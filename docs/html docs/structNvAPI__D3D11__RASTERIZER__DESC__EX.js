@@ -1,0 +1,26 @@
+var structNvAPI__D3D11__RASTERIZER__DESC__EX =
+[
+    [ "AntialiasedLineEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a6985d6530803549b8f840c12a8c15ec2", null ],
+    [ "ConservativeRasterEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a36a5091869b10a7eadda3546b8ebf7b6", null ],
+    [ "CoverageToColorEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#ab10e368512cb5631138395a595d76e6e", null ],
+    [ "CoverageToColorRTIndex", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a69e61138b5f56abebf10e790c6d15401", null ],
+    [ "CullMode", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a54e50faa61e87441f5cb1966d292cf60", null ],
+    [ "DepthBias", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a57444f39f6c4b3ef78838a932209e8bd", null ],
+    [ "DepthBiasClamp", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a42729dadf19335b79b09192fcd8fba7f", null ],
+    [ "DepthClipEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a6f3d9fa6f774de9ffb8cba07af39d35d", null ],
+    [ "FillMode", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a6749de5854a712b21e3968a93716830f", null ],
+    [ "ForcedSampleCount", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a10585a33d50fdb11bc0934c8a0831f62", null ],
+    [ "FrontCounterClockwise", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a2f66a650affe847a37316810545913f7", null ],
+    [ "InterleavedSamplingEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a86faaf133f57e53777fa16073d9cd167", null ],
+    [ "MultisampleEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a86cf0738474e82d8761e1a6910aa0535", null ],
+    [ "PostZCoverageEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a64f51dddc8c5c2c652d2973bf4a5ecd5", null ],
+    [ "ProgrammableSamplePositionsEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a15f446ad27ab02fc8e499f236cea4fad", null ],
+    [ "QuadFillMode", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#af95f711035e6335bfdbb4bd31e91e4a3", null ],
+    [ "reserved", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#ae36a3d51be76304ee5d209da226de3e0", null ],
+    [ "SampleCount", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a2333e92e80ea29ae75a771aa0d04b27a", null ],
+    [ "SamplePositionsX", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a78582ea3952d232eddac3cf7432f0995", null ],
+    [ "SamplePositionsY", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a12f2d2cdc7e724b62801e411ecdd0983", null ],
+    [ "ScissorEnable", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#ab094fe5feee8f592c384d9d9e87c0381", null ],
+    [ "SlopeScaledDepthBias", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a544dd6ac788e68146c338262e1bbac21", null ],
+    [ "TargetIndepentRasterWithDepth", "structNvAPI__D3D11__RASTERIZER__DESC__EX.html#a242c7da8b79b43c3d23d4039b8c8c2e2", null ]
+];

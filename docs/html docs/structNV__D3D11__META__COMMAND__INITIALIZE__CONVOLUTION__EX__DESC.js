@@ -1,0 +1,4 @@
+var structNV__D3D11__META__COMMAND__INITIALIZE__CONVOLUTION__EX__DESC =
+[
+    [ "PersistentResource", "structNV__D3D11__META__COMMAND__INITIALIZE__CONVOLUTION__EX__DESC.html#a43140e9ba80325197069ae065cdf0b84", null ]
+];

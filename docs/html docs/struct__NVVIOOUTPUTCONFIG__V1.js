@@ -1,0 +1,27 @@
+var struct__NVVIOOUTPUTCONFIG__V1 =
+[
+    [ "colorConversion", "struct__NVVIOOUTPUTCONFIG__V1.html#a8d70a6bd93d5920cf70f57dd4b3e6e5d", null ],
+    [ "compositeSyncType", "struct__NVVIOOUTPUTCONFIG__V1.html#ac13df6f9a94e4b0e2a9b0268cc67079a", null ],
+    [ "compositeTerminate", "struct__NVVIOOUTPUTCONFIG__V1.html#a871d34aa6c02be6db70691d0e6565aff", null ],
+    [ "compRange", "struct__NVVIOOUTPUTCONFIG__V1.html#aa0f2a68779a031c8fffe886fe1065693", null ],
+    [ "cscOverride", "struct__NVVIOOUTPUTCONFIG__V1.html#aee711448be9240eff682e1addba335a7", null ],
+    [ "dataFormat", "struct__NVVIOOUTPUTCONFIG__V1.html#a5eab95e3f5396ed76a9cfead247c8121", null ],
+    [ "enable422Filter", "struct__NVVIOOUTPUTCONFIG__V1.html#a669f4f9379d96dca5bfdbadb4420ca11", null ],
+    [ "enableAlphaKeyComposite", "struct__NVVIOOUTPUTCONFIG__V1.html#a279f228cc6456d59c758a91de81a529b", null ],
+    [ "enableANCTimeCodeGeneration", "struct__NVVIOOUTPUTCONFIG__V1.html#ae05752605cfd84ba2d666f4f178391fa", null ],
+    [ "enableComposite", "struct__NVVIOOUTPUTCONFIG__V1.html#a698029bb80cfe81eb47c45ce616dea29", null ],
+    [ "enableDataIntegrityCheck", "struct__NVVIOOUTPUTCONFIG__V1.html#a404255de996b79c9cf0afcbe86995a02", null ],
+    [ "enableFullColorRange", "struct__NVVIOOUTPUTCONFIG__V1.html#a3725e4e3b4ecca02ff09029f11bfc236", null ],
+    [ "enableRGBData", "struct__NVVIOOUTPUTCONFIG__V1.html#ab8d303a6ea144c2a800f10f25a3e14ac", null ],
+    [ "flipQueueLength", "struct__NVVIOOUTPUTCONFIG__V1.html#abf5fce6b9dcfd3f176c136b46b984cb0", null ],
+    [ "frameLockEnable", "struct__NVVIOOUTPUTCONFIG__V1.html#a1c182dc6c9db2bb105ee1248087dbed6", null ],
+    [ "gammaCorrection", "struct__NVVIOOUTPUTCONFIG__V1.html#a4f3030a7b031866d4ecec7007bff5ecd", null ],
+    [ "outputArea", "struct__NVVIOOUTPUTCONFIG__V1.html#ab9707baf7e3912a721af2d34d9c61a2e", null ],
+    [ "outputRegion", "struct__NVVIOOUTPUTCONFIG__V1.html#a1861e510ea6fbc6192944cb4e80da6b8", null ],
+    [ "psfSignalFormat", "struct__NVVIOOUTPUTCONFIG__V1.html#a2f4bacb0b33ffbe5700c9bc8e27a7a55", null ],
+    [ "reservedData", "struct__NVVIOOUTPUTCONFIG__V1.html#a3ac3d774e1e02cca8f6422650f5d8498", null ],
+    [ "signalFormat", "struct__NVVIOOUTPUTCONFIG__V1.html#ac78b830e622e48f406c2cd736b7a82ad", null ],
+    [ "syncDelay", "struct__NVVIOOUTPUTCONFIG__V1.html#a097c7593983d4dc491a24907a13b2a6c", null ],
+    [ "syncEnable", "struct__NVVIOOUTPUTCONFIG__V1.html#a9b5374f8c57ee628a9dac39104da6773", null ],
+    [ "syncSource", "struct__NVVIOOUTPUTCONFIG__V1.html#aef540401787e584d87c20d47c5954caa", null ]
+];

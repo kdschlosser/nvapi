@@ -1,0 +1,4 @@
+var struct__NV__GPU__CLIENT__ILLUM__ZONE__CONTROL__DATA__MANUAL__COLOR__FIXED__PARAMS =
+[
+    [ "brightnessPct", "struct__NV__GPU__CLIENT__ILLUM__ZONE__CONTROL__DATA__MANUAL__COLOR__FIXED__PARAMS.html#a975cdbe196ecfca415a7b806ab4e3347", null ]
+];

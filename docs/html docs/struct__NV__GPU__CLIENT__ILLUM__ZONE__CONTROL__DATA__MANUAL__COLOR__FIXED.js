@@ -1,0 +1,4 @@
+var struct__NV__GPU__CLIENT__ILLUM__ZONE__CONTROL__DATA__MANUAL__COLOR__FIXED =
+[
+    [ "colorFixedParams", "struct__NV__GPU__CLIENT__ILLUM__ZONE__CONTROL__DATA__MANUAL__COLOR__FIXED.html#a4cdf5e154364e996d1635c2c294739a1", null ]
+];
