@@ -127,7 +127,7 @@ D3D10_DEVICE_STATE_TYPES = _D3D10_DEVICE_STATE_TYPES
 # Used in ID3D10StateBlockMask function calls
 # ------------------------------------------------------------------
 def D3D10_BYTES_FROM_BITS(x):
-     return (x + 7) / 8
+     return (x + 7) // 8
 
 
 _D3D10_STATE_BLOCK_MASK._fields_ = [
@@ -165,7 +165,7 @@ _D3D10_STATE_BLOCK_MASK._fields_ = [
 
 # {0803425A-57F5-4dd6-9465-A87570834A08}
 IID_ID3D10StateBlock = GUID(
-    '{803425A-57F5-4DD6-9465-A87570834A08}'
+    '{0803425A-57F5-4DD6-9465-A87570834A08}'
 )
 
 
@@ -334,6 +334,10 @@ D3D10_EFFECT_VARIABLE_POOLED = 1 << 0
 D3D10_EFFECT_VARIABLE_ANNOTATION = 1 << 1
 D3D10_EFFECT_VARIABLE_EXPLICIT_BIND_POINT = 1 << 2
 
+
+D3D10_SHADER_VARIABLE_CLASS = D3D_SHADER_VARIABLE_CLASS
+
+D3D10_SHADER_VARIABLE_TYPE = D3D_SHADER_VARIABLE_TYPE
 # //////////////////////////////////////////////////////////////////
 # ID3D10EffectType
 # //////////////////////////////////////////////////////////

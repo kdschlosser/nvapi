@@ -22,7 +22,7 @@ from .nvapi_lite_common_h import *  # NOQA
 # not \ingroup dispcontrol
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_DISP_GetGDIPrimaryDisplayId(NvU32* displayId);
-NvAPI_DISP_GetGDIPrimaryDisplayId = hDll.NvAPI_DISP_GetGDIPrimaryDisplayId
+NvAPI_DISP_GetGDIPrimaryDisplayId = hDll.DISP_GetGDIPrimaryDisplayId
 NvAPI_DISP_GetGDIPrimaryDisplayId.restype = NVAPI_INTERFACE
 
 NV_MOSAIC_MAX_DISPLAYS = 64
@@ -70,6 +70,6 @@ NV_MOSAIC_MAX_DISPLAYS = 64
 # NV_RECT viewports[NV_MOSAIC_MAX_DISPLAYS],
 # NvU8* bezelCorrected
 # );
-NvAPI_Mosaic_GetDisplayViewportsByResolution = hDll.NvAPI_Mosaic_GetDisplayViewportsByResolution
+NvAPI_Mosaic_GetDisplayViewportsByResolution = hDll.Mosaic_GetDisplayViewportsByResolution
 NvAPI_Mosaic_GetDisplayViewportsByResolution.restype = NVAPI_INTERFACE
 

@@ -9,9 +9,6 @@ from ctypes.wintypes import BOOL, CHAR, INT,  UINT
 VOID = ctypes.c_void_p
 NULL = None
 
-NVAPI_INTERFACE = INT
-
-
 class ENUM(INT):
     pass
 
@@ -67,15 +64,21 @@ class _hDll(object):
                 self.__name__ = name
                 self.__func = None
                 self.hDll = None
+                self.restype = None
 
             def __call__(self, *args, **kwargs):
                 if self.__func is None:
                     if self.hDll is not None:
-                        self.__func = getattr(self.hDll, self.__name__)
+                        try:
+                            self.__func = getattr(self.hDll, self.__name__)
+                            self.__func.restype = self.restype
+                        except:
+                            return None
                     else:
                         raise RuntimeError(
                             'Module initilization problem function "{0}" is not available.'.format(self.__name__)
                         )
+
                 return self.__func(*args, **kwargs)
 
         wrapper = Wrapper(item)
@@ -87,13 +90,17 @@ hDll = _hDll()
 
 
 def InitNV():
-    for lib in ('atiadlxx.dll', 'atiadlxy.dll'):
-        hDll.hDll = load_library(lib)
-        if hDll.hDll is not None:
-            break
+    import os
+    
+    dll_path = os.path.dirname(__file__)
+    
+    if _WIN64:
+        dll = 'nvapi64.dll'
     else:
-        hDll.hDll = None
+        dll = 'nvapi.dll'
 
+    hDll.hDll = load_library(os.path.join(dll_path, dll))
+    
     if hDll.hDll is None:
         raise RuntimeError('Unable to locate Nvidia shared library')
 
@@ -161,7 +168,7 @@ class NV_DISPLAY_DRIVER_MEMORY_INFO_V3(ctypes.Structure):
 
 
 def __nvapi_deprecated_function(message):
-    print message
+    pass
 
 
 def __nvapi_deprecated_datatype(_):
@@ -208,16 +215,16 @@ _NV_RECT._fields_ = [
 glob = globals()
 
 
-def NV_DECLARE_HANDLE(name):    
-    namespace = {
-        '_fields_': [('unused', INT)],
-        '_pack_': 8
-    }
-    
-    cls = type(name + '__', (ctypes.Structure,), namespace)
+def NV_DECLARE_HANDLE(name):
+
+    class Struct(ctypes.Structure):
+        _fields_ = [('unused', INT)]
+        _pack_ = 8
+
+    cls = type(name + '__', (Struct,), {})
 
     glob.update({name + '__': cls})
-    return POINTER(cls)
+    return cls
     
 
 # not \addtogroup nvapihandles
@@ -355,7 +362,10 @@ NvAPI_UnicodeShortString = NvU16 * NVAPI_SHORT_STRING_MAX
     
     
 def MAKE_NVAPI_VERSION(typeName, ver):
-    return NvU32(ctypes.sizeof(typeName) | (ver << 16))
+    try:
+        return NvU32(ctypes.sizeof(typeName) | (ver << 16))
+    except TypeError:
+        return NvU32(len(typeName.__dict__) | (ver << 16))
 
 
 # not \ingroup nvapitypes
@@ -613,6 +623,8 @@ class _NvAPI_Status(ENUM):
 
 NvAPI_Status = _NvAPI_Status
 
+NVAPI_INTERFACE = NvAPI_Status
+
 # /////////////////////////////////////////////////////////////////////////////
 # FUNCTION NAME: NvAPI_SYS_GetDriverAndBranchVersion
 # not DESCRIPTION: This API returns display driver version and driver-branch
@@ -636,7 +648,7 @@ NvAPI_Status = _NvAPI_Status
 # /////////////////////////////////////////////////////////////////////////////
 
 # NVAPI_INTERFACE NvAPI_SYS_GetDriverAndBranchVersion(NvU32* pDriverVersion, NvAPI_ShortString szBuildBranchString);
-NvAPI_SYS_GetDriverAndBranchVersion = hDll.NvAPI_SYS_GetDriverAndBranchVersion
+NvAPI_SYS_GetDriverAndBranchVersion = hDll.SYS_GetDriverAndBranchVersion
 NvAPI_SYS_GetDriverAndBranchVersion.restype = NVAPI_INTERFACE
 
 # not \ingroup driverapi
@@ -758,7 +770,7 @@ NV_DISPLAY_DRIVER_MEMORY_INFO_VER = NV_DISPLAY_DRIVER_MEMORY_INFO_VER_3
 # not \ingroup driverapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_GPU_GetMemoryInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_DISPLAY_DRIVER_MEMORY_INFO *pMemoryInfo);
-NvAPI_GPU_GetMemoryInfo = hDll.NvAPI_GPU_GetMemoryInfo
+NvAPI_GPU_GetMemoryInfo = hDll.GPU_GetMemoryInfo
 NvAPI_GPU_GetMemoryInfo.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -799,7 +811,7 @@ NvAPI_GPU_GetMemoryInfo.restype = NVAPI_INTERFACE
 # not \ingroup gpu
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_EnumPhysicalGPUs(NvPhysicalGpuHandle nvGPUHandle[NVAPI_MAX_PHYSICAL_GPUS], NvU32 *pGpuCount);
-NvAPI_EnumPhysicalGPUs = hDll.NvAPI_EnumPhysicalGPUs
+NvAPI_EnumPhysicalGPUs = hDll.EnumPhysicalGPUs
 NvAPI_EnumPhysicalGPUs.restype = NVAPI_INTERFACE
 
 # DX Objects#
@@ -832,5 +844,5 @@ NVDX_OBJECT_NONE = NVDX_ObjectHandle(0)
 #     IUnknown *pDevice,
 #     IUnknown *pResource,
 #     NVDX_ObjectHandle *pHandle);
-NvAPI_D3D_GetObjectHandleForResource = hDll.NvAPI_D3D_GetObjectHandleForResource
+NvAPI_D3D_GetObjectHandleForResource = hDll.D3D_GetObjectHandleForResource
 NvAPI_D3D_GetObjectHandleForResource.restype = NVAPI_INTERFACE

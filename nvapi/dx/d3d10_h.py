@@ -2468,8 +2468,8 @@ d3d10 = ctypes.windll.D3D10
 # typedef struct D3D10_SUBRESOURCE_DATA
 # {
 # VOID *pSysMem;
-D3D10CalcSubresource = d3d10.D3D10CalcSubresource
-D3D10CalcSubresource.restype = UINT
+# D3D10CalcSubresource = d3d10.D3D10CalcSubresource
+# D3D10CalcSubresource.restype = UINT
 
 IID_ID3D10Resource = MIDL_INTERFACE(
     "{9B7E4C01-342C-4106-A19F-4F2704F689F0}"
@@ -3355,7 +3355,7 @@ ID3D10Device._methods_ = [
         'VSSetConstantBuffers',
         (['in'], UINT, 'StartSlot'),
         (['in'], UINT, 'NumBuffers'),
-        (['in'], POINTER(), 'ppConstantBuffers'),
+        (['in'], POINTER(POINTER(ID3D10Buffer)), 'ppConstantBuffers'),
     ),
     COMMETHOD(
         [helpstring('Method PSSetShaderResources')],
@@ -3365,7 +3365,7 @@ ID3D10Device._methods_ = [
         (['in'], UINT, 'NumViews'),
         (
             ['in'],
-            POINTER(),
+            POINTER(POINTER(ID3D10ShaderResourceView)),
             'ppShaderResourceViews'
         ),
     ),
@@ -3385,7 +3385,7 @@ ID3D10Device._methods_ = [
         'PSSetSamplers',
         (['in'], UINT, 'StartSlot'),
         (['in'], UINT, 'NumSamplers'),
-        (['in'], POINTER(), 'ppSamplers'),
+        (['in'], POINTER(POINTER(ID3D10SamplerState)), 'ppSamplers'),
     ),
     COMMETHOD(
         [helpstring('Method VSSetShader')],
@@ -3418,7 +3418,7 @@ ID3D10Device._methods_ = [
         'PSSetConstantBuffers',
         (['in'], UINT, 'StartSlot'),
         (['in'], UINT, 'NumBuffers'),
-        (['in'], POINTER(), 'ppConstantBuffers'),
+        (['in'], POINTER(POINTER(ID3D10Buffer)), 'ppConstantBuffers'),
     ),
     COMMETHOD(
         [helpstring('Method IASetInputLayout')],
@@ -3436,7 +3436,7 @@ ID3D10Device._methods_ = [
         'IASetVertexBuffers',
         (['in'], UINT, 'StartSlot'),
         (['in'], UINT, 'NumBuffers'),
-        (['in'], POINTER(), 'ppVertexBuffers'),
+        (['in'], POINTER(POINTER(ID3D10Buffer)), 'ppVertexBuffers'),
         (['in'], POINTER(UINT), 'pStrides'),
         (['in'], POINTER(UINT), 'pOffsets'),
     ),
@@ -3473,7 +3473,7 @@ ID3D10Device._methods_ = [
         'GSSetConstantBuffers',
         (['in'], UINT, 'StartSlot'),
         (['in'], UINT, 'NumBuffers'),
-        (['in'], POINTER(), 'ppConstantBuffers'),
+        (['in'], POINTER(POINTER(ID3D10Buffer)), 'ppConstantBuffers'),
     ),
     COMMETHOD(
         [helpstring('Method GSSetShader')],
@@ -3499,7 +3499,7 @@ ID3D10Device._methods_ = [
         (['in'], UINT, 'NumViews'),
         (
             ['in'],
-            POINTER(),
+            POINTER(POINTER(ID3D10ShaderResourceView)),
             'ppShaderResourceViews'
         ),
     ),
@@ -3509,7 +3509,7 @@ ID3D10Device._methods_ = [
         'VSSetSamplers',
         (['in'], UINT, 'StartSlot'),
         (['in'], UINT, 'NumSamplers'),
-        (['in'], POINTER(), 'ppSamplers'),
+        (['in'], POINTER(POINTER(ID3D10SamplerState)), 'ppSamplers'),
     ),
     COMMETHOD(
         [helpstring('Method SetPredication')],
@@ -3526,7 +3526,7 @@ ID3D10Device._methods_ = [
         (['in'], UINT, 'NumViews'),
         (
             ['in'],
-            POINTER(),
+            POINTER(POINTER(ID3D10ShaderResourceView)),
             'ppShaderResourceViews'
         ),
     ),
@@ -3536,14 +3536,14 @@ ID3D10Device._methods_ = [
         'GSSetSamplers',
         (['in'], UINT, 'StartSlot'),
         (['in'], UINT, 'NumSamplers'),
-        (['in'], POINTER(), 'ppSamplers'),
+        (['in'], POINTER(POINTER(ID3D10SamplerState)), 'ppSamplers'),
     ),
     COMMETHOD(
         [helpstring('Method OMSetRenderTargets')],
         VOID,
         'OMSetRenderTargets',
         (['in'], UINT, 'NumViews'),
-        (['in'], POINTER(), 'ppRenderTargetViews'),
+        (['in'], POINTER(POINTER(ID3D10RenderTargetView)), 'ppRenderTargetViews'),
         (
             ['in'],
             POINTER(ID3D10DepthStencilView),
@@ -3559,7 +3559,7 @@ ID3D10Device._methods_ = [
             POINTER(ID3D10BlendState),
             'pBlendState'
         ),
-        (['in'], 4, ']'),
+        (['in'], FLOAT * 4, 'BlendFactor'),
         (['in'], UINT, 'SampleMask'),
     ),
 
@@ -3580,7 +3580,7 @@ ID3D10Device._methods_ = [
         VOID,
         'SOSetTargets',
         (['in'], UINT, 'NumBuffers'),
-        (['in'], POINTER(), 'ppSOTargets'),
+        (['in'], POINTER(POINTER(ID3D10Buffer)), 'ppSOTargets'),
         (['in'], POINTER(UINT), 'pOffsets'),
     ),
 
@@ -3660,7 +3660,7 @@ ID3D10Device._methods_ = [
             POINTER(ID3D10RenderTargetView),
             'pRenderTargetView'
         ),
-        (['in'], 4, ']'),
+        (['in'], FLOAT * 4, 'ColorRGBA'),
     ),
     COMMETHOD(
         [helpstring('Method ClearDepthStencilView')],
@@ -3915,7 +3915,7 @@ ID3D10Device._methods_ = [
             POINTER(POINTER(ID3D10BlendState)),
             'ppBlendState'
         ),
-        (['out'], 4, ']'),
+        (['out'], FLOAT * 4, 'BlendFactor'),
         (['out'], POINTER(UINT), 'pSampleMask'),
     ),
     COMMETHOD(

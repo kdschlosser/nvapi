@@ -1,5 +1,5 @@
 
-from nvapi_lite_common_h import *  # NOQA
+from .nvapi_lite_common_h import *  # NOQA
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ from nvapi_lite_common_h import *  # NOQA
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_Enable(void);
-NvAPI_Stereo_Enable = hDll.NvAPI_Stereo_Enable
+NvAPI_Stereo_Enable = hDll.Stereo_Enable
 NvAPI_Stereo_Enable.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ NvAPI_Stereo_Enable.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_Disable(void);
-NvAPI_Stereo_Disable = hDll.NvAPI_Stereo_Disable
+NvAPI_Stereo_Disable = hDll.Stereo_Disable
 NvAPI_Stereo_Disable.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ NvAPI_Stereo_Disable.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_IsEnabled(NvU8 *pIsStereoEnabled);
-NvAPI_Stereo_IsEnabled = hDll.NvAPI_Stereo_IsEnabled
+NvAPI_Stereo_IsEnabled = hDll.Stereo_IsEnabled
 NvAPI_Stereo_IsEnabled.restype = NVAPI_INTERFACE
 
 # ///////////////////////////////////////////////////////////////////////
@@ -122,7 +122,7 @@ NvAPI_Stereo_IsEnabled.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_CreateHandleFromIUnknown(IUnknown *pDevice, StereoHandle *pStereoHandle);
-NvAPI_Stereo_CreateHandleFromIUnknown = hDll.NvAPI_Stereo_CreateHandleFromIUnknown
+NvAPI_Stereo_CreateHandleFromIUnknown = hDll.Stereo_CreateHandleFromIUnknown
 NvAPI_Stereo_CreateHandleFromIUnknown.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -148,7 +148,7 @@ NvAPI_Stereo_CreateHandleFromIUnknown.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_DestroyHandle(StereoHandle stereoHandle);
-NvAPI_Stereo_DestroyHandle = hDll.NvAPI_Stereo_DestroyHandle
+NvAPI_Stereo_DestroyHandle = hDll.Stereo_DestroyHandle
 NvAPI_Stereo_DestroyHandle.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ NvAPI_Stereo_DestroyHandle.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_Activate(StereoHandle stereoHandle);
-NvAPI_Stereo_Activate = hDll.NvAPI_Stereo_Activate
+NvAPI_Stereo_Activate = hDll.Stereo_Activate
 NvAPI_Stereo_Activate.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -217,7 +217,7 @@ NvAPI_Stereo_Activate.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_Deactivate(StereoHandle stereoHandle);
-NvAPI_Stereo_Deactivate = hDll.NvAPI_Stereo_Deactivate
+NvAPI_Stereo_Deactivate = hDll.Stereo_Deactivate
 NvAPI_Stereo_Deactivate.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -251,7 +251,7 @@ NvAPI_Stereo_Deactivate.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_IsActivated(StereoHandle stereoHandle, NvU8 *pIsStereoOn);
-NvAPI_Stereo_IsActivated = hDll.NvAPI_Stereo_IsActivated
+NvAPI_Stereo_IsActivated = hDll.Stereo_IsActivated
 NvAPI_Stereo_IsActivated.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -284,7 +284,7 @@ NvAPI_Stereo_IsActivated.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_GetSeparation(StereoHandle stereoHandle, float *pSeparationPercentage);
-NvAPI_Stereo_GetSeparation = hDll.NvAPI_Stereo_GetSeparation
+NvAPI_Stereo_GetSeparation = hDll.Stereo_GetSeparation
 NvAPI_Stereo_GetSeparation.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -316,7 +316,7 @@ NvAPI_Stereo_GetSeparation.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_SetSeparation(StereoHandle stereoHandle, float newSeparationPercentage);
-NvAPI_Stereo_SetSeparation = hDll.NvAPI_Stereo_SetSeparation
+NvAPI_Stereo_SetSeparation = hDll.Stereo_SetSeparation
 NvAPI_Stereo_SetSeparation.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -348,7 +348,7 @@ NvAPI_Stereo_SetSeparation.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_GetConvergence(StereoHandle stereoHandle, float *pConvergence);
-NvAPI_Stereo_GetConvergence = hDll.NvAPI_Stereo_GetConvergence
+NvAPI_Stereo_GetConvergence = hDll.Stereo_GetConvergence
 NvAPI_Stereo_GetConvergence.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -379,7 +379,7 @@ NvAPI_Stereo_GetConvergence.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_SetConvergence(StereoHandle stereoHandle, float newConvergence);
-NvAPI_Stereo_SetConvergence = hDll.NvAPI_Stereo_SetConvergence
+NvAPI_Stereo_SetConvergence = hDll.Stereo_SetConvergence
 NvAPI_Stereo_SetConvergence.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -428,7 +428,7 @@ NV_STEREO_ACTIVE_EYE = _NV_StereoActiveEye
 
 # not \ingroup stereoapi
 # NVAPI_INTERFACE NvAPI_Stereo_SetActiveEye(StereoHandle hStereoHandle, NV_STEREO_ACTIVE_EYE StereoEye);
-NvAPI_Stereo_SetActiveEye = hDll.NvAPI_Stereo_SetActiveEye
+NvAPI_Stereo_SetActiveEye = hDll.Stereo_SetActiveEye
 NvAPI_Stereo_SetActiveEye.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -465,7 +465,7 @@ NV_STEREO_DRIVER_MODE = _NV_StereoDriverMode
 
 # not \ingroup stereoapi
 # NVAPI_INTERFACE NvAPI_Stereo_SetDriverMode( NV_STEREO_DRIVER_MODE mode );
-NvAPI_Stereo_SetDriverMode = hDll.NvAPI_Stereo_SetDriverMode
+NvAPI_Stereo_SetDriverMode = hDll.Stereo_SetDriverMode
 NvAPI_Stereo_SetDriverMode.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -494,7 +494,7 @@ NvAPI_Stereo_SetDriverMode.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_GetEyeSeparation(StereoHandle hStereoHandle,  float *pSeparation );
-NvAPI_Stereo_GetEyeSeparation = hDll.NvAPI_Stereo_GetEyeSeparation
+NvAPI_Stereo_GetEyeSeparation = hDll.Stereo_GetEyeSeparation
 NvAPI_Stereo_GetEyeSeparation.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -517,7 +517,7 @@ NvAPI_Stereo_GetEyeSeparation.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_IsWindowedModeSupported(NvU8* bSupported);
-NvAPI_Stereo_IsWindowedModeSupported = hDll.NvAPI_Stereo_IsWindowedModeSupported
+NvAPI_Stereo_IsWindowedModeSupported = hDll.Stereo_IsWindowedModeSupported
 NvAPI_Stereo_IsWindowedModeSupported.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -562,7 +562,7 @@ NVAPI_STEREO_SURFACECREATEMODE = _NVAPI_STEREO_SURFACECREATEMODE
 # __in StereoHandle hStereoHandle,
 # __in NVAPI_STEREO_SURFACECREATEMODE creationMode
 # );
-NvAPI_Stereo_SetSurfaceCreationMode = hDll.NvAPI_Stereo_SetSurfaceCreationMode
+NvAPI_Stereo_SetSurfaceCreationMode = hDll.Stereo_SetSurfaceCreationMode
 NvAPI_Stereo_SetSurfaceCreationMode.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -596,7 +596,7 @@ NvAPI_Stereo_SetSurfaceCreationMode.restype = NVAPI_INTERFACE
 # __in StereoHandle hStereoHandle,
 # __in NVAPI_STEREO_SURFACECREATEMODE* pCreationMode
 # );
-NvAPI_Stereo_GetSurfaceCreationMode = hDll.NvAPI_Stereo_GetSurfaceCreationMode
+NvAPI_Stereo_GetSurfaceCreationMode = hDll.Stereo_GetSurfaceCreationMode
 NvAPI_Stereo_GetSurfaceCreationMode.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -622,7 +622,7 @@ NvAPI_Stereo_GetSurfaceCreationMode.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_Debug_WasLastDrawStereoized(__in StereoHandle hStereoHandle, __out NvU8 *pWasStereoized);
-NvAPI_Stereo_Debug_WasLastDrawStereoized = hDll.NvAPI_Stereo_Debug_WasLastDrawStereoized
+NvAPI_Stereo_Debug_WasLastDrawStereoized = hDll.Stereo_Debug_WasLastDrawStereoized
 NvAPI_Stereo_Debug_WasLastDrawStereoized.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -653,7 +653,7 @@ NvAPI_Stereo_Debug_WasLastDrawStereoized.restype = NVAPI_INTERFACE
 # not \ingroup stereoapi
 # /////////////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Stereo_SetDefaultProfile(__in const char* szProfileName);
-NvAPI_Stereo_SetDefaultProfile = hDll.NvAPI_Stereo_SetDefaultProfile
+NvAPI_Stereo_SetDefaultProfile = hDll.Stereo_SetDefaultProfile
 NvAPI_Stereo_SetDefaultProfile.restype = NVAPI_INTERFACE
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -699,5 +699,5 @@ NvAPI_Stereo_SetDefaultProfile.restype = NVAPI_INTERFACE
 # __out_bcount_part_opt(cbSizeIn, *pcbSizeOut) char* szProfileName,
 # __out NvU32 *pcbSizeOut
 # );
-NvAPI_Stereo_GetDefaultProfile = hDll.NvAPI_Stereo_GetDefaultProfile
+NvAPI_Stereo_GetDefaultProfile = hDll.Stereo_GetDefaultProfile
 NvAPI_Stereo_GetDefaultProfile.restype = NVAPI_INTERFACE

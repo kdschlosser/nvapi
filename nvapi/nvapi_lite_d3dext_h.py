@@ -1,4 +1,4 @@
-from nvapi_lite_common_h import * # NOQA
+from .nvapi_lite_common_h import * # NOQA
 
 
 # not \ingroup dx
@@ -74,7 +74,7 @@ NVAPI_DEVICE_FEATURE_LEVEL_11_0 = NVAPI_DEVICE_FEATURE_LEVEL.NVAPI_DEVICE_FEATUR
 #                                          ID3D11DeviceContext **ppImmediateContext,
 #                                          NVAPI_DEVICE_FEATURE_LEVEL *pSupportedLevel);
 
-NvAPI_D3D11_CreateDevice = hDll.NvAPI_D3D11_CreateDevice
+NvAPI_D3D11_CreateDevice = hDll.D3D11_CreateDevice
 NvAPI_D3D11_CreateDevice.restype = NVAPI_INTERFACE
 
 # ///////////////////////////////////////////////////////////////////////
@@ -128,7 +128,7 @@ NvAPI_D3D11_CreateDevice.restype = NVAPI_INTERFACE
 #                                          D3D_FEATURE_LEVEL *pFeatureLevel,
 #                                          ID3D11DeviceContext **ppImmediateContext,
 #                                          NVAPI_DEVICE_FEATURE_LEVEL *pSupportedLevel);
-NvAPI_D3D11_CreateDeviceAndSwapChain = hDll.NvAPI_D3D11_CreateDeviceAndSwapChain
+NvAPI_D3D11_CreateDeviceAndSwapChain = hDll.D3D11_CreateDeviceAndSwapChain
 NvAPI_D3D11_CreateDeviceAndSwapChain.restype = NVAPI_INTERFACE
 
 # ///////////////////////////////////////////////////////////////////////
@@ -156,7 +156,7 @@ NvAPI_D3D11_CreateDeviceAndSwapChain.restype = NVAPI_INTERFACE
 #                                                NvU32 bEnable,
 #                                                float fMinDepth,
 #                                                float fMaxDepth);
-NvAPI_D3D11_SetDepthBoundsTest = hDll.NvAPI_D3D11_SetDepthBoundsTest
+NvAPI_D3D11_SetDepthBoundsTest = hDll.D3D11_SetDepthBoundsTest
 NvAPI_D3D11_SetDepthBoundsTest.restype = NVAPI_INTERFACE
 
 

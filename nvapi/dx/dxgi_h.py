@@ -762,8 +762,8 @@ DXGI_ADAPTER_DESC1._fields_ = [
 ]
 
 DXGI_DISPLAY_COLOR_SPACE._fields_ = [
-    ('PrimaryCoordinates', (FLOAT * 8)(FLOAT * 2)),
-    ('WhitePoints', (FLOAT * 16)(FLOAT * 2)),
+    ('PrimaryCoordinates', (FLOAT * 8) * 2),
+    ('WhitePoints', (FLOAT * 16) * 2),
 ]
 
 
@@ -828,7 +828,7 @@ IID_IDXGIObject = GUID('{AEC22FB8-76F3-4639-9BE0-28EB43A67A2E}')
 
 IID_IDXGIDeviceSubObject = GUID('{3D3E0379-F9DE-4D58-BB6C-18D62992F1A6}')
 
-IID_IDXGIResource = GUID('{35F3AB4-482E-4E50-B41F-8A7F8BD8960B}')
+IID_IDXGIResource = GUID('{035F3AB4-482E-4E50-B41F-8A7F8BD8960B}')
 
 IID_IDXGIKeyedMutex = GUID('{9D8E1289-D7B3-465F-8126-250E349AF85D}')
 

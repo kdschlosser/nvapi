@@ -11,7 +11,7 @@ class NV_GET_CURRENT_SLI_STATE_V2(ctypes.Structure):
 
 # **********************************************************************************************************************
 
-from nvapi_lite_common_h import *  # NOQA
+from .nvapi_lite_common_h import *  # NOQA
 
 
 # -----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ NV_GET_CURRENT_SLI_STATE = NV_GET_CURRENT_SLI_STATE_V2
 # ///////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_D3D_GetCurrentSLIState(IUnknown *pDevice, NV_GET_CURRENT_SLI_STATE *pSliState);
 
-NvAPI_D3D_GetCurrentSLIState = hDll.NvAPI_D3D_GetCurrentSLIState
+NvAPI_D3D_GetCurrentSLIState = hDll.D3D_GetCurrentSLIState
 NvAPI_D3D_GetCurrentSLIState.restype = NVAPI_INTERFACE
 
 
@@ -187,7 +187,7 @@ NVAPI_D3D_SETRESOURCEHINT_SLI = _NVAPI_D3D_SETRESOURCEHINT_SLI
 #                                           NvU32 dwHintName,
 #                                           NvU32 *pdwHintValue);
 
-NvAPI_D3D_SetResourceHint = hDll.NvAPI_D3D_SetResourceHint
+NvAPI_D3D_SetResourceHint = hDll.D3D_SetResourceHint
 NvAPI_D3D_SetResourceHint.restype = NVAPI_INTERFACE
 
 
@@ -240,7 +240,7 @@ NVAPI_D3D_RESOURCERENDERING_FLAG = _NVAPI_D3D_RESOURCERENDERING_FLAG
 # not \ingroup dx
 # NVAPI_INTERFACE NvAPI_D3D_BeginResourceRendering(IUnknown *pDeviceOrContext, NVDX_ObjectHandle obj, NvU32 Flags);
 
-NvAPI_D3D_BeginResourceRendering = hDll.NvAPI_D3D_BeginResourceRendering
+NvAPI_D3D_BeginResourceRendering = hDll.D3D_BeginResourceRendering
 NvAPI_D3D_BeginResourceRendering.restype = NVAPI_INTERFACE
 
 
@@ -271,5 +271,5 @@ NvAPI_D3D_BeginResourceRendering.restype = NVAPI_INTERFACE
 # ///////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_D3D_EndResourceRendering(IUnknown *pDeviceOrContext, NVDX_ObjectHandle obj, NvU32 Flags);
 
-NvAPI_D3D_EndResourceRendering = hDll.NvAPI_D3D_EndResourceRendering
+NvAPI_D3D_EndResourceRendering = hDll.D3D_EndResourceRendering
 NvAPI_D3D_EndResourceRendering.restype = NVAPI_INTERFACE

@@ -2,7 +2,7 @@ import ctypes
 import comtypes
 from comtypes.GUID import GUID
 from ctypes import POINTER
-from ctypes.wintypes import BOOL, UINT, FLOAT
+from ctypes.wintypes import BOOL, UINT, FLOAT, LPCWSTR
 
 
 D3D12_GPU_VIRTUAL_ADDRESS = ctypes.c_uint64
@@ -1500,11 +1500,11 @@ class NV_LID_DOCK_PARAMS(ctypes.Structure):
     pass
 
 
-from nvapi_lite_d3dext_h import *  # NOQA
-from nvapi_lite_surround_h import *  # NOQA
-from nvapi_lite_common_h import *  # NOQA
-from nvapi_lite_sli_h import *  # NOQA
-from nvapi_lite_stereo_h import *  # NOQA
+from .nvapi_lite_d3dext_h import *  # NOQA
+from .nvapi_lite_surround_h import *  # NOQA
+from .nvapi_lite_common_h import *  # NOQA
+from .nvapi_lite_sli_h import *  # NOQA
+from .nvapi_lite_stereo_h import *  # NOQA
 
 #
 # /////////////////////////////////////////////////////////////////////////////
@@ -1552,7 +1552,7 @@ from nvapi_lite_stereo_h import *  # NOQA
 # not \ingroup nvapifunctions
 # ///////////////////////////////////////////////////////////////////////
 # NVAPI_INTERFACE NvAPI_Initialize();
-NvAPI_Initialize = hDll.NvAPI_Initialize
+NvAPI_Initialize = hDll.Initialize
 NvAPI_Initialize.restype = NVAPI_INTERFACE
 
 # ///////////////////////////////////////////////////////////////////////
@@ -1590,7 +1590,7 @@ NvAPI_Initialize.restype = NVAPI_INTERFACE
 # not
 # not \ingroup nvapifunctions
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Unload = hDll.NvAPI_Unload
+NvAPI_Unload = hDll.Unload
 NvAPI_Unload.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Unload();
 
@@ -1610,7 +1610,7 @@ NvAPI_Unload.restype = NVAPI_INTERFACE
 # not \return NULL terminated string (always, never NULL)
 # not \ingroup nvapifunctions
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetErrorMessage = hDll.NvAPI_GetErrorMessage
+NvAPI_GetErrorMessage = hDll.GetErrorMessage
 NvAPI_GetErrorMessage.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetErrorMessage(NvAPI_Status nr,NvAPI_ShortString szDesc);
 
@@ -1633,7 +1633,7 @@ NvAPI_GetErrorMessage.restype = NVAPI_INTERFACE
 # not \return See \ref nvapistatus for the list of possible return values.
 # not \ingroup nvapifunctions
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetInterfaceVersionString = hDll.NvAPI_GetInterfaceVersionString
+NvAPI_GetInterfaceVersionString = hDll.GetInterfaceVersionString
 NvAPI_GetInterfaceVersionString.restype = NVAPI_INTERFACE
 
 
@@ -1779,7 +1779,7 @@ NV_EDID_VER3 = MAKE_NVAPI_VERSION(NV_EDID_V3, 3)
 NV_EDID_VER = NV_EDID_VER3
 # not @}
 # not \ingroup gpu
-NvAPI_GPU_GetEDID = hDll.NvAPI_GPU_GetEDID
+NvAPI_GPU_GetEDID = hDll.GPU_GetEDID
 NvAPI_GPU_GetEDID.restype = NVAPI_INTERFACE
 
 
@@ -2163,7 +2163,7 @@ NV_VIEW_TARGET_INFO._fields_ = [
 NV_VIEW_TARGET_INFO_VER = MAKE_NVAPI_VERSION(NV_VIEW_TARGET_INFO, 2)
 
 # not \ingroup dispcontrol
-NvAPI_SetView = hDll.NvAPI_SetView
+NvAPI_SetView = hDll.SetView
 NvAPI_SetView.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SetView(NvDisplayHandle hNvDisplay, NV_VIEW_TARGET_INFO *pTargetInfo, NV_TARGET_VIEW_MODE targetView);
 
@@ -2329,7 +2329,7 @@ NV_DISPLAY_PATH_INFO_VER = NV_DISPLAY_PATH_INFO_VER4
 # not \retval NVAPI_INVALID_ARGUMENT Invalid input parameter.
 # ///////////////////////////////////////////////////////////////////////
 # not \ingroup dispcontrol
-NvAPI_SetViewEx = hDll.NvAPI_SetViewEx
+NvAPI_SetViewEx = hDll.SetViewEx
 NvAPI_SetViewEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SetViewEx(NvDisplayHandle hNvDisplay, NV_DISPLAY_PATH_INFO *pPathInfo, NV_TARGET_VIEW_MODE displayView);
 
@@ -2834,7 +2834,7 @@ NV_GPU_PERF_PSTATES20_INFO_VER = NV_GPU_PERF_PSTATES20_INFO_VER3
 # not \retval NVAPI_ERROR
 # not \retval NVAPI_OK
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetDisplayDriverVersion = hDll.NvAPI_GetDisplayDriverVersion
+NvAPI_GetDisplayDriverVersion = hDll.GetDisplayDriverVersion
 NvAPI_GetDisplayDriverVersion.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetDisplayDriverVersion(NvDisplayHandle hNvDisplay, NV_DISPLAY_DRIVER_VERSION *pVersion);
 
@@ -2975,7 +2975,7 @@ NVAPI_OGLEXPERT_CALLBACK = ctypes.WINFUNCTYPE(
 
 # not \ingroup oglapi
 # not SUPPORTED OS: Windows 7 and higher
-NvAPI_OGL_ExpertModeSet = hDll.NvAPI_OGL_ExpertModeSet
+NvAPI_OGL_ExpertModeSet = hDll.OGL_ExpertModeSet
 NvAPI_OGL_ExpertModeSet.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_OGL_ExpertModeSet(NvU32 expertDetailLevel,
 #                                         NvU32 expertReportMask,
@@ -2985,7 +2985,7 @@ NvAPI_OGL_ExpertModeSet.restype = NVAPI_INTERFACE
 # not
 # not \addtogroup oglapi
 # not SUPPORTED OS: Windows 7 and higher
-NvAPI_OGL_ExpertModeGet = hDll.NvAPI_OGL_ExpertModeGet
+NvAPI_OGL_ExpertModeGet = hDll.OGL_ExpertModeGet
 NvAPI_OGL_ExpertModeGet.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_OGL_ExpertModeGet(NvU32 *pExpertDetailLevel,
 #                                         NvU32 *pExpertReportMask,
@@ -3027,7 +3027,7 @@ NvAPI_OGL_ExpertModeGet.restype = NVAPI_INTERFACE
 # ///////////////////////////////////////////////////////////////////////
 # not \ingroup oglapi
 # not SUPPORTED OS: Windows 7 and higher
-NvAPI_OGL_ExpertModeDefaultsSet = hDll.NvAPI_OGL_ExpertModeDefaultsSet
+NvAPI_OGL_ExpertModeDefaultsSet = hDll.OGL_ExpertModeDefaultsSet
 NvAPI_OGL_ExpertModeDefaultsSet.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_OGL_ExpertModeDefaultsSet(NvU32 expertDetailLevel,
 #                                                 NvU32 expertReportMask,
@@ -3036,7 +3036,7 @@ NvAPI_OGL_ExpertModeDefaultsSet.restype = NVAPI_INTERFACE
 # not
 # not \addtogroup oglapi
 # not SUPPORTED OS: Windows 7 and higher
-NvAPI_OGL_ExpertModeDefaultsGet = hDll.NvAPI_OGL_ExpertModeDefaultsGet
+NvAPI_OGL_ExpertModeDefaultsGet = hDll.OGL_ExpertModeDefaultsGet
 NvAPI_OGL_ExpertModeDefaultsGet.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_OGL_ExpertModeDefaultsGet(NvU32 *pExpertDetailLevel,
 #                                                 NvU32 *pExpertReportMask,
@@ -3076,7 +3076,7 @@ NvAPI_OGL_ExpertModeDefaultsGet.restype = NVAPI_INTERFACE
 # not \retval NVAPI_INVALID_ARGUMENT  nvGPUHandle or pGpuCount is NULL
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_EnumTCCPhysicalGPUs = hDll.NvAPI_EnumTCCPhysicalGPUs
+NvAPI_EnumTCCPhysicalGPUs = hDll.EnumTCCPhysicalGPUs
 NvAPI_EnumTCCPhysicalGPUs.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_EnumTCCPhysicalGPUs( NvPhysicalGpuHandle nvGPUHandle[NVAPI_MAX_PHYSICAL_GPUS], NvU32 *pGpuCount);
 
@@ -3116,7 +3116,7 @@ NvAPI_EnumTCCPhysicalGPUs.restype = NVAPI_INTERFACE
 # display was found
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_EnumLogicalGPUs = hDll.NvAPI_EnumLogicalGPUs
+NvAPI_EnumLogicalGPUs = hDll.EnumLogicalGPUs
 NvAPI_EnumLogicalGPUs.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_EnumLogicalGPUs(NvLogicalGpuHandle nvGPUHandle[NVAPI_MAX_LOGICAL_GPUS], NvU32 *pGpuCount);
 
@@ -3149,7 +3149,7 @@ NvAPI_EnumLogicalGPUs.restype = NVAPI_INTERFACE
 # display was found
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetPhysicalGPUsFromDisplay = hDll.NvAPI_GetPhysicalGPUsFromDisplay
+NvAPI_GetPhysicalGPUsFromDisplay = hDll.GetPhysicalGPUsFromDisplay
 NvAPI_GetPhysicalGPUsFromDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetPhysicalGPUsFromDisplay(NvDisplayHandle hNvDisp, NvPhysicalGpuHandle nvGPUHandle[NVAPI_MAX_PHYSICAL_GPUS], NvU32 *pGpuCount);
 
@@ -3176,7 +3176,7 @@ NvAPI_GetPhysicalGPUsFromDisplay.restype = NVAPI_INTERFACE
 # display was found
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetPhysicalGPUFromUnAttachedDisplay = hDll.NvAPI_GetPhysicalGPUFromUnAttachedDisplay
+NvAPI_GetPhysicalGPUFromUnAttachedDisplay = hDll.GetPhysicalGPUFromUnAttachedDisplay
 NvAPI_GetPhysicalGPUFromUnAttachedDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetPhysicalGPUFromUnAttachedDisplay(NvUnAttachedDisplayHandle hNvUnAttachedDisp, NvPhysicalGpuHandle *pPhysicalGpu);
 
@@ -3202,7 +3202,7 @@ NvAPI_GetPhysicalGPUFromUnAttachedDisplay.restype = NVAPI_INTERFACE
 # display was found
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetLogicalGPUFromDisplay = hDll.NvAPI_GetLogicalGPUFromDisplay
+NvAPI_GetLogicalGPUFromDisplay = hDll.GetLogicalGPUFromDisplay
 NvAPI_GetLogicalGPUFromDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetLogicalGPUFromDisplay(NvDisplayHandle hNvDisp, NvLogicalGpuHandle *pLogicalGPU);
 
@@ -3226,7 +3226,7 @@ NvAPI_GetLogicalGPUFromDisplay.restype = NVAPI_INTERFACE
 # display was found
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetLogicalGPUFromPhysicalGPU = hDll.NvAPI_GetLogicalGPUFromPhysicalGPU
+NvAPI_GetLogicalGPUFromPhysicalGPU = hDll.GetLogicalGPUFromPhysicalGPU
 NvAPI_GetLogicalGPUFromPhysicalGPU.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetLogicalGPUFromPhysicalGPU(NvPhysicalGpuHandle hPhysicalGPU, NvLogicalGpuHandle *pLogicalGPU);
 
@@ -3256,7 +3256,7 @@ NvAPI_GetLogicalGPUFromPhysicalGPU.restype = NVAPI_INTERFACE
 # logical GPU handle
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetPhysicalGPUsFromLogicalGPU = hDll.NvAPI_GetPhysicalGPUsFromLogicalGPU
+NvAPI_GetPhysicalGPUsFromLogicalGPU = hDll.GetPhysicalGPUsFromLogicalGPU
 NvAPI_GetPhysicalGPUsFromLogicalGPU.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetPhysicalGPUsFromLogicalGPU(NvLogicalGpuHandle hLogicalGPU,NvPhysicalGpuHandle hPhysicalGPU[NVAPI_MAX_PHYSICAL_GPUS], NvU32 *pGpuCount);
 
@@ -3283,7 +3283,7 @@ NvAPI_GetPhysicalGPUsFromLogicalGPU.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetShaderSubPipeCount = hDll.NvAPI_GPU_GetShaderSubPipeCount
+NvAPI_GPU_GetShaderSubPipeCount = hDll.GPU_GetShaderSubPipeCount
 NvAPI_GPU_GetShaderSubPipeCount.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetShaderSubPipeCount(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pCount);
 
@@ -3309,7 +3309,7 @@ NvAPI_GPU_GetShaderSubPipeCount.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetGpuCoreCount = hDll.NvAPI_GPU_GetGpuCoreCount
+NvAPI_GPU_GetGpuCoreCount = hDll.GPU_GetGpuCoreCount
 NvAPI_GPU_GetGpuCoreCount.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetGpuCoreCount(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pCount);
 
@@ -3335,7 +3335,7 @@ NvAPI_GPU_GetGpuCoreCount.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetAllOutputs = hDll.NvAPI_GPU_GetAllOutputs
+NvAPI_GPU_GetAllOutputs = hDll.GPU_GetAllOutputs
 NvAPI_GPU_GetAllOutputs.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetAllOutputs(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pOutputsMask);
 
@@ -3363,7 +3363,7 @@ NvAPI_GPU_GetAllOutputs.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetConnectedOutputs = hDll.NvAPI_GPU_GetConnectedOutputs
+NvAPI_GPU_GetConnectedOutputs = hDll.GPU_GetConnectedOutputs
 NvAPI_GPU_GetConnectedOutputs.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetConnectedOutputs(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
 
@@ -3394,7 +3394,7 @@ NvAPI_GPU_GetConnectedOutputs.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetConnectedSLIOutputs = hDll.NvAPI_GPU_GetConnectedSLIOutputs
+NvAPI_GPU_GetConnectedSLIOutputs = hDll.GPU_GetConnectedSLIOutputs
 NvAPI_GPU_GetConnectedSLIOutputs.restype = NVAPI_INTERFACE
 
 
@@ -3521,7 +3521,7 @@ NV_GPU_DISPLAYIDS_VER = NV_GPU_DISPLAYIDS_VER2
 # not \endcode
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetConnectedDisplayIds = hDll.NvAPI_GPU_GetConnectedDisplayIds
+NvAPI_GPU_GetConnectedDisplayIds = hDll.GPU_GetConnectedDisplayIds
 NvAPI_GPU_GetConnectedDisplayIds.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetConnectedDisplayIds(__in NvPhysicalGpuHandle hPhysicalGpu,  __inout_ecount_part_opt(*pDisplayIdCount, *pDisplayIdCount) NV_GPU_DISPLAYIDS* pDisplayIds, __inout NvU32* pDisplayIdCount, __in NvU32 flags);
 
@@ -3587,7 +3587,7 @@ NvAPI_GPU_GetConnectedDisplayIds.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetAllDisplayIds = hDll.NvAPI_GPU_GetAllDisplayIds
+NvAPI_GPU_GetAllDisplayIds = hDll.GPU_GetAllDisplayIds
 NvAPI_GPU_GetAllDisplayIds.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetAllDisplayIds(__in NvPhysicalGpuHandle hPhysicalGpu, __inout_ecount_part_opt(*pDisplayIdCount, *pDisplayIdCount) NV_GPU_DISPLAYIDS* pDisplayIds, __inout NvU32* pDisplayIdCount);
 
@@ -3626,7 +3626,7 @@ NvAPI_GPU_GetAllDisplayIds.restype = NVAPI_INTERFACE
 # physical GPU handle
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetConnectedOutputsWithLidState = hDll.NvAPI_GPU_GetConnectedOutputsWithLidState
+NvAPI_GPU_GetConnectedOutputsWithLidState = hDll.GPU_GetConnectedOutputsWithLidState
 NvAPI_GPU_GetConnectedOutputsWithLidState.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetConnectedOutputsWithLidState(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
 
@@ -3656,7 +3656,7 @@ NvAPI_GPU_GetConnectedOutputsWithLidState.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetConnectedSLIOutputsWithLidState = hDll.NvAPI_GPU_GetConnectedSLIOutputsWithLidState
+NvAPI_GPU_GetConnectedSLIOutputsWithLidState = hDll.GPU_GetConnectedSLIOutputsWithLidState
 NvAPI_GPU_GetConnectedSLIOutputsWithLidState.restype = NVAPI_INTERFACE
 
 
@@ -3698,7 +3698,7 @@ NV_SYSTEM_TYPE_LAPTOP = NV_SYSTEM_TYPE.NV_SYSTEM_TYPE_LAPTOP
 NV_SYSTEM_TYPE_DESKTOP = NV_SYSTEM_TYPE.NV_SYSTEM_TYPE_DESKTOP
 
 # not \ingroup gpu
-NvAPI_GPU_GetSystemType = hDll.NvAPI_GPU_GetSystemType
+NvAPI_GPU_GetSystemType = hDll.GPU_GetSystemType
 NvAPI_GPU_GetSystemType.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetSystemType(NvPhysicalGpuHandle hPhysicalGpu, NV_SYSTEM_TYPE *pSystemType);
 
@@ -3724,7 +3724,7 @@ NvAPI_GPU_GetSystemType.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetActiveOutputs = hDll.NvAPI_GPU_GetActiveOutputs
+NvAPI_GPU_GetActiveOutputs = hDll.GPU_GetActiveOutputs
 NvAPI_GPU_GetActiveOutputs.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetActiveOutputs(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
 
@@ -3763,7 +3763,7 @@ NvAPI_GPU_GetActiveOutputs.restype = NVAPI_INTERFACE
 # not \retval NVAPI_NOT_SUPPORTED    For the above mentioned GPUs
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_SetEDID = hDll.NvAPI_GPU_SetEDID
+NvAPI_GPU_SetEDID = hDll.GPU_SetEDID
 NvAPI_GPU_SetEDID.restype = NVAPI_INTERFACE
 
 
@@ -3806,7 +3806,7 @@ class _NV_GPU_OUTPUT_TYPE(ENUM):
 NV_GPU_OUTPUT_TYPE = _NV_GPU_OUTPUT_TYPE
 
 # not \ingroup gpu
-NvAPI_GPU_GetOutputType = hDll.NvAPI_GPU_GetOutputType
+NvAPI_GPU_GetOutputType = hDll.GPU_GetOutputType
 NvAPI_GPU_GetOutputType.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetOutputType(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputId, NV_GPU_OUTPUT_TYPE *pOutputType);
 
@@ -3844,7 +3844,7 @@ NvAPI_GPU_GetOutputType.restype = NVAPI_INTERFACE
 # display was found.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ValidateOutputCombination = hDll.NvAPI_GPU_ValidateOutputCombination
+NvAPI_GPU_ValidateOutputCombination = hDll.GPU_ValidateOutputCombination
 NvAPI_GPU_ValidateOutputCombination.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ValidateOutputCombination(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputsMask);
 
@@ -3864,7 +3864,7 @@ NvAPI_GPU_ValidateOutputCombination.restype = NVAPI_INTERFACE
 # not \return NVAPI_ERROR or NVAPI_OK
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetFullName = hDll.NvAPI_GPU_GetFullName
+NvAPI_GPU_GetFullName = hDll.GPU_GetFullName
 NvAPI_GPU_GetFullName.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetFullName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szName);
 
@@ -3894,7 +3894,7 @@ NvAPI_GPU_GetFullName.restype = NVAPI_INTERFACE
 # physical GPU handle
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetPCIIdentifiers = hDll.NvAPI_GPU_GetPCIIdentifiers
+NvAPI_GPU_GetPCIIdentifiers = hDll.GPU_GetPCIIdentifiers
 NvAPI_GPU_GetPCIIdentifiers.restype = NVAPI_INTERFACE
 
 
@@ -3933,7 +3933,7 @@ NV_GPU_TYPE = _NV_GPU_TYPE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetGPUType = hDll.NvAPI_GPU_GetGPUType
+NvAPI_GPU_GetGPUType = hDll.GPU_GetGPUType
 NvAPI_GPU_GetGPUType.restype = NVAPI_INTERFACE
 
 
@@ -3971,7 +3971,7 @@ NV_GPU_BUS_TYPE = _NV_GPU_BUS_TYPE
 # not \retval NVAPI_OK     *pBusType contains bus identifier.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetBusType = hDll.NvAPI_GPU_GetBusType
+NvAPI_GPU_GetBusType = hDll.GPU_GetBusType
 NvAPI_GPU_GetBusType.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetBusType(NvPhysicalGpuHandle hPhysicalGpu,NV_GPU_BUS_TYPE *pBusType);
 
@@ -3996,7 +3996,7 @@ NvAPI_GPU_GetBusType.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetBusId = hDll.NvAPI_GPU_GetBusId
+NvAPI_GPU_GetBusId = hDll.GPU_GetBusId
 NvAPI_GPU_GetBusId.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetBusId(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pBusId);
 
@@ -4021,7 +4021,7 @@ NvAPI_GPU_GetBusId.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetBusSlotId = hDll.NvAPI_GPU_GetBusSlotId
+NvAPI_GPU_GetBusSlotId = hDll.GPU_GetBusSlotId
 NvAPI_GPU_GetBusSlotId.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetBusSlotId(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pBusSlotId);
 
@@ -4045,7 +4045,7 @@ NvAPI_GPU_GetBusSlotId.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetIRQ = hDll.NvAPI_GPU_GetIRQ
+NvAPI_GPU_GetIRQ = hDll.GPU_GetIRQ
 NvAPI_GPU_GetIRQ.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetIRQ(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pIRQ);
 
@@ -4071,7 +4071,7 @@ NvAPI_GPU_GetIRQ.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetVbiosRevision = hDll.NvAPI_GPU_GetVbiosRevision
+NvAPI_GPU_GetVbiosRevision = hDll.GPU_GetVbiosRevision
 NvAPI_GPU_GetVbiosRevision.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetVbiosRevision(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pBiosRevision);
 
@@ -4097,7 +4097,7 @@ NvAPI_GPU_GetVbiosRevision.restype = NVAPI_INTERFACE
 # physical GPU handle
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetVbiosOEMRevision = hDll.NvAPI_GPU_GetVbiosOEMRevision
+NvAPI_GPU_GetVbiosOEMRevision = hDll.GPU_GetVbiosOEMRevision
 NvAPI_GPU_GetVbiosOEMRevision.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetVbiosOEMRevision(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pBiosRevision);
 
@@ -4124,7 +4124,7 @@ NvAPI_GPU_GetVbiosOEMRevision.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetVbiosVersionString = hDll.NvAPI_GPU_GetVbiosVersionString
+NvAPI_GPU_GetVbiosVersionString = hDll.GPU_GetVbiosVersionString
 NvAPI_GPU_GetVbiosVersionString.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetVbiosVersionString(NvPhysicalGpuHandle hPhysicalGpu,NvAPI_ShortString szBiosRevision);
 
@@ -4148,7 +4148,7 @@ NvAPI_GPU_GetVbiosVersionString.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetAGPAperture = hDll.NvAPI_GPU_GetAGPAperture
+NvAPI_GPU_GetAGPAperture = hDll.GPU_GetAGPAperture
 NvAPI_GPU_GetAGPAperture.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetAGPAperture(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pSize);
 
@@ -4173,7 +4173,7 @@ NvAPI_GPU_GetAGPAperture.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetCurrentAGPRate = hDll.NvAPI_GPU_GetCurrentAGPRate
+NvAPI_GPU_GetCurrentAGPRate = hDll.GPU_GetCurrentAGPRate
 NvAPI_GPU_GetCurrentAGPRate.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetCurrentAGPRate(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pRate);
 
@@ -4199,7 +4199,7 @@ NvAPI_GPU_GetCurrentAGPRate.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetCurrentPCIEDownstreamWidth = hDll.NvAPI_GPU_GetCurrentPCIEDownstreamWidth
+NvAPI_GPU_GetCurrentPCIEDownstreamWidth = hDll.GPU_GetCurrentPCIEDownstreamWidth
 NvAPI_GPU_GetCurrentPCIEDownstreamWidth.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetCurrentPCIEDownstreamWidth(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pWidth);
 
@@ -4225,7 +4225,7 @@ NvAPI_GPU_GetCurrentPCIEDownstreamWidth.restype = NVAPI_INTERFACE
 # physical GPU handle
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetPhysicalFrameBufferSize = hDll.NvAPI_GPU_GetPhysicalFrameBufferSize
+NvAPI_GPU_GetPhysicalFrameBufferSize = hDll.GPU_GetPhysicalFrameBufferSize
 NvAPI_GPU_GetPhysicalFrameBufferSize.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetPhysicalFrameBufferSize(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pSize);
 
@@ -4251,7 +4251,7 @@ NvAPI_GPU_GetPhysicalFrameBufferSize.restype = NVAPI_INTERFACE
 # physical GPU handle.
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetVirtualFrameBufferSize = hDll.NvAPI_GPU_GetVirtualFrameBufferSize
+NvAPI_GPU_GetVirtualFrameBufferSize = hDll.GPU_GetVirtualFrameBufferSize
 NvAPI_GPU_GetVirtualFrameBufferSize.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetVirtualFrameBufferSize(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pSize);
 
@@ -4269,7 +4269,7 @@ NvAPI_GPU_GetVirtualFrameBufferSize.restype = NVAPI_INTERFACE
 # not \return NVAPI_ERROR or NVAPI_OK
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetQuadroStatus = hDll.NvAPI_GPU_GetQuadroStatus
+NvAPI_GPU_GetQuadroStatus = hDll.GPU_GetQuadroStatus
 NvAPI_GPU_GetQuadroStatus.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetQuadroStatus(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pStatus);
 
@@ -4315,7 +4315,7 @@ NV_BOARD_INFO_VER = NV_BOARD_INFO_VER1
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetBoardInfo = hDll.NvAPI_GPU_GetBoardInfo
+NvAPI_GPU_GetBoardInfo = hDll.GPU_GetBoardInfo
 NvAPI_GPU_GetBoardInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetBoardInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_BOARD_INFO *pBoardInfo);
 
@@ -4491,7 +4491,7 @@ NV_I2C_INFO_VER = NV_I2C_INFO_VER3
 # not
 # not \ingroup i2capi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_I2CRead = hDll.NvAPI_I2CRead
+NvAPI_I2CRead = hDll.I2CRead
 NvAPI_I2CRead.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_I2CRead(NvPhysicalGpuHandle hPhysicalGpu, NV_I2C_INFO *pI2cInfo);
 
@@ -4532,7 +4532,7 @@ NvAPI_I2CRead.restype = NVAPI_INTERFACE
 # not
 # not \ingroup i2capi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_I2CWrite = hDll.NvAPI_I2CWrite
+NvAPI_I2CWrite = hDll.I2CWrite
 NvAPI_I2CWrite.restype = NVAPI_INTERFACE
 
 
@@ -4594,7 +4594,7 @@ NVAPI_GPU_WORKSTATION_FEATURE_MASK_GRAYSCALE = NVAPI_GPU_WORKSTATION_FEATURE_MAS
 NVAPI_GPU_WORKSTATION_FEATURE_MASK_BPC10 = NVAPI_GPU_WORKSTATION_FEATURE_MASK.NVAPI_GPU_WORKSTATION_FEATURE_MASK_BPC10
 
 # not \ingroup gpu
-NvAPI_GPU_WorkstationFeatureSetup = hDll.NvAPI_GPU_WorkstationFeatureSetup
+NvAPI_GPU_WorkstationFeatureSetup = hDll.GPU_WorkstationFeatureSetup
 NvAPI_GPU_WorkstationFeatureSetup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_WorkstationFeatureSetup(__in NvPhysicalGpuHandle hPhysicalGpu, __in NvU32 featureEnableMask, __in NvU32 featureDisableMask);
 
@@ -4624,7 +4624,7 @@ NvAPI_GPU_WorkstationFeatureSetup.restype = NVAPI_INTERFACE
 # not        keep compatibility with apps written against Win7.
 # ///////////////////////////////////////////////////////////////////////
 # not \ingroup gpu
-NvAPI_GPU_WorkstationFeatureQuery = hDll.NvAPI_GPU_WorkstationFeatureQuery
+NvAPI_GPU_WorkstationFeatureQuery = hDll.GPU_WorkstationFeatureQuery
 NvAPI_GPU_WorkstationFeatureQuery.restype = NVAPI_INTERFACE
 
 
@@ -4707,7 +4707,7 @@ NV_GPU_GET_HDCP_SUPPORT_STATUS_VER = (
 
 # not @}
 # not \ingroup gpu
-NvAPI_GPU_GetHDCPSupportStatus = hDll.NvAPI_GPU_GetHDCPSupportStatus
+NvAPI_GPU_GetHDCPSupportStatus = hDll.GPU_GetHDCPSupportStatus
 NvAPI_GPU_GetHDCPSupportStatus.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetHDCPSupportStatus(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_GET_HDCP_SUPPORT_STATUS *pGetHDCPSupportStatus);
 
@@ -4744,7 +4744,7 @@ NvAPI_GPU_GetHDCPSupportStatus.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpucooler
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetTachReading = hDll.NvAPI_GPU_GetTachReading
+NvAPI_GPU_GetTachReading = hDll.GPU_GetTachReading
 NvAPI_GPU_GetTachReading.restype = NVAPI_INTERFACE
 
 
@@ -4810,7 +4810,7 @@ NV_GPU_ECC_STATUS_INFO_VER = (
 )
 
 # not \ingroup gpuecc
-NvAPI_GPU_GetECCStatusInfo = hDll.NvAPI_GPU_GetECCStatusInfo
+NvAPI_GPU_GetECCStatusInfo = hDll.GPU_GetECCStatusInfo
 NvAPI_GPU_GetECCStatusInfo.restype = NVAPI_INTERFACE
 
 
@@ -4890,7 +4890,7 @@ NV_GPU_ECC_ERROR_INFO_VER = MAKE_NVAPI_VERSION(NV_GPU_ECC_ERROR_INFO, 1)
 # not \retval ::NVAPI_API_NOT_INTIALIZED NvAPI was not yet initialized.
 # ///////////////////////////////////////////////////////////////////////
 # not \ingroup gpuecc
-NvAPI_GPU_GetECCErrorInfo = hDll.NvAPI_GPU_GetECCErrorInfo
+NvAPI_GPU_GetECCErrorInfo = hDll.GPU_GetECCErrorInfo
 NvAPI_GPU_GetECCErrorInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetECCErrorInfo(NvPhysicalGpuHandle hPhysicalGpu,
 #                                          NV_GPU_ECC_ERROR_INFO *pECCErrorInfo);
@@ -4924,7 +4924,7 @@ NvAPI_GPU_GetECCErrorInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpuecc
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ResetECCErrorInfo = hDll.NvAPI_GPU_ResetECCErrorInfo
+NvAPI_GPU_ResetECCErrorInfo = hDll.GPU_ResetECCErrorInfo
 NvAPI_GPU_ResetECCErrorInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ResetECCErrorInfo(NvPhysicalGpuHandle hPhysicalGpu, NvU8 bResetCurrent,
 #                                             NvU8 bResetAggregate);
@@ -4980,7 +4980,7 @@ NV_GPU_ECC_CONFIGURATION_INFO_VER = (
 )
 
 # not \ingroup gpuecc
-NvAPI_GPU_GetECCConfigurationInfo = hDll.NvAPI_GPU_GetECCConfigurationInfo
+NvAPI_GPU_GetECCConfigurationInfo = hDll.GPU_GetECCConfigurationInfo
 NvAPI_GPU_GetECCConfigurationInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetECCConfigurationInfo(NvPhysicalGpuHandle hPhysicalGpu,
 #                                                  NV_GPU_ECC_CONFIGURATION_INFO *pECCConfigurationInfo);
@@ -5018,7 +5018,7 @@ NvAPI_GPU_GetECCConfigurationInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpuecc
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_SetECCConfiguration = hDll.NvAPI_GPU_SetECCConfiguration
+NvAPI_GPU_SetECCConfiguration = hDll.GPU_SetECCConfiguration
 NvAPI_GPU_SetECCConfiguration.restype = NVAPI_INTERFACE
 
 
@@ -5072,7 +5072,7 @@ NV_GPU_WORKSTATION_FEATURE_TYPE = _NV_GPU_WORKSTATION_FEATURE_TYPE
 # not \endcode
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_QueryWorkstationFeatureSupport = hDll.NvAPI_GPU_QueryWorkstationFeatureSupport
+NvAPI_GPU_QueryWorkstationFeatureSupport = hDll.GPU_QueryWorkstationFeatureSupport
 NvAPI_GPU_QueryWorkstationFeatureSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_QueryWorkstationFeatureSupport(NvPhysicalGpuHandle physicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE gpuWorkstationFeature);
 
@@ -5141,7 +5141,7 @@ NV_SCANOUT_INTENSITY_DATA_VER = NV_SCANOUT_INTENSITY_DATA_VER2
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_SetScanoutIntensity = hDll.NvAPI_GPU_SetScanoutIntensity
+NvAPI_GPU_SetScanoutIntensity = hDll.GPU_SetScanoutIntensity
 NvAPI_GPU_SetScanoutIntensity.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_SetScanoutIntensity(NvU32 displayId, NV_SCANOUT_INTENSITY_DATA* scanoutIntensityData, int *pbSticky);
 
@@ -5184,7 +5184,7 @@ NV_SCANOUT_INTENSITY_STATE_VER = (
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetScanoutIntensityState = hDll.NvAPI_GPU_GetScanoutIntensityState
+NvAPI_GPU_GetScanoutIntensityState = hDll.GPU_GetScanoutIntensityState
 NvAPI_GPU_GetScanoutIntensityState.restype = NVAPI_INTERFACE
 
 
@@ -5244,7 +5244,7 @@ NV_SCANOUT_WARPING_VER = MAKE_NVAPI_VERSION(NV_SCANOUT_WARPING_DATA, 1)
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_SetScanoutWarping = hDll.NvAPI_GPU_SetScanoutWarping
+NvAPI_GPU_SetScanoutWarping = hDll.GPU_SetScanoutWarping
 NvAPI_GPU_SetScanoutWarping.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_SetScanoutWarping(NvU32 displayId, NV_SCANOUT_WARPING_DATA* scanoutWarpingData, int* piMaxNumVertices, int* pbSticky);
 
@@ -5287,7 +5287,7 @@ NV_SCANOUT_WARPING_STATE_VER = (
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetScanoutWarpingState = hDll.NvAPI_GPU_GetScanoutWarpingState
+NvAPI_GPU_GetScanoutWarpingState = hDll.GPU_GetScanoutWarpingState
 NvAPI_GPU_GetScanoutWarpingState.restype = NVAPI_INTERFACE
 
 
@@ -5370,7 +5370,7 @@ NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_WARPING_RESAMPLING_METHOD_BICUBIC_ADA
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_SetScanoutCompositionParameter = hDll.NvAPI_GPU_SetScanoutCompositionParameter
+NvAPI_GPU_SetScanoutCompositionParameter = hDll.GPU_SetScanoutCompositionParameter
 NvAPI_GPU_SetScanoutCompositionParameter.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_SetScanoutCompositionParameter(NvU32 displayId, NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter,
 #                                                         NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE parameterValue, float *pContainer);
@@ -5404,7 +5404,7 @@ NvAPI_GPU_SetScanoutCompositionParameter.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetScanoutCompositionParameter = hDll.NvAPI_GPU_GetScanoutCompositionParameter
+NvAPI_GPU_GetScanoutCompositionParameter = hDll.GPU_GetScanoutCompositionParameter
 NvAPI_GPU_GetScanoutCompositionParameter.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetScanoutCompositionParameter(__in NvU32 displayId, __in NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter,
 #                                                         __out NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE *parameterData, __out float *pContainer);
@@ -5434,7 +5434,7 @@ NvAPI_GPU_GetScanoutCompositionParameter.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetScanoutConfiguration = hDll.NvAPI_GPU_GetScanoutConfiguration
+NvAPI_GPU_GetScanoutConfiguration = hDll.GPU_GetScanoutConfiguration
 NvAPI_GPU_GetScanoutConfiguration.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetScanoutConfiguration(NvU32 displayId, NvSBox* desktopRect, NvSBox* scanoutRect);
 
@@ -5491,7 +5491,7 @@ NV_SCANOUT_INFORMATION_VER = (
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetScanoutConfigurationEx = hDll.NvAPI_GPU_GetScanoutConfigurationEx
+NvAPI_GPU_GetScanoutConfigurationEx = hDll.GPU_GetScanoutConfigurationEx
 NvAPI_GPU_GetScanoutConfigurationEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetScanoutConfigurationEx(__in NvU32 displayId, __inout NV_SCANOUT_INFORMATION *pScanoutInformation);
 
@@ -5537,7 +5537,7 @@ NV_LOGICAL_GPU_DATA_VER = NV_LOGICAL_GPU_DATA_VER1
 # not
 # not \ingroup gpu
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetLogicalGpuInfo = hDll.NvAPI_GPU_GetLogicalGpuInfo
+NvAPI_GPU_GetLogicalGpuInfo = hDll.GPU_GetLogicalGpuInfo
 NvAPI_GPU_GetLogicalGpuInfo.restype = NVAPI_INTERFACE
 
 
@@ -5575,7 +5575,7 @@ NVAPI_GPU_PERF_DECREASE = _NVAPI_GPU_PERF_DECREASE
 # not
 # not \ingroup gpuPerf
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetPerfDecreaseInfo = hDll.NvAPI_GPU_GetPerfDecreaseInfo
+NvAPI_GPU_GetPerfDecreaseInfo = hDll.GPU_GetPerfDecreaseInfo
 NvAPI_GPU_GetPerfDecreaseInfo.restype = NVAPI_INTERFACE
 
 
@@ -5788,7 +5788,7 @@ NV_GPU_PERF_PSTATES_INFO_VER = NV_GPU_PERF_PSTATES_INFO_VER3
 # not
 # not \ingroup gpupstate
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetPstatesInfoEx = hDll.NvAPI_GPU_GetPstatesInfoEx
+NvAPI_GPU_GetPstatesInfoEx = hDll.GPU_GetPstatesInfoEx
 NvAPI_GPU_GetPstatesInfoEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetPstatesInfoEx(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_PERF_PSTATES_INFO *pPerfPstatesInfo, NvU32 inputFlags);
 
@@ -5830,7 +5830,7 @@ NvAPI_GPU_GetPstatesInfoEx.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpupstate
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetPstates20 = hDll.NvAPI_GPU_GetPstates20
+NvAPI_GPU_GetPstates20 = hDll.GPU_GetPstates20
 NvAPI_GPU_GetPstates20.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetPstates20(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_PERF_PSTATES20_INFO *pPstatesInfo);
 
@@ -5862,7 +5862,7 @@ NvAPI_GPU_GetPstates20.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gpupstate
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetCurrentPstate = hDll.NvAPI_GPU_GetCurrentPstate
+NvAPI_GPU_GetCurrentPstate = hDll.GPU_GetCurrentPstate
 NvAPI_GPU_GetCurrentPstate.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetCurrentPstate(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_PERF_PSTATE_ID *pCurrentPstate);
 
@@ -5931,7 +5931,7 @@ NV_GPU_DYNAMIC_PSTATES_INFO_EX_VER = (
 # not
 # not \ingroup gpupstate
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetDynamicPstatesInfoEx = hDll.NvAPI_GPU_GetDynamicPstatesInfoEx
+NvAPI_GPU_GetDynamicPstatesInfoEx = hDll.GPU_GetDynamicPstatesInfoEx
 NvAPI_GPU_GetDynamicPstatesInfoEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetDynamicPstatesInfoEx(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_DYNAMIC_PSTATES_INFO_EX *pDynamicPstatesInfoEx);
 
@@ -6126,7 +6126,7 @@ NV_GPU_THERMAL_SETTINGS_VER = NV_GPU_THERMAL_SETTINGS_VER_2
 # struct is not supported.
 # not \ingroup gputhermal
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetThermalSettings = hDll.NvAPI_GPU_GetThermalSettings
+NvAPI_GPU_GetThermalSettings = hDll.GPU_GetThermalSettings
 NvAPI_GPU_GetThermalSettings.restype = NVAPI_INTERFACE
 
 
@@ -6251,7 +6251,7 @@ NV_GPU_CLOCK_FREQUENCIES_VER = NV_GPU_CLOCK_FREQUENCIES_VER_3
 # not \retval NVAPI_INVALID_ARGUMENT  pClkFreqs is NULL.
 # not \ingroup gpuclock
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_GetAllClockFrequencies = hDll.NvAPI_GPU_GetAllClockFrequencies
+NvAPI_GPU_GetAllClockFrequencies = hDll.GPU_GetAllClockFrequencies
 NvAPI_GPU_GetAllClockFrequencies.restype = NVAPI_INTERFACE
 
 
@@ -6327,7 +6327,7 @@ NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM_VER = (
 )
 
 # not \ingroup gpu
-NvAPI_GPU_QueryIlluminationSupport = hDll.NvAPI_GPU_QueryIlluminationSupport
+NvAPI_GPU_QueryIlluminationSupport = hDll.GPU_QueryIlluminationSupport
 NvAPI_GPU_QueryIlluminationSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_QueryIlluminationSupport(__inout NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM *pIlluminationSupportInfo);
 
@@ -6401,7 +6401,7 @@ NV_GPU_GET_ILLUMINATION_PARM_VER_1 = (
 NV_GPU_GET_ILLUMINATION_PARM_VER = NV_GPU_GET_ILLUMINATION_PARM_VER_1
 
 # not \ingroup gpu
-NvAPI_GPU_GetIllumination = hDll.NvAPI_GPU_GetIllumination
+NvAPI_GPU_GetIllumination = hDll.GPU_GetIllumination
 NvAPI_GPU_GetIllumination.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetIllumination(NV_GPU_GET_ILLUMINATION_PARM *pIlluminationInfo);
 
@@ -6475,7 +6475,7 @@ NV_GPU_SET_ILLUMINATION_PARM_VER_1 = (
 NV_GPU_SET_ILLUMINATION_PARM_VER = NV_GPU_SET_ILLUMINATION_PARM_VER_1
 
 # not \ingroup gpu
-NvAPI_GPU_SetIllumination = hDll.NvAPI_GPU_SetIllumination
+NvAPI_GPU_SetIllumination = hDll.GPU_SetIllumination
 NvAPI_GPU_SetIllumination.restype = NVAPI_INTERFACE
 
 
@@ -6611,7 +6611,7 @@ NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS = NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS_
 # not   If there are return error codes with specific meaning for this API,
 # not   they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ClientIllumDevicesGetInfo = hDll.NvAPI_GPU_ClientIllumDevicesGetInfo
+NvAPI_GPU_ClientIllumDevicesGetInfo = hDll.GPU_ClientIllumDevicesGetInfo
 NvAPI_GPU_ClientIllumDevicesGetInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ClientIllumDevicesGetInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS *pIllumDevicesInfo);
 
@@ -6676,7 +6676,7 @@ NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_P
 # not   If there are return error codes with specific meaning for this API,
 # not   they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ClientIllumDevicesGetControl = hDll.NvAPI_GPU_ClientIllumDevicesGetControl
+NvAPI_GPU_ClientIllumDevicesGetControl = hDll.GPU_ClientIllumDevicesGetControl
 NvAPI_GPU_ClientIllumDevicesGetControl.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ClientIllumDevicesGetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS *pClientIllumDevicesControl);
 
@@ -6703,7 +6703,7 @@ NvAPI_GPU_ClientIllumDevicesGetControl.restype = NVAPI_INTERFACE
 # not   If there are return error codes with specific meaning for this API,
 # not   they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ClientIllumDevicesSetControl = hDll.NvAPI_GPU_ClientIllumDevicesSetControl
+NvAPI_GPU_ClientIllumDevicesSetControl = hDll.GPU_ClientIllumDevicesSetControl
 NvAPI_GPU_ClientIllumDevicesSetControl.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ClientIllumDevicesSetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS *pClientIllumDevicesControl);
 
@@ -6774,7 +6774,7 @@ NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS = NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS_V1
 # not   If there are return error codes with specific meaning for this API,
 # not   they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ClientIllumZonesGetInfo = hDll.NvAPI_GPU_ClientIllumZonesGetInfo
+NvAPI_GPU_ClientIllumZonesGetInfo = hDll.GPU_ClientIllumZonesGetInfo
 NvAPI_GPU_ClientIllumZonesGetInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ClientIllumZonesGetInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS *pIllumZonesInfo);
 
@@ -6958,7 +6958,7 @@ NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAM
 # not   If there are return error codes with specific meaning for this API,
 # not   they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ClientIllumZonesGetControl = hDll.NvAPI_GPU_ClientIllumZonesGetControl
+NvAPI_GPU_ClientIllumZonesGetControl = hDll.GPU_ClientIllumZonesGetControl
 NvAPI_GPU_ClientIllumZonesGetControl.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ClientIllumZonesGetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS *pIllumZonesControl);
 
@@ -6985,7 +6985,7 @@ NvAPI_GPU_ClientIllumZonesGetControl.restype = NVAPI_INTERFACE
 # not   If there are return error codes with specific meaning for this API,
 # not   they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GPU_ClientIllumZonesSetControl = hDll.NvAPI_GPU_ClientIllumZonesSetControl
+NvAPI_GPU_ClientIllumZonesSetControl = hDll.GPU_ClientIllumZonesSetControl
 NvAPI_GPU_ClientIllumZonesSetControl.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ClientIllumZonesSetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS *pIllumZonesControl);
 
@@ -7018,7 +7018,7 @@ NvAPI_GPU_ClientIllumZonesSetControl.restype = NVAPI_INTERFACE
 # not \retval NVAPI_END_ENUMERATION  No more display device to enumerate
 # not \ingroup disphandle
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_EnumNvidiaDisplayHandle = hDll.NvAPI_EnumNvidiaDisplayHandle
+NvAPI_EnumNvidiaDisplayHandle = hDll.EnumNvidiaDisplayHandle
 NvAPI_EnumNvidiaDisplayHandle.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_EnumNvidiaDisplayHandle(NvU32 thisEnum, NvDisplayHandle *pNvDispHandle);
 
@@ -7051,7 +7051,7 @@ NvAPI_EnumNvidiaDisplayHandle.restype = NVAPI_INTERFACE
 # not \retval NVAPI_END_ENUMERATION  No more display device to enumerate.
 # not \ingroup disphandle
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_EnumNvidiaUnAttachedDisplayHandle = hDll.NvAPI_EnumNvidiaUnAttachedDisplayHandle
+NvAPI_EnumNvidiaUnAttachedDisplayHandle = hDll.EnumNvidiaUnAttachedDisplayHandle
 NvAPI_EnumNvidiaUnAttachedDisplayHandle.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_EnumNvidiaUnAttachedDisplayHandle(NvU32 thisEnum, NvUnAttachedDisplayHandle *pNvUnAttachedDispHandle);
 
@@ -7076,7 +7076,7 @@ NvAPI_EnumNvidiaUnAttachedDisplayHandle.restype = NVAPI_INTERFACE
 # display was found
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_CreateDisplayFromUnAttachedDisplay = hDll.NvAPI_CreateDisplayFromUnAttachedDisplay
+NvAPI_CreateDisplayFromUnAttachedDisplay = hDll.CreateDisplayFromUnAttachedDisplay
 NvAPI_CreateDisplayFromUnAttachedDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_CreateDisplayFromUnAttachedDisplay(NvUnAttachedDisplayHandle hNvUnAttachedDisp, NvDisplayHandle *pNvDisplay);
 
@@ -7098,7 +7098,7 @@ NvAPI_CreateDisplayFromUnAttachedDisplay.restype = NVAPI_INTERFACE
 # display name
 # not \ingroup disphandle
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetAssociatedNvidiaDisplayHandle = hDll.NvAPI_GetAssociatedNvidiaDisplayHandle
+NvAPI_GetAssociatedNvidiaDisplayHandle = hDll.GetAssociatedNvidiaDisplayHandle
 NvAPI_GetAssociatedNvidiaDisplayHandle.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetAssociatedNvidiaDisplayHandle(const char *szDisplayName, NvDisplayHandle *pNvDispHandle);
 
@@ -7121,7 +7121,7 @@ NvAPI_GetAssociatedNvidiaDisplayHandle.restype = NVAPI_INTERFACE
 # not
 # not \ingroup disphandle
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle = hDll.NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle
+NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle = hDll.DISP_GetAssociatedUnAttachedNvidiaDisplayHandle
 NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle(const char *szDisplayName, NvUnAttachedDisplayHandle *pNvUnAttachedDispHandle);
 
@@ -7142,7 +7142,7 @@ NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle.restype = NVAPI_INTERFACE
 # display name
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetAssociatedNvidiaDisplayName = hDll.NvAPI_GetAssociatedNvidiaDisplayName
+NvAPI_GetAssociatedNvidiaDisplayName = hDll.GetAssociatedNvidiaDisplayName
 NvAPI_GetAssociatedNvidiaDisplayName.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetAssociatedNvidiaDisplayName(NvDisplayHandle NvDispHandle, NvAPI_ShortString szDisplayName);
 
@@ -7163,7 +7163,7 @@ NvAPI_GetAssociatedNvidiaDisplayName.restype = NVAPI_INTERFACE
 # display name
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetUnAttachedAssociatedDisplayName = hDll.NvAPI_GetUnAttachedAssociatedDisplayName
+NvAPI_GetUnAttachedAssociatedDisplayName = hDll.GetUnAttachedAssociatedDisplayName
 NvAPI_GetUnAttachedAssociatedDisplayName.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetUnAttachedAssociatedDisplayName(NvUnAttachedDisplayHandle hNvUnAttachedDisp, NvAPI_ShortString szDisplayName);
 
@@ -7181,7 +7181,7 @@ NvAPI_GetUnAttachedAssociatedDisplayName.restype = NVAPI_INTERFACE
 # not \return NVAPI_ERROR or NVAPI_OK
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_EnableHWCursor = hDll.NvAPI_EnableHWCursor
+NvAPI_EnableHWCursor = hDll.EnableHWCursor
 NvAPI_EnableHWCursor.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_EnableHWCursor(NvDisplayHandle hNvDisplay);
 
@@ -7197,7 +7197,7 @@ NvAPI_EnableHWCursor.restype = NVAPI_INTERFACE
 # not \return NVAPI_ERROR or NVAPI_OK
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DisableHWCursor = hDll.NvAPI_DisableHWCursor
+NvAPI_DisableHWCursor = hDll.DisableHWCursor
 NvAPI_DisableHWCursor.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DisableHWCursor(NvDisplayHandle hNvDisplay);
 
@@ -7214,7 +7214,7 @@ NvAPI_DisableHWCursor.restype = NVAPI_INTERFACE
 # not \return NVAPI_ERROR or NVAPI_OK
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetVBlankCounter = hDll.NvAPI_GetVBlankCounter
+NvAPI_GetVBlankCounter = hDll.GetVBlankCounter
 NvAPI_GetVBlankCounter.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetVBlankCounter(NvDisplayHandle hNvDisplay, NvU32 *pCounter);
 
@@ -7255,7 +7255,7 @@ NvAPI_GetVBlankCounter.restype = NVAPI_INTERFACE
 # not \retval NVAPI_ERROR  The operation failed
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_SetRefreshRateOverride = hDll.NvAPI_SetRefreshRateOverride
+NvAPI_SetRefreshRateOverride = hDll.SetRefreshRateOverride
 NvAPI_SetRefreshRateOverride.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SetRefreshRateOverride(NvDisplayHandle hNvDisplay, NvU32 outputsMask, float refreshRate, NvU32 bSetDeferred);
 
@@ -7287,7 +7287,7 @@ NvAPI_SetRefreshRateOverride.restype = NVAPI_INTERFACE
 # display handle.
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetAssociatedDisplayOutputId = hDll.NvAPI_GetAssociatedDisplayOutputId
+NvAPI_GetAssociatedDisplayOutputId = hDll.GetAssociatedDisplayOutputId
 NvAPI_GetAssociatedDisplayOutputId.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetAssociatedDisplayOutputId(NvDisplayHandle hNvDisplay, NvU32 *pOutputId);
 
@@ -7412,7 +7412,7 @@ NV_DISPLAY_PORT_INFO_VER = NV_DISPLAY_PORT_INFO_VER2
 # not \retval  NVAPI_INVALID_ARGUMENT Invalid input parameter.
 # ///////////////////////////////////////////////////////////////////////
 # not \ingroup  dispcontrol
-NvAPI_GetDisplayPortInfo = hDll.NvAPI_GetDisplayPortInfo
+NvAPI_GetDisplayPortInfo = hDll.GetDisplayPortInfo
 NvAPI_GetDisplayPortInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetDisplayPortInfo(__in_opt NvDisplayHandle hNvDisplay, __in NvU32 outputId, __inout NV_DISPLAY_PORT_INFO *pInfo);
 
@@ -7490,7 +7490,7 @@ NV_DISPLAY_PORT_CONFIG_VER_2 = (
 )
 # not @}
 # not \ingroup  dispcontrol
-NvAPI_SetDisplayPort = hDll.NvAPI_SetDisplayPort
+NvAPI_SetDisplayPort = hDll.SetDisplayPort
 NvAPI_SetDisplayPort.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SetDisplayPort(NvDisplayHandle hNvDisplay, NvU32 outputId, NV_DISPLAY_PORT_CONFIG *pCfg);
 
@@ -7591,7 +7591,7 @@ NV_HDMI_SUPPORT_INFO_VER = NV_HDMI_SUPPORT_INFO_VER2
 # not \retval NVAPI_INVALID_ARGUMENT Invalid input parameter.
 # ///////////////////////////////////////////////////////////////////////
 # not \ingroup dispcontrol
-NvAPI_GetHDMISupportInfo = hDll.NvAPI_GetHDMISupportInfo
+NvAPI_GetHDMISupportInfo = hDll.GetHDMISupportInfo
 NvAPI_GetHDMISupportInfo.restype = NVAPI_INTERFACE
 
 
@@ -8486,7 +8486,7 @@ NV_INFOFRAME_DATA_VER = MAKE_NVAPI_VERSION(NV_INFOFRAME_DATA, 1)
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Disp_InfoFrameControl = hDll.NvAPI_Disp_InfoFrameControl
+NvAPI_Disp_InfoFrameControl = hDll.Disp_InfoFrameControl
 NvAPI_Disp_InfoFrameControl.restype = NVAPI_INTERFACE
 
 
@@ -8763,7 +8763,7 @@ NV_COLOR_DATA_VER4 = MAKE_NVAPI_VERSION(NV_COLOR_DATA_V4, 4)
 NV_COLOR_DATA_VER5 = MAKE_NVAPI_VERSION(NV_COLOR_DATA_V5, 5)
 NV_COLOR_DATA_VER = NV_COLOR_DATA_VER5
 
-NvAPI_Disp_ColorControl = hDll.NvAPI_Disp_ColorControl
+NvAPI_Disp_ColorControl = hDll.Disp_ColorControl
 NvAPI_Disp_ColorControl.restype = NVAPI_INTERFACE
 
 
@@ -8998,7 +8998,7 @@ NV_HDR_CAPABILITIES = NV_HDR_CAPABILITIES_V2
 # NvAPI_Status. If there are return error codes with
 # not   specific meaning for this API, they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Disp_GetHdrCapabilities = hDll.NvAPI_Disp_GetHdrCapabilities
+NvAPI_Disp_GetHdrCapabilities = hDll.Disp_GetHdrCapabilities
 NvAPI_Disp_GetHdrCapabilities.restype = NVAPI_INTERFACE
 
 
@@ -9216,7 +9216,7 @@ NV_HDR_COLOR_DATA = NV_HDR_COLOR_DATA_V2
 # NvAPI_Status. If there are return error codes with
 # not   specific meaning for this API, they are listed below.
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Disp_HdrColorControl = hDll.NvAPI_Disp_HdrColorControl
+NvAPI_Disp_HdrColorControl = hDll.Disp_HdrColorControl
 NvAPI_Disp_HdrColorControl.restype = NVAPI_INTERFACE
 
 
@@ -9292,7 +9292,7 @@ NV_TIMING_INPUT_VER = MAKE_NVAPI_VERSION(NV_TIMING_INPUT, 1)
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_GetTiming = hDll.NvAPI_DISP_GetTiming
+NvAPI_DISP_GetTiming = hDll.DISP_GetTiming
 NvAPI_DISP_GetTiming.restype = NVAPI_INTERFACE
 
 
@@ -9435,7 +9435,7 @@ NV_MONITOR_CAPABILITIES_VER = NV_MONITOR_CAPABILITIES_VER1
 # not SUPPORTED OS: Windows 7 and higher
 # not
 # not \ingroup dispcontrol
-NvAPI_DISP_GetMonitorCapabilities = hDll.NvAPI_DISP_GetMonitorCapabilities
+NvAPI_DISP_GetMonitorCapabilities = hDll.DISP_GetMonitorCapabilities
 NvAPI_DISP_GetMonitorCapabilities.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_GetMonitorCapabilities(__in NvU32 displayId, __inout NV_MONITOR_CAPABILITIES *pMonitorCapabilities);
 
@@ -9511,7 +9511,7 @@ NV_MONITOR_COLOR_CAPS_VER = NV_MONITOR_COLOR_CAPS_VER1
 # not \ingroup dispcontrol
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_GetMonitorColorCapabilities = hDll.NvAPI_DISP_GetMonitorColorCapabilities
+NvAPI_DISP_GetMonitorColorCapabilities = hDll.DISP_GetMonitorColorCapabilities
 NvAPI_DISP_GetMonitorColorCapabilities.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_GetMonitorColorCapabilities(__in NvU32 displayId, __inout_ecount_part_opt(*pColorCapsCount, *pColorCapsCount) NV_MONITOR_COLOR_CAPS *pMonitorColorCapabilities, __inout NvU32 *pColorCapsCount);
 
@@ -9568,7 +9568,7 @@ NV_CUSTOM_DISPLAY_VER = MAKE_NVAPI_VERSION(NV_CUSTOM_DISPLAY, 1)
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_EnumCustomDisplay = hDll.NvAPI_DISP_EnumCustomDisplay
+NvAPI_DISP_EnumCustomDisplay = hDll.DISP_EnumCustomDisplay
 NvAPI_DISP_EnumCustomDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_EnumCustomDisplay( __in NvU32 displayId, __in NvU32 index, __inout NV_CUSTOM_DISPLAY *pCustDisp);
 
@@ -9614,7 +9614,7 @@ NvAPI_DISP_EnumCustomDisplay.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_TryCustomDisplay = hDll.NvAPI_DISP_TryCustomDisplay
+NvAPI_DISP_TryCustomDisplay = hDll.DISP_TryCustomDisplay
 NvAPI_DISP_TryCustomDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_TryCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in_ecount(count) NV_CUSTOM_DISPLAY *pCustDisp);
 
@@ -9644,7 +9644,7 @@ NvAPI_DISP_TryCustomDisplay.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_DeleteCustomDisplay = hDll.NvAPI_DISP_DeleteCustomDisplay
+NvAPI_DISP_DeleteCustomDisplay = hDll.DISP_DeleteCustomDisplay
 NvAPI_DISP_DeleteCustomDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_DeleteCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in NV_CUSTOM_DISPLAY *pCustDisp);
 
@@ -9683,7 +9683,7 @@ NvAPI_DISP_DeleteCustomDisplay.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_SaveCustomDisplay = hDll.NvAPI_DISP_SaveCustomDisplay
+NvAPI_DISP_SaveCustomDisplay = hDll.DISP_SaveCustomDisplay
 NvAPI_DISP_SaveCustomDisplay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_SaveCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in NvU32 isThisOutputIdOnly, __in NvU32 isThisMonitorIdOnly);
 
@@ -9715,7 +9715,7 @@ NvAPI_DISP_SaveCustomDisplay.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_RevertCustomDisplayTrial = hDll.NvAPI_DISP_RevertCustomDisplayTrial
+NvAPI_DISP_RevertCustomDisplayTrial = hDll.DISP_RevertCustomDisplayTrial
 NvAPI_DISP_RevertCustomDisplayTrial.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_RevertCustomDisplayTrial( __in_ecount(count) NvU32* pDisplayIds, __in NvU32 count);
 
@@ -9750,7 +9750,7 @@ NvAPI_DISP_RevertCustomDisplayTrial.restype = NVAPI_INTERFACE
 # not \retval  NVAPI_INVALID_ARGUMENT Invalid input parameter.
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetView = hDll.NvAPI_GetView
+NvAPI_GetView = hDll.GetView
 NvAPI_GetView.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetView(NvDisplayHandle hNvDisplay, NV_VIEW_TARGET_INFO *pTargets, NvU32 *pTargetMaskCount, NV_TARGET_VIEW_MODE *pTargetView);
 
@@ -9789,7 +9789,7 @@ NvAPI_GetView.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetViewEx = hDll.NvAPI_GetViewEx
+NvAPI_GetViewEx = hDll.GetViewEx
 NvAPI_GetViewEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetViewEx(NvDisplayHandle hNvDisplay, NV_DISPLAY_PATH_INFO *pPathInfo, NvU32 *pPathCount, NV_TARGET_VIEW_MODE *pTargetViewMode);
 
@@ -9815,7 +9815,7 @@ NvAPI_GetViewEx.restype = NVAPI_INTERFACE
 # not \retval  NVAPI_INVALID_ARGUMENT Invalid input parameter.
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetSupportedViews = hDll.NvAPI_GetSupportedViews
+NvAPI_GetSupportedViews = hDll.GetSupportedViews
 NvAPI_GetSupportedViews.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetSupportedViews(NvDisplayHandle hNvDisplay, NV_TARGET_VIEW_MODE *pTargetViews, NvU32 *pViewCount);
 
@@ -9843,7 +9843,7 @@ NvAPI_GetSupportedViews.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_GetDisplayIdByDisplayName = hDll.NvAPI_DISP_GetDisplayIdByDisplayName
+NvAPI_DISP_GetDisplayIdByDisplayName = hDll.DISP_GetDisplayIdByDisplayName
 NvAPI_DISP_GetDisplayIdByDisplayName.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_GetDisplayIdByDisplayName(const char *displayName, NvU32* displayId);
 
@@ -9885,7 +9885,7 @@ NvAPI_DISP_GetDisplayIdByDisplayName.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_GetDisplayConfig = hDll.NvAPI_DISP_GetDisplayConfig
+NvAPI_DISP_GetDisplayConfig = hDll.DISP_GetDisplayConfig
 NvAPI_DISP_GetDisplayConfig.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_GetDisplayConfig(__inout NvU32 *pathInfoCount, __out_ecount_full_opt(*pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO *pathInfo);
 
@@ -9922,7 +9922,7 @@ NvAPI_DISP_GetDisplayConfig.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dispcontrol
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_DISP_SetDisplayConfig = hDll.NvAPI_DISP_SetDisplayConfig
+NvAPI_DISP_SetDisplayConfig = hDll.DISP_SetDisplayConfig
 NvAPI_DISP_SetDisplayConfig.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DISP_SetDisplayConfig(__in NvU32 pathInfoCount, __in_ecount(pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO* pathInfo, __in NvU32 flags);
 
@@ -10331,7 +10331,7 @@ NVAPI_MOSAIC_TOPO_GROUP_VER = MAKE_NVAPI_VERSION(NV_MOSAIC_TOPO_GROUP, 1)
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_GetSupportedTopoInfo = hDll.NvAPI_Mosaic_GetSupportedTopoInfo
+NvAPI_Mosaic_GetSupportedTopoInfo = hDll.Mosaic_GetSupportedTopoInfo
 NvAPI_Mosaic_GetSupportedTopoInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_GetSupportedTopoInfo(NV_MOSAIC_SUPPORTED_TOPO_INFO *pSupportedTopoInfo, NV_MOSAIC_TOPO_TYPE type);
 
@@ -10379,7 +10379,7 @@ NvAPI_Mosaic_GetSupportedTopoInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_GetTopoGroup = hDll.NvAPI_Mosaic_GetTopoGroup
+NvAPI_Mosaic_GetTopoGroup = hDll.Mosaic_GetTopoGroup
 NvAPI_Mosaic_GetTopoGroup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_GetTopoGroup(NV_MOSAIC_TOPO_BRIEF *pTopoBrief, NV_MOSAIC_TOPO_GROUP *pTopoGroup);
 
@@ -10420,7 +10420,7 @@ NvAPI_Mosaic_GetTopoGroup.restype = NVAPI_INTERFACE
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_GetOverlapLimits = hDll.NvAPI_Mosaic_GetOverlapLimits
+NvAPI_Mosaic_GetOverlapLimits = hDll.Mosaic_GetOverlapLimits
 NvAPI_Mosaic_GetOverlapLimits.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_GetOverlapLimits(NV_MOSAIC_TOPO_BRIEF *pTopoBrief, NV_MOSAIC_DISPLAY_SETTING *pDisplaySetting, NvS32 *pMinOverlapX, NvS32 *pMaxOverlapX, NvS32 *pMinOverlapY, NvS32 *pMaxOverlapY);
 
@@ -10486,7 +10486,7 @@ NvAPI_Mosaic_GetOverlapLimits.restype = NVAPI_INTERFACE
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_SetCurrentTopo = hDll.NvAPI_Mosaic_SetCurrentTopo
+NvAPI_Mosaic_SetCurrentTopo = hDll.Mosaic_SetCurrentTopo
 NvAPI_Mosaic_SetCurrentTopo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_SetCurrentTopo(NV_MOSAIC_TOPO_BRIEF *pTopoBrief, NV_MOSAIC_DISPLAY_SETTING *pDisplaySetting, NvS32 overlapX, NvS32 overlapY, NvU32 enable);
 
@@ -10525,7 +10525,7 @@ NvAPI_Mosaic_SetCurrentTopo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_GetCurrentTopo = hDll.NvAPI_Mosaic_GetCurrentTopo
+NvAPI_Mosaic_GetCurrentTopo = hDll.Mosaic_GetCurrentTopo
 NvAPI_Mosaic_GetCurrentTopo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_GetCurrentTopo(NV_MOSAIC_TOPO_BRIEF *pTopoBrief, NV_MOSAIC_DISPLAY_SETTING *pDisplaySetting, NvS32 *pOverlapX, NvS32 *pOverlapY);
 
@@ -10567,7 +10567,7 @@ NvAPI_Mosaic_GetCurrentTopo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_EnableCurrentTopo = hDll.NvAPI_Mosaic_EnableCurrentTopo
+NvAPI_Mosaic_EnableCurrentTopo = hDll.Mosaic_EnableCurrentTopo
 NvAPI_Mosaic_EnableCurrentTopo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_EnableCurrentTopo(NvU32 enable);
 
@@ -10772,7 +10772,7 @@ NV_MOSAIC_SETDISPLAYTOPO_FLAG_MAXIMIZE_PERFORMANCE = NV_BIT(2)
 # grids.
 NV_MOSAIC_SETDISPLAYTOPO_FLAG_ALLOW_INVALID = NV_BIT(3)
 
-NvAPI_Mosaic_SetDisplayGrids = hDll.NvAPI_Mosaic_SetDisplayGrids
+NvAPI_Mosaic_SetDisplayGrids = hDll.Mosaic_SetDisplayGrids
 NvAPI_Mosaic_SetDisplayGrids.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_SetDisplayGrids(__in_ecount(gridCount) NV_MOSAIC_GRID_TOPO *pGridTopologies, __in NvU32 gridCount, __in NvU32 setTopoFlags);
 
@@ -10873,7 +10873,7 @@ NV_MOSAIC_DISPLAY_TOPO_STATUS_VER = (
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_ValidateDisplayGrids = hDll.NvAPI_Mosaic_ValidateDisplayGrids
+NvAPI_Mosaic_ValidateDisplayGrids = hDll.Mosaic_ValidateDisplayGrids
 NvAPI_Mosaic_ValidateDisplayGrids.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_ValidateDisplayGrids(__in NvU32 setTopoFlags,
 #        __in_ecount(gridCount) NV_MOSAIC_GRID_TOPO *pGridTopologies,
@@ -10911,7 +10911,7 @@ NvAPI_Mosaic_ValidateDisplayGrids.restype = NVAPI_INTERFACE
 # not
 # not \ingroup mosaciapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_EnumDisplayModes = hDll.NvAPI_Mosaic_EnumDisplayModes
+NvAPI_Mosaic_EnumDisplayModes = hDll.Mosaic_EnumDisplayModes
 NvAPI_Mosaic_EnumDisplayModes.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayModes(__in NV_MOSAIC_GRID_TOPO *pGridTopology,
 #        __inout_ecount_part_opt(*pDisplayCount, *pDisplayCount) NV_MOSAIC_DISPLAY_SETTING *pDisplaySettings,
@@ -10952,7 +10952,7 @@ NvAPI_Mosaic_EnumDisplayModes.restype = NVAPI_INTERFACE
 # not
 # not \ingroup mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Mosaic_EnumDisplayGrids = hDll.NvAPI_Mosaic_EnumDisplayGrids
+NvAPI_Mosaic_EnumDisplayGrids = hDll.Mosaic_EnumDisplayGrids
 NvAPI_Mosaic_EnumDisplayGrids.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayGrids(__inout_ecount_part_opt(*pGridCount, *pGridCount) NV_MOSAIC_GRID_TOPO *pGridTopologies,
 #        __inout NvU32 *pGridCount);
@@ -11064,7 +11064,7 @@ NVAPI_MOSAIC_SUPPORTED_TOPOLOGIES_VER = (
 # not
 # not \ingroup  mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetSupportedMosaicTopologies = hDll.NvAPI_GetSupportedMosaicTopologies
+NvAPI_GetSupportedMosaicTopologies = hDll.GetSupportedMosaicTopologies
 NvAPI_GetSupportedMosaicTopologies.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetSupportedMosaicTopologies(NV_MOSAIC_SUPPORTED_TOPOLOGIES *pMosaicTopos);
 
@@ -11092,7 +11092,7 @@ NvAPI_GetSupportedMosaicTopologies.restype = NVAPI_INTERFACE
 # not
 # not \ingroup  mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GetCurrentMosaicTopology = hDll.NvAPI_GetCurrentMosaicTopology
+NvAPI_GetCurrentMosaicTopology = hDll.GetCurrentMosaicTopology
 NvAPI_GetCurrentMosaicTopology.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GetCurrentMosaicTopology(NV_MOSAIC_TOPOLOGY *pMosaicTopo, NvU32 *pEnabled);
 
@@ -11120,7 +11120,7 @@ NvAPI_GetCurrentMosaicTopology.restype = NVAPI_INTERFACE
 # not
 # not \ingroup  mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_SetCurrentMosaicTopology = hDll.NvAPI_SetCurrentMosaicTopology
+NvAPI_SetCurrentMosaicTopology = hDll.SetCurrentMosaicTopology
 NvAPI_SetCurrentMosaicTopology.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SetCurrentMosaicTopology(NV_MOSAIC_TOPOLOGY *pMosaicTopo);
 
@@ -11154,7 +11154,7 @@ NvAPI_SetCurrentMosaicTopology.restype = NVAPI_INTERFACE
 # not
 # not \ingroup  mosaicapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_EnableCurrentMosaicTopology = hDll.NvAPI_EnableCurrentMosaicTopology
+NvAPI_EnableCurrentMosaicTopology = hDll.EnableCurrentMosaicTopology
 NvAPI_EnableCurrentMosaicTopology.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_EnableCurrentMosaicTopology(NvU32 enable);
 
@@ -11195,7 +11195,7 @@ NVAPI_MAX_GSYNC_DEVICES = 4
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_EnumSyncDevices = hDll.NvAPI_GSync_EnumSyncDevices
+NvAPI_GSync_EnumSyncDevices = hDll.GSync_EnumSyncDevices
 NvAPI_GSync_EnumSyncDevices.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GSync_EnumSyncDevices(__out NvGSyncDeviceHandle nvGSyncHandles[NVAPI_MAX_GSYNC_DEVICES], __out NvU32 *gsyncCount);
 
@@ -11274,7 +11274,7 @@ NV_GSYNC_CAPABILITIES_VER = NV_GSYNC_CAPABILITIES_VER2
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_QueryCapabilities = hDll.NvAPI_GSync_QueryCapabilities
+NvAPI_GSync_QueryCapabilities = hDll.GSync_QueryCapabilities
 NvAPI_GSync_QueryCapabilities.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GSync_QueryCapabilities(__in NvGSyncDeviceHandle hNvGSyncDevice, __inout NV_GSYNC_CAPABILITIES *pNvGSyncCapabilities);
 
@@ -11383,7 +11383,7 @@ NV_GSYNC_GPU_VER = MAKE_NVAPI_VERSION(NV_GSYNC_GPU, 1)
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_GetTopology = hDll.NvAPI_GSync_GetTopology
+NvAPI_GSync_GetTopology = hDll.GSync_GetTopology
 NvAPI_GSync_GetTopology.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GSync_GetTopology(__in NvGSyncDeviceHandle hNvGSyncDevice, __inout_opt NvU32 *gsyncGpuCount,  __inout_ecount_part_opt(*gsyncGpuCount, *gsyncGpuCount) NV_GSYNC_GPU *gsyncGPUs,
 #                                        __inout_opt NvU32 *gsyncDisplayCount, __inout_ecount_part_opt(*gsyncDisplayCount, *gsyncDisplayCount) NV_GSYNC_DISPLAY *gsyncDisplays);
@@ -11426,7 +11426,7 @@ NvAPI_GSync_GetTopology.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_SetSyncStateSettings = hDll.NvAPI_GSync_SetSyncStateSettings
+NvAPI_GSync_SetSyncStateSettings = hDll.GSync_SetSyncStateSettings
 NvAPI_GSync_SetSyncStateSettings.restype = NVAPI_INTERFACE
 
 
@@ -11540,7 +11540,7 @@ NV_GSYNC_CONTROL_PARAMS_VER = (
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_GetControlParameters = hDll.NvAPI_GSync_GetControlParameters
+NvAPI_GSync_GetControlParameters = hDll.GSync_GetControlParameters
 NvAPI_GSync_GetControlParameters.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GSync_GetControlParameters(__in NvGSyncDeviceHandle hNvGSyncDevice, __inout NV_GSYNC_CONTROL_PARAMS *pGsyncControls);
 
@@ -11572,7 +11572,7 @@ NvAPI_GSync_GetControlParameters.restype = NVAPI_INTERFACE
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_SetControlParameters = hDll.NvAPI_GSync_SetControlParameters
+NvAPI_GSync_SetControlParameters = hDll.GSync_SetControlParameters
 NvAPI_GSync_SetControlParameters.restype = NVAPI_INTERFACE
 
 
@@ -11617,7 +11617,7 @@ NVAPI_GSYNC_DELAY_TYPE = _NVAPI_GSYNC_DELAY_TYPE
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_AdjustSyncDelay = hDll.NvAPI_GSync_AdjustSyncDelay
+NvAPI_GSync_AdjustSyncDelay = hDll.GSync_AdjustSyncDelay
 NvAPI_GSync_AdjustSyncDelay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GSync_AdjustSyncDelay(__in NvGSyncDeviceHandle hNvGSyncDevice, __in NVAPI_GSYNC_DELAY_TYPE delayType, __inout NV_GSYNC_DELAY *pGsyncDelay, __out_opt NvU32* syncSteps);
 
@@ -11666,7 +11666,7 @@ NV_GSYNC_STATUS_VER = MAKE_NVAPI_VERSION(NV_GSYNC_STATUS, 1)
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_GetSyncStatus = hDll.NvAPI_GSync_GetSyncStatus
+NvAPI_GSync_GetSyncStatus = hDll.GSync_GetSyncStatus
 NvAPI_GSync_GetSyncStatus.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GSync_GetSyncStatus(__in NvGSyncDeviceHandle hNvGSyncDevice, __in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GSYNC_STATUS *status);
 
@@ -11759,7 +11759,7 @@ NV_GSYNC_STATUS_PARAMS_VER = NV_GSYNC_STATUS_PARAMS_VER2
 # not
 # not \ingroup gsyncapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_GSync_GetStatusParameters = hDll.NvAPI_GSync_GetStatusParameters
+NvAPI_GSync_GetStatusParameters = hDll.GSync_GetStatusParameters
 NvAPI_GSync_GetStatusParameters.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GSync_GetStatusParameters(NvGSyncDeviceHandle hNvGSyncDevice, NV_GSYNC_STATUS_PARAMS *pStatusParams);
 
@@ -11779,7 +11779,7 @@ NvAPI_GSync_GetStatusParameters.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_RegisterResource = hDll.NvAPI_D3D9_RegisterResource
+NvAPI_D3D9_RegisterResource = hDll.D3D9_RegisterResource
 NvAPI_D3D9_RegisterResource.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_RegisterResource(IDirect3DResource9* pResource);
 
@@ -11797,7 +11797,7 @@ NvAPI_D3D9_RegisterResource.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_UnregisterResource = hDll.NvAPI_D3D9_UnregisterResource
+NvAPI_D3D9_UnregisterResource = hDll.D3D9_UnregisterResource
 NvAPI_D3D9_UnregisterResource.restype = NVAPI_INTERFACE
 
 
@@ -11856,7 +11856,7 @@ NVAPI_ALIAS_SURFACE_FLAG_NONE = NVAPI_ALIAS_SURFACE_FLAG.NVAPI_ALIAS_SURFACE_FLA
 NVAPI_ALIAS_SURFACE_FLAG_USE_SUPER = NVAPI_ALIAS_SURFACE_FLAG.NVAPI_ALIAS_SURFACE_FLAG_USE_SUPER
 NVAPI_ALIAS_SURFACE_FLAG_MASK = NVAPI_ALIAS_SURFACE_FLAG.NVAPI_ALIAS_SURFACE_FLAG_MASK
 
-NvAPI_D3D9_AliasSurfaceAsTexture = hDll.NvAPI_D3D9_AliasSurfaceAsTexture
+NvAPI_D3D9_AliasSurfaceAsTexture = hDll.D3D9_AliasSurfaceAsTexture
 NvAPI_D3D9_AliasSurfaceAsTexture.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_AliasSurfaceAsTexture(IDirect3DDevice9* pDev,
 #                                                 IDirect3DSurface9* pSurface,
@@ -11900,7 +11900,7 @@ NvAPI_D3D9_AliasSurfaceAsTexture.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_StretchRectEx = hDll.NvAPI_D3D9_StretchRectEx
+NvAPI_D3D9_StretchRectEx = hDll.D3D9_StretchRectEx
 NvAPI_D3D9_StretchRectEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_StretchRectEx(IDirect3DDevice9 * pDevice,
 #                                         IDirect3DResource9 * pSourceResource,
@@ -11934,7 +11934,7 @@ NvAPI_D3D9_StretchRectEx.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_ClearRT = hDll.NvAPI_D3D9_ClearRT
+NvAPI_D3D9_ClearRT = hDll.D3D9_ClearRT
 NvAPI_D3D9_ClearRT.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_ClearRT(IDirect3DDevice9 * pDevice,
 #                                    NvU32 dwNumRects,
@@ -11958,7 +11958,7 @@ NvAPI_D3D9_ClearRT.restype = NVAPI_INTERFACE
 # not \return An INT which could be an NvAPI status or DX HRESULT code
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_GetSurfaceHandle = hDll.NvAPI_D3D9_GetSurfaceHandle
+NvAPI_D3D9_GetSurfaceHandle = hDll.D3D9_GetSurfaceHandle
 NvAPI_D3D9_GetSurfaceHandle.restype = NVAPI_INTERFACE
 
 
@@ -12034,7 +12034,7 @@ NV_DX_VIDEO_STEREO_INFO_VER = (
     MAKE_NVAPI_VERSION(NV_DX_VIDEO_STEREO_INFO, 1)
 )
 
-NvAPI_D3D9_VideoSetStereoInfo = hDll.NvAPI_D3D9_VideoSetStereoInfo
+NvAPI_D3D9_VideoSetStereoInfo = hDll.D3D9_VideoSetStereoInfo
 NvAPI_D3D9_VideoSetStereoInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_VideoSetStereoInfo(IDirect3DDevice9 *pDev,
 #                                              NV_DX_VIDEO_STEREO_INFO *pStereoInfo);
@@ -12063,7 +12063,7 @@ NvAPI_D3D9_VideoSetStereoInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D10_SetDepthBoundsTest = hDll.NvAPI_D3D10_SetDepthBoundsTest
+NvAPI_D3D10_SetDepthBoundsTest = hDll.D3D10_SetDepthBoundsTest
 NvAPI_D3D10_SetDepthBoundsTest.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D10_SetDepthBoundsTest(ID3D10Device *pDev,
 #                                               NvU32 bEnable,
@@ -12100,7 +12100,7 @@ NvAPI_D3D10_SetDepthBoundsTest.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_IsNvShaderExtnOpCodeSupported = hDll.NvAPI_D3D11_IsNvShaderExtnOpCodeSupported
+NvAPI_D3D11_IsNvShaderExtnOpCodeSupported = hDll.D3D11_IsNvShaderExtnOpCodeSupported
 NvAPI_D3D11_IsNvShaderExtnOpCodeSupported.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_IsNvShaderExtnOpCodeSupported(__in  IUnknown *pDev,
 #                                                           __in  NvU32 opCode,
@@ -12141,7 +12141,7 @@ NvAPI_D3D11_IsNvShaderExtnOpCodeSupported.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_SetNvShaderExtnSlot = hDll.NvAPI_D3D11_SetNvShaderExtnSlot
+NvAPI_D3D11_SetNvShaderExtnSlot = hDll.D3D11_SetNvShaderExtnSlot
 NvAPI_D3D11_SetNvShaderExtnSlot.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_SetNvShaderExtnSlot(__in IUnknown *pDev,
 #                                                __in NvU32 uavSlot);
@@ -12185,7 +12185,7 @@ NvAPI_D3D11_SetNvShaderExtnSlot.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_SetNvShaderExtnSlotSpace = hDll.NvAPI_D3D12_SetNvShaderExtnSlotSpace
+NvAPI_D3D12_SetNvShaderExtnSlotSpace = hDll.D3D12_SetNvShaderExtnSlotSpace
 NvAPI_D3D12_SetNvShaderExtnSlotSpace.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_SetNvShaderExtnSlotSpace(__in IUnknown *pDev,
 #                                                __in NvU32 uavSlot,
@@ -12234,7 +12234,7 @@ NvAPI_D3D12_SetNvShaderExtnSlotSpace.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_SetNvShaderExtnSlotSpaceLocalThread = hDll.NvAPI_D3D12_SetNvShaderExtnSlotSpaceLocalThread
+NvAPI_D3D12_SetNvShaderExtnSlotSpaceLocalThread = hDll.D3D12_SetNvShaderExtnSlotSpaceLocalThread
 NvAPI_D3D12_SetNvShaderExtnSlotSpaceLocalThread.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_SetNvShaderExtnSlotSpaceLocalThread(__in IUnknown *pDev,
 #                                                                 __in NvU32 uavSlot,
@@ -12278,7 +12278,7 @@ NvAPI_D3D12_SetNvShaderExtnSlotSpaceLocalThread.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_SetNvShaderExtnSlotLocalThread = hDll.NvAPI_D3D11_SetNvShaderExtnSlotLocalThread
+NvAPI_D3D11_SetNvShaderExtnSlotLocalThread = hDll.D3D11_SetNvShaderExtnSlotLocalThread
 NvAPI_D3D11_SetNvShaderExtnSlotLocalThread.restype = NVAPI_INTERFACE
 
 
@@ -12318,7 +12318,7 @@ class _NVAPI_D3D11_INSERTWFI_FLAG(ENUM):
 
 NVAPI_D3D11_INSERTWFI_FLAG = _NVAPI_D3D11_INSERTWFI_FLAG
 
-NvAPI_D3D11_BeginUAVOverlapEx = hDll.NvAPI_D3D11_BeginUAVOverlapEx
+NvAPI_D3D11_BeginUAVOverlapEx = hDll.D3D11_BeginUAVOverlapEx
 NvAPI_D3D11_BeginUAVOverlapEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_BeginUAVOverlapEx(__in  IUnknown *pDeviceOrContext, __in NvU32 insertWFIFlags);
 
@@ -12345,7 +12345,7 @@ NvAPI_D3D11_BeginUAVOverlapEx.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_BeginUAVOverlap = hDll.NvAPI_D3D11_BeginUAVOverlap
+NvAPI_D3D11_BeginUAVOverlap = hDll.D3D11_BeginUAVOverlap
 NvAPI_D3D11_BeginUAVOverlap.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_BeginUAVOverlap(__in  IUnknown *pDeviceOrContext);
 
@@ -12369,7 +12369,7 @@ NvAPI_D3D11_BeginUAVOverlap.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_EndUAVOverlap = hDll.NvAPI_D3D11_EndUAVOverlap
+NvAPI_D3D11_EndUAVOverlap = hDll.D3D11_EndUAVOverlap
 NvAPI_D3D11_EndUAVOverlap.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_EndUAVOverlap(__in  IUnknown *pDeviceOrContext);
 
@@ -12390,7 +12390,7 @@ NvAPI_D3D11_EndUAVOverlap.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_SetFPSIndicatorState = hDll.NvAPI_D3D_SetFPSIndicatorState
+NvAPI_D3D_SetFPSIndicatorState = hDll.D3D_SetFPSIndicatorState
 NvAPI_D3D_SetFPSIndicatorState.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_SetFPSIndicatorState(IUnknown *pDev, NvU8 doEnable);
 
@@ -12454,7 +12454,7 @@ NvAPI_D3D_SetFPSIndicatorState.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_Present = hDll.NvAPI_D3D9_Present
+NvAPI_D3D9_Present = hDll.D3D9_Present
 NvAPI_D3D9_Present.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_Present(IDirect3DDevice9 *pDevice,
 #                                    IDirect3DSwapChain9 *pSwapChain,
@@ -12486,7 +12486,7 @@ NvAPI_D3D9_Present.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_QueryFrameCount = hDll.NvAPI_D3D9_QueryFrameCount
+NvAPI_D3D9_QueryFrameCount = hDll.D3D9_QueryFrameCount
 NvAPI_D3D9_QueryFrameCount.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_QueryFrameCount(IDirect3DDevice9 *pDevice,
 #                                            NvU32 *pFrameCount);
@@ -12511,7 +12511,7 @@ NvAPI_D3D9_QueryFrameCount.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_ResetFrameCount = hDll.NvAPI_D3D9_ResetFrameCount
+NvAPI_D3D9_ResetFrameCount = hDll.D3D9_ResetFrameCount
 NvAPI_D3D9_ResetFrameCount.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_ResetFrameCount(IDirect3DDevice9 *pDevice);
 
@@ -12540,7 +12540,7 @@ NvAPI_D3D9_ResetFrameCount.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_QueryMaxSwapGroup = hDll.NvAPI_D3D9_QueryMaxSwapGroup
+NvAPI_D3D9_QueryMaxSwapGroup = hDll.D3D9_QueryMaxSwapGroup
 NvAPI_D3D9_QueryMaxSwapGroup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_QueryMaxSwapGroup(IDirect3DDevice9 *pDevice,
 #                                             NvU32 *pMaxGroups,
@@ -12574,7 +12574,7 @@ NvAPI_D3D9_QueryMaxSwapGroup.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_QuerySwapGroup = hDll.NvAPI_D3D9_QuerySwapGroup
+NvAPI_D3D9_QuerySwapGroup = hDll.D3D9_QuerySwapGroup
 NvAPI_D3D9_QuerySwapGroup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_QuerySwapGroup(IDirect3DDevice9 *pDevice,
 #                                          IDirect3DSwapChain9 *pSwapChain,
@@ -12620,7 +12620,7 @@ NvAPI_D3D9_QuerySwapGroup.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_JoinSwapGroup = hDll.NvAPI_D3D9_JoinSwapGroup
+NvAPI_D3D9_JoinSwapGroup = hDll.D3D9_JoinSwapGroup
 NvAPI_D3D9_JoinSwapGroup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_JoinSwapGroup(IDirect3DDevice9 *pDevice,
 #                                         IDirect3DSwapChain9 *pSwapChain,
@@ -12658,7 +12658,7 @@ NvAPI_D3D9_JoinSwapGroup.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_BindSwapBarrier = hDll.NvAPI_D3D9_BindSwapBarrier
+NvAPI_D3D9_BindSwapBarrier = hDll.D3D9_BindSwapBarrier
 NvAPI_D3D9_BindSwapBarrier.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_BindSwapBarrier(IDirect3DDevice9 *pDevice,
 #                                           NvU32 group,
@@ -12714,7 +12714,7 @@ NvAPI_D3D9_BindSwapBarrier.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_Present = hDll.NvAPI_D3D1x_Present
+NvAPI_D3D1x_Present = hDll.D3D1x_Present
 NvAPI_D3D1x_Present.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_Present(IUnknown *pDevice,
 #                                    IDXGISwapChain *pSwapChain,
@@ -12746,7 +12746,7 @@ NvAPI_D3D1x_Present.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_QueryFrameCount = hDll.NvAPI_D3D1x_QueryFrameCount
+NvAPI_D3D1x_QueryFrameCount = hDll.D3D1x_QueryFrameCount
 NvAPI_D3D1x_QueryFrameCount.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_QueryFrameCount(IUnknown *pDevice,
 #                                            NvU32 *pFrameCount);
@@ -12773,7 +12773,7 @@ NvAPI_D3D1x_QueryFrameCount.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_ResetFrameCount = hDll.NvAPI_D3D1x_ResetFrameCount
+NvAPI_D3D1x_ResetFrameCount = hDll.D3D1x_ResetFrameCount
 NvAPI_D3D1x_ResetFrameCount.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_ResetFrameCount(IUnknown *pDevice);
 
@@ -12805,7 +12805,7 @@ NvAPI_D3D1x_ResetFrameCount.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_QueryMaxSwapGroup = hDll.NvAPI_D3D1x_QueryMaxSwapGroup
+NvAPI_D3D1x_QueryMaxSwapGroup = hDll.D3D1x_QueryMaxSwapGroup
 NvAPI_D3D1x_QueryMaxSwapGroup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_QueryMaxSwapGroup(IUnknown *pDevice,
 #                                              NvU32 *pMaxGroups,
@@ -12841,7 +12841,7 @@ NvAPI_D3D1x_QueryMaxSwapGroup.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_QuerySwapGroup = hDll.NvAPI_D3D1x_QuerySwapGroup
+NvAPI_D3D1x_QuerySwapGroup = hDll.D3D1x_QuerySwapGroup
 NvAPI_D3D1x_QuerySwapGroup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_QuerySwapGroup(IUnknown *pDevice,
 #                                           IDXGISwapChain  *pSwapChain,
@@ -12888,7 +12888,7 @@ NvAPI_D3D1x_QuerySwapGroup.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_JoinSwapGroup = hDll.NvAPI_D3D1x_JoinSwapGroup
+NvAPI_D3D1x_JoinSwapGroup = hDll.D3D1x_JoinSwapGroup
 NvAPI_D3D1x_JoinSwapGroup.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_JoinSwapGroup(IUnknown *pDevice,
 #                                          IDXGISwapChain  *pSwapChain,
@@ -12928,7 +12928,7 @@ NvAPI_D3D1x_JoinSwapGroup.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D1x_BindSwapBarrier = hDll.NvAPI_D3D1x_BindSwapBarrier
+NvAPI_D3D1x_BindSwapBarrier = hDll.D3D1x_BindSwapBarrier
 NvAPI_D3D1x_BindSwapBarrier.restype = NVAPI_INTERFACE
 
 
@@ -13028,7 +13028,7 @@ NvAPI_D3D11_RASTERIZER_DESC_EX._fields_ = [
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_CreateRasterizerState = hDll.NvAPI_D3D11_CreateRasterizerState
+NvAPI_D3D11_CreateRasterizerState = hDll.D3D11_CreateRasterizerState
 NvAPI_D3D11_CreateRasterizerState.restype = NVAPI_INTERFACE
 
 
@@ -13111,7 +13111,7 @@ NVAPI_ANSEL_CONFIGURATION_STRUCT_VER = (
     NVAPI_ANSEL_CONFIGURATION_STRUCT_VER1
 )
 
-NvAPI_D3D_ConfigureAnsel = hDll.NvAPI_D3D_ConfigureAnsel
+NvAPI_D3D_ConfigureAnsel = hDll.D3D_ConfigureAnsel
 NvAPI_D3D_ConfigureAnsel.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_ConfigureAnsel(__in IUnknown *pDevice,
 #                                         __in NVAPI_ANSEL_CONFIGURATION_STRUCT *pNLSConfig);
@@ -13170,7 +13170,7 @@ NvAPI_D3D_ConfigureAnsel.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_CreateTiledTexture2DArray = hDll.NvAPI_D3D11_CreateTiledTexture2DArray
+NvAPI_D3D11_CreateTiledTexture2DArray = hDll.D3D11_CreateTiledTexture2DArray
 NvAPI_D3D11_CreateTiledTexture2DArray.restype = NVAPI_INTERFACE
 
 
@@ -13225,11 +13225,11 @@ _NV_D3D11_FEATURE_DATA_RASTERIZER_SUPPORT._fields_ = [
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_CheckFeatureSupport = hDll.NvAPI_D3D11_CheckFeatureSupport
+NvAPI_D3D11_CheckFeatureSupport = hDll.D3D11_CheckFeatureSupport
 NvAPI_D3D11_CheckFeatureSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_CheckFeatureSupport(__in  ID3D11Device        *pDevice,
 #                                                __in  NV_D3D11_FEATURE    Feature,
-#                                                __out void                *pFeatureSupportData,
+#                                                __out VOID                *pFeatureSupportData,
 #                                                __in  UINT                FeatureSupportDataSize);
 
 # not SUPPORTED OS: Windows 10 and higher
@@ -13267,7 +13267,7 @@ NvAPI_D3D11_CheckFeatureSupport.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_CreateImplicitMSAATexture2D = hDll.NvAPI_D3D11_CreateImplicitMSAATexture2D
+NvAPI_D3D11_CreateImplicitMSAATexture2D = hDll.D3D11_CreateImplicitMSAATexture2D
 NvAPI_D3D11_CreateImplicitMSAATexture2D.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_CreateImplicitMSAATexture2D(__in  ID3D11Device                 *pDevice,
 #                                                        __in  const D3D11_TEXTURE2D_DESC   *pDesc,
@@ -13308,7 +13308,7 @@ NvAPI_D3D11_CreateImplicitMSAATexture2D.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_CreateCommittedImplicitMSAATexture2D = hDll.NvAPI_D3D12_CreateCommittedImplicitMSAATexture2D
+NvAPI_D3D12_CreateCommittedImplicitMSAATexture2D = hDll.D3D12_CreateCommittedImplicitMSAATexture2D
 NvAPI_D3D12_CreateCommittedImplicitMSAATexture2D.restype = NVAPI_INTERFACE
 
 
@@ -13320,7 +13320,7 @@ NvAPI_D3D12_CreateCommittedImplicitMSAATexture2D.restype = NVAPI_INTERFACE
 #        D3D12_RESOURCE_STATES InitialResourceState,
 #        __in_opt  const D3D12_CLEAR_VALUE *pOptimizedClearValue,
 #        REFIID riidResource,
-#        __out void **ppvResource);
+#        __out VOID **ppvResource);
 
 # not SUPPORTED OS: Windows 10 and higher
 # not
@@ -13378,7 +13378,7 @@ NV_RESOLVE_MODE = _NV_RESOLVE_MODE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_ResolveSubresourceRegion = hDll.NvAPI_D3D11_ResolveSubresourceRegion
+NvAPI_D3D11_ResolveSubresourceRegion = hDll.D3D11_ResolveSubresourceRegion
 NvAPI_D3D11_ResolveSubresourceRegion.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_ResolveSubresourceRegion(
 #     __in  ID3D11Device     *pDevice,
@@ -13440,7 +13440,7 @@ NvAPI_D3D11_ResolveSubresourceRegion.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_ResolveSubresourceRegion = hDll.NvAPI_D3D12_ResolveSubresourceRegion
+NvAPI_D3D12_ResolveSubresourceRegion = hDll.D3D12_ResolveSubresourceRegion
 NvAPI_D3D12_ResolveSubresourceRegion.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_ResolveSubresourceRegion(
 #     __in     ID3D12GraphicsCommandList1*pCommandList,
@@ -13484,7 +13484,7 @@ NvAPI_D3D12_ResolveSubresourceRegion.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_TiledTexture2DArrayGetDesc = hDll.NvAPI_D3D11_TiledTexture2DArrayGetDesc
+NvAPI_D3D11_TiledTexture2DArrayGetDesc = hDll.D3D11_TiledTexture2DArrayGetDesc
 NvAPI_D3D11_TiledTexture2DArrayGetDesc.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_TiledTexture2DArrayGetDesc(__in  ID3D11Texture2D      *pTiledTexture2DArray,
 #                                                        __out D3D11_TEXTURE2D_DESC *pDesc);
@@ -13536,7 +13536,7 @@ NvAPI_D3D11_TiledTexture2DArrayGetDesc.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_UpdateTileMappings = hDll.NvAPI_D3D11_UpdateTileMappings
+NvAPI_D3D11_UpdateTileMappings = hDll.D3D11_UpdateTileMappings
 NvAPI_D3D11_UpdateTileMappings.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_UpdateTileMappings(
 #     __in       ID3D11DeviceContext2            *pDeviceContext,
@@ -13591,7 +13591,7 @@ NvAPI_D3D11_UpdateTileMappings.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_CopyTileMappings = hDll.NvAPI_D3D11_CopyTileMappings
+NvAPI_D3D11_CopyTileMappings = hDll.D3D11_CopyTileMappings
 NvAPI_D3D11_CopyTileMappings.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_CopyTileMappings(
 # __in ID3D11DeviceContext * pDeviceContext,
@@ -13637,7 +13637,7 @@ NvAPI_D3D11_CopyTileMappings.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_TiledResourceBarrier = hDll.NvAPI_D3D11_TiledResourceBarrier
+NvAPI_D3D11_TiledResourceBarrier = hDll.D3D11_TiledResourceBarrier
 NvAPI_D3D11_TiledResourceBarrier.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_TiledResourceBarrier(
 #     __in       ID3D11DeviceContext             *pDeviceContext,
@@ -13681,7 +13681,7 @@ NvAPI_D3D11_TiledResourceBarrier.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_AliasMSAATexture2DAsNonMSAA = hDll.NvAPI_D3D11_AliasMSAATexture2DAsNonMSAA
+NvAPI_D3D11_AliasMSAATexture2DAsNonMSAA = hDll.D3D11_AliasMSAATexture2DAsNonMSAA
 NvAPI_D3D11_AliasMSAATexture2DAsNonMSAA.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_AliasMSAATexture2DAsNonMSAA(__in ID3D11Device *pDevice,
 #                                                         __in ID3D11Texture2D *pInputTex,
@@ -13863,9 +13863,9 @@ NVAPI_D3D11_CREATEGEOMETRYSHADEREX_2_VERSION = (
 # not   meaning for this API, they are listed below.
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_CreateGeometryShaderEx_2 = hDll.NvAPI_D3D11_CreateGeometryShaderEx_2
+NvAPI_D3D11_CreateGeometryShaderEx_2 = hDll.D3D11_CreateGeometryShaderEx_2
 NvAPI_D3D11_CreateGeometryShaderEx_2.restype = NVAPI_INTERFACE
-# NVAPI_INTERFACE NvAPI_D3D11_CreateGeometryShaderEx_2(__in ID3D11Device *pDevice, __in const void *pShaderBytecode,
+# NVAPI_INTERFACE NvAPI_D3D11_CreateGeometryShaderEx_2(__in ID3D11Device *pDevice, __in const VOID *pShaderBytecode,
 #                                                      __in SIZE_T BytecodeLength, __in_opt ID3D11ClassLinkage *pClassLinkage,
 #                                                      __in const NvAPI_D3D11_CREATE_GEOMETRY_SHADER_EX *pCreateGeometryShaderExArgs,
 #                                                     __out ID3D11GeometryShader **ppGeometryShader);
@@ -13966,9 +13966,9 @@ NVAPI_D3D11_CREATEVERTEXSHADEREX_VERSION = (
 # not   NvAPI_Status. If there are return error codes with specific
 # not   meaning for this API, they are listed below.
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_CreateVertexShaderEx = hDll.NvAPI_D3D11_CreateVertexShaderEx
+NvAPI_D3D11_CreateVertexShaderEx = hDll.D3D11_CreateVertexShaderEx
 NvAPI_D3D11_CreateVertexShaderEx.restype = NVAPI_INTERFACE
-# NVAPI_INTERFACE NvAPI_D3D11_CreateVertexShaderEx(__in ID3D11Device *pDevice, __in const void *pShaderBytecode,
+# NVAPI_INTERFACE NvAPI_D3D11_CreateVertexShaderEx(__in ID3D11Device *pDevice, __in const VOID *pShaderBytecode,
 #                                                  __in SIZE_T BytecodeLength, __in_opt ID3D11ClassLinkage *pClassLinkage,
 #                                                  __in const NvAPI_D3D11_CREATE_VERTEX_SHADER_EX *pCreateVertexShaderExArgs,
 #                                                  __out ID3D11VertexShader **ppVertexShader);
@@ -14056,9 +14056,9 @@ NVAPI_D3D11_CREATEHULLSHADEREX_VERSION = (
 # not   meaning for this API, they are listed below.
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_CreateHullShaderEx = hDll.NvAPI_D3D11_CreateHullShaderEx
+NvAPI_D3D11_CreateHullShaderEx = hDll.D3D11_CreateHullShaderEx
 NvAPI_D3D11_CreateHullShaderEx.restype = NVAPI_INTERFACE
-# NVAPI_INTERFACE NvAPI_D3D11_CreateHullShaderEx(__in ID3D11Device *pDevice, __in const void *pShaderBytecode,
+# NVAPI_INTERFACE NvAPI_D3D11_CreateHullShaderEx(__in ID3D11Device *pDevice, __in const VOID *pShaderBytecode,
 #                                                __in SIZE_T BytecodeLength, __in_opt ID3D11ClassLinkage *pClassLinkage,
 #                                                __in const NvAPI_D3D11_CREATE_HULL_SHADER_EX *pCreateHullShaderExArgs,
 #                                                __out ID3D11HullShader **ppHullShader);
@@ -14160,9 +14160,9 @@ NVAPI_D3D11_CREATEDOMAINSHADEREX_VERSION = (
 # not   meaning for this API, they are listed below.
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_CreateDomainShaderEx = hDll.NvAPI_D3D11_CreateDomainShaderEx
+NvAPI_D3D11_CreateDomainShaderEx = hDll.D3D11_CreateDomainShaderEx
 NvAPI_D3D11_CreateDomainShaderEx.restype = NVAPI_INTERFACE
-# NVAPI_INTERFACE NvAPI_D3D11_CreateDomainShaderEx(__in ID3D11Device *pDevice, __in const void *pShaderBytecode,
+# NVAPI_INTERFACE NvAPI_D3D11_CreateDomainShaderEx(__in ID3D11Device *pDevice, __in const VOID *pShaderBytecode,
 #                                                  __in SIZE_T BytecodeLength, __in_opt ID3D11ClassLinkage *pClassLinkage,
 #                                                  __in const NvAPI_D3D11_CREATE_DOMAIN_SHADER_EX *pCreateDomainShaderExArgs,
 #                                                  __out ID3D11DomainShader **ppDomainShader);
@@ -14250,11 +14250,11 @@ NVAPI_D3D11_CREATEPIXELSHADEREX_VERSION = (
 # not   NvAPI_Status. If there are return error codes with specific
 # not   meaning for this API, they are listed below.
 #
-NvAPI_D3D11_CreatePixelShaderEx_2 = hDll.NvAPI_D3D11_CreatePixelShaderEx_2
+NvAPI_D3D11_CreatePixelShaderEx_2 = hDll.D3D11_CreatePixelShaderEx_2
 NvAPI_D3D11_CreatePixelShaderEx_2.restype = NVAPI_INTERFACE
 
 
-# NVAPI_INTERFACE NvAPI_D3D11_CreatePixelShaderEx_2(__in ID3D11Device *pDevice, __in const void *pShaderBytecode,
+# NVAPI_INTERFACE NvAPI_D3D11_CreatePixelShaderEx_2(__in ID3D11Device *pDevice, __in const VOID *pShaderBytecode,
 #                                                  __in SIZE_T BytecodeLength, __in_opt ID3D11ClassLinkage *pClassLinkage,
 #                                                  __in const NvAPI_D3D11_CREATE_PIXEL_SHADER_EX *pCreatePixelShaderExArgs,
 #                                                  __out ID3D11PixelShader **ppPixelShader);
@@ -14345,9 +14345,9 @@ NvAPI_D3D11_CREATE_FASTGS_EXPLICIT_DESC = NvAPI_D3D11_CREATE_FASTGS_EXPLICIT_DES
 # not   meaning for this API, they are listed below.
 # ////////////////////////////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_CreateFastGeometryShaderExplicit = hDll.NvAPI_D3D11_CreateFastGeometryShaderExplicit
+NvAPI_D3D11_CreateFastGeometryShaderExplicit = hDll.D3D11_CreateFastGeometryShaderExplicit
 NvAPI_D3D11_CreateFastGeometryShaderExplicit.restype = NVAPI_INTERFACE
-# NVAPI_INTERFACE NvAPI_D3D11_CreateFastGeometryShaderExplicit(__in ID3D11Device *pDevice, __in const void *pShaderBytecode,
+# NVAPI_INTERFACE NvAPI_D3D11_CreateFastGeometryShaderExplicit(__in ID3D11Device *pDevice, __in const VOID *pShaderBytecode,
 #                                                              __in SIZE_T BytecodeLength, __in_opt ID3D11ClassLinkage *pClassLinkage,
 #                                                              __in const NvAPI_D3D11_CREATE_FASTGS_EXPLICIT_DESC *pCreateFastGSArgs,
 #                                                              __out ID3D11GeometryShader **ppGeometryShader);
@@ -14397,9 +14397,9 @@ NvAPI_D3D11_CreateFastGeometryShaderExplicit.restype = NVAPI_INTERFACE
 # ///////////////////////////////////////////////////////////////////
 
 
-NvAPI_D3D11_CreateFastGeometryShader = hDll.NvAPI_D3D11_CreateFastGeometryShader
+NvAPI_D3D11_CreateFastGeometryShader = hDll.D3D11_CreateFastGeometryShader
 NvAPI_D3D11_CreateFastGeometryShader.restype = NVAPI_INTERFACE
-# NVAPI_INTERFACE NvAPI_D3D11_CreateFastGeometryShader(__in ID3D11Device *pDevice, __in const void *pShaderBytecode,
+# NVAPI_INTERFACE NvAPI_D3D11_CreateFastGeometryShader(__in ID3D11Device *pDevice, __in const VOID *pShaderBytecode,
 #                                                      __in SIZE_T BytecodeLength, __in_opt ID3D11ClassLinkage *pClassLinkage,
 #                                                      __out ID3D11GeometryShader **ppGeometryShader);
 
@@ -14430,7 +14430,7 @@ NvAPI_D3D11_CreateFastGeometryShader.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_DecompressView = hDll.NvAPI_D3D11_DecompressView
+NvAPI_D3D11_DecompressView = hDll.D3D11_DecompressView
 NvAPI_D3D11_DecompressView.restype = NVAPI_INTERFACE
 
 
@@ -14465,63 +14465,63 @@ NV_PSO_EXTENSION_DESC_VER = NV_PSO_EXTENSION_DESC_VER_1
 NVAPI_D3D12_PSO_EXTENSION_DESC = NVAPI_D3D12_PSO_EXTENSION_DESC_V1
 
 
-class NVAPI_D3D12_PSO_RASTERIZER_STATE_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_RASTERIZER_STATE_DESC_V1(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_CREATE_FASTGS_EXPLICIT_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_CREATE_FASTGS_EXPLICIT_DESC_V1(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_REQUEST_FAST_GEOMETRY_SHADER_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_REQUEST_FAST_GEOMETRY_SHADER_DESC_V1(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC_V5(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC_V5(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V2(NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V1):
+class NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V1(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V3(NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V2):
+class NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V2(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_HULL_SHADER_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V3(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_HULL_SHADER_DESC_V1(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_HULL_SHADER_DESC_V2(NVAPI_D3D12_PSO_HULL_SHADER_DESC_V1):
+class NVAPI_D3D12_PSO_HULL_SHADER_DESC_V2(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V1(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V2(NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V1):
+class NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V2(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V3(NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V2):
+class NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V3(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_ENABLE_DEPTH_BOUND_TEST_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_ENABLE_DEPTH_BOUND_TEST_DESC_V1(ctypes.Structure):
     pass
 
 
-class NVAPI_D3D12_PSO_SET_SHADER_EXTENSION_SLOT_DESC_V1(NVAPI_D3D12_PSO_EXTENSION_DESC):
+class NVAPI_D3D12_PSO_SET_SHADER_EXTENSION_SLOT_DESC_V1(ctypes.Structure):
     pass
 
 
-NVAPI_D3D12_PSO_RASTERIZER_STATE_DESC_V1._fields_ = [
+NVAPI_D3D12_PSO_RASTERIZER_STATE_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_RASTERIZER_PSO_EXTENSION_DESC_VER
     # These are additional parameters on the top of D3D12_RASTERIZER_DESC
     ('ProgrammableSamplePositionsEnable', BOOL),  # <! enable Programmable Samples feature
@@ -14553,7 +14553,7 @@ NV_RASTERIZER_PSO_EXTENSION_DESC_VER = (
 NVAPI_D3D12_PSO_RASTERIZER_STATE_DESC = NVAPI_D3D12_PSO_RASTERIZER_STATE_DESC_V1
 
 
-NVAPI_D3D12_PSO_CREATE_FASTGS_EXPLICIT_DESC_V1._fields_ = [
+NVAPI_D3D12_PSO_CREATE_FASTGS_EXPLICIT_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  #  ALWAYS == NV_FASTGS_EXPLICIT_PSO_EXTENSION_VER
     ('flags', NvU32),#  A combination of flags from NV_FASTGS_FLAGS
     ('pCoordinateSwizzling', POINTER(NvAPI_D3D11_SWIZZLE_MODE)),  # [optional] Array of 16 coordinate swizzle modes, one per viewport. NULL if not used.
@@ -14588,7 +14588,7 @@ NV_FASTGS_EXPLICIT_PSO_EXTENSION_VER = (
 NVAPI_D3D12_PSO_CREATE_FASTGS_EXPLICIT_DESC = NVAPI_D3D12_PSO_CREATE_FASTGS_EXPLICIT_DESC_V1
 
 
-NVAPI_D3D12_PSO_REQUEST_FAST_GEOMETRY_SHADER_DESC_V1._fields_ = [
+NVAPI_D3D12_PSO_REQUEST_FAST_GEOMETRY_SHADER_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_FAST_GEOMETRY_SHADER_PSO_EXTENSION_VER
 
 ]
@@ -14601,7 +14601,8 @@ NV_FAST_GEOMETRY_SHADER_PSO_EXTENSION_VER = (
 )
 NVAPI_D3D12_PSO_REQUEST_FAST_GEOMETRY_SHADER_DESC = NVAPI_D3D12_PSO_REQUEST_FAST_GEOMETRY_SHADER_DESC_V1
 
-NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC_V5._fields_ = [
+
+NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC_V5._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_GEOMETRY_SHADER_PSO_EXTENSION_DESC_VER
     ('UseViewportMask', BOOL),
     # Set to FALSE for custom semantic shaders. Tell the driver to create a shader that outputs the viewport mask in lieu of the viewport index. See above description.
@@ -14622,6 +14623,7 @@ NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC_V5._fields_ = [
 
 ]
 
+
 NV_GEOMETRY_SHADER_PSO_EXTENSION_DESC_VER_5 = (
     MAKE_NVAPI_VERSION(NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC_V5, 5)
 )
@@ -14631,19 +14633,19 @@ NV_GEOMETRY_SHADER_PSO_EXTENSION_DESC_VER = (
 NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC = NVAPI_D3D12_PSO_GEOMETRY_SHADER_DESC_V5
 
 
-NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V1._fields_ = [
+NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_VERTEX_SHADER_PSO_EXTENSION_DESC_VER
     ('NumCustomSemantics', NvU32),  #  Number of custom semantics elements (upto NV_CUSTOM_SEMANTIC_MAX) provided in array pointer pCustomSemantics
     ('pCustomSemantics', POINTER(NV_CUSTOM_SEMANTIC)),  #  Pointer to array of NV_CUSTOM_SEMANTIC
 
 ]
 
-NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V2._fields_ = [
+NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V2._fields_ = NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V1._fields_ + [
     ('UseWithFastGS', BOOL),  #  Reserved
 ]
 
 
-NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V3._fields_ = [
+NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V3._fields_ = NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V2._fields_ + [
     ('UseSpecificShaderExt', BOOL),  #  TRUE if creating minimal specific shaders with NvAPI shader extensions
 ]
 
@@ -14663,7 +14665,7 @@ NV_VERTEX_SHADER_PSO_EXTENSION_DESC_VER = (
 NVAPI_D3D12_PSO_VERTEX_SHADER_DESC = NVAPI_D3D12_PSO_VERTEX_SHADER_DESC_V3
 
 
-NVAPI_D3D12_PSO_HULL_SHADER_DESC_V1._fields_ = [
+NVAPI_D3D12_PSO_HULL_SHADER_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_HULL_SHADER_PSO_EXTENSION_DESC_VER
     ('NumCustomSemantics', NvU32),  # Number of custom semantics elements (upto NV_CUSTOM_SEMANTIC_MAX) provided in array pointer pCustomSemantics
     ('pCustomSemantics', POINTER(NV_CUSTOM_SEMANTIC)),  # Pointer to array of NV_CUSTOM_SEMANTIC
@@ -14672,7 +14674,7 @@ NVAPI_D3D12_PSO_HULL_SHADER_DESC_V1._fields_ = [
 ]
 
 
-NVAPI_D3D12_PSO_HULL_SHADER_DESC_V2._fields_ = [
+NVAPI_D3D12_PSO_HULL_SHADER_DESC_V2._fields_ = NVAPI_D3D12_PSO_HULL_SHADER_DESC_V1._fields_ + [
     ('UseSpecificShaderExt', BOOL),  # TRUE if creating minimal specific shaders with nvapi shader extensions
 ]
 
@@ -14689,21 +14691,19 @@ NV_HULL_SHADER_PSO_EXTENSION_DESC_VER = (
 NVAPI_D3D12_PSO_HULL_SHADER_DESC = NVAPI_D3D12_PSO_HULL_SHADER_DESC_V2
 
 
-
-
-NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V1._fields_ = [
+NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_DOMAIN_SHADER_PSO_EXTENSION_DESC_VER
     ('NumCustomSemantics', NvU32),  #  Number of custom semantics elements (upto NV_CUSTOM_SEMANTIC_MAX) provided in array pointer pCustomSemantics
     ('pCustomSemantics', POINTER(NV_CUSTOM_SEMANTIC)),  #  Pointer to array of NV_CUSTOM_SEMANTIC
 
 ]
 
-NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V2._fields_ = [
+NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V2._fields_ = NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V1._fields_ + [
     ('UseWithFastGS', BOOL),  #  Reserved
 ]
 
 
-NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V3._fields_ = [
+NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V3._fields_ = NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V2._fields_ + [
     ('UseSpecificShaderExt', BOOL),  #  TRUE if creating minimal specific shaders with NvAPI shader extensions
 ]
 
@@ -14723,7 +14723,7 @@ NV_DOMAIN_SHADER_PSO_EXTENSION_DESC_VER = (
 NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC = NVAPI_D3D12_PSO_DOMAIN_SHADER_DESC_V3
 
 
-NVAPI_D3D12_PSO_ENABLE_DEPTH_BOUND_TEST_DESC_V1._fields_ = [
+NVAPI_D3D12_PSO_ENABLE_DEPTH_BOUND_TEST_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_ENABLE_DEPTH_BOUND_TEST_PSO_EXTENSION_DESC_VER
     ('EnableDBT', BOOL),
 
@@ -14738,7 +14738,8 @@ NV_ENABLE_DEPTH_BOUND_TEST_PSO_EXTENSION_DESC_VER = (
 )
 NVAPI_D3D12_PSO_ENABLE_DEPTH_BOUND_TEST_DESC = NVAPI_D3D12_PSO_ENABLE_DEPTH_BOUND_TEST_DESC_V1
 
-NVAPI_D3D12_PSO_SET_SHADER_EXTENSION_SLOT_DESC_V1._fields_ = [
+
+NVAPI_D3D12_PSO_SET_SHADER_EXTENSION_SLOT_DESC_V1._fields_ = NVAPI_D3D12_PSO_EXTENSION_DESC._fields_ + [
     ('version', NvU32),  # <! Always use NV_SET_SHADER_EXTENSION_SLOT_DESC_VER
     ('uavSlot', NvU32),
     ('registerSpace', NvU32)
@@ -14796,7 +14797,7 @@ NV_COMPUTE_SHADER_DERIVATIVES = _NV_COMPUTE_SHADER_DERIVATIVES
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_CreateGraphicsPipelineState = hDll.NvAPI_D3D12_CreateGraphicsPipelineState
+NvAPI_D3D12_CreateGraphicsPipelineState = hDll.D3D12_CreateGraphicsPipelineState
 NvAPI_D3D12_CreateGraphicsPipelineState.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_CreateGraphicsPipelineState(__in ID3D12Device *pDevice,
 #                                                         __in const D3D12_GRAPHICS_PIPELINE_STATE_DESC *pPSODesc,
@@ -14829,7 +14830,7 @@ NvAPI_D3D12_CreateGraphicsPipelineState.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_CreateComputePipelineState = hDll.NvAPI_D3D12_CreateComputePipelineState
+NvAPI_D3D12_CreateComputePipelineState = hDll.D3D12_CreateComputePipelineState
 NvAPI_D3D12_CreateComputePipelineState.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_CreateComputePipelineState(__in ID3D12Device *pDevice,
 #                                                        __in const D3D12_COMPUTE_PIPELINE_STATE_DESC *pPSODesc,
@@ -14861,7 +14862,7 @@ NvAPI_D3D12_CreateComputePipelineState.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_SetDepthBoundsTestValues = hDll.NvAPI_D3D12_SetDepthBoundsTestValues
+NvAPI_D3D12_SetDepthBoundsTestValues = hDll.D3D12_SetDepthBoundsTestValues
 NvAPI_D3D12_SetDepthBoundsTestValues.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_SetDepthBoundsTestValues(__in ID3D12GraphicsCommandList *pCommandList,
 #                                                      __in const float minDepth,
@@ -14940,14 +14941,14 @@ NvAPI_D3D12_SetDepthBoundsTestValues.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_CreateReservedResource = hDll.NvAPI_D3D12_CreateReservedResource
+NvAPI_D3D12_CreateReservedResource = hDll.D3D12_CreateReservedResource
 NvAPI_D3D12_CreateReservedResource.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_CreateReservedResource(__in       ID3D12Device           *pDevice,
 #                                                    __in const D3D12_RESOURCE_DESC    *pDesc,
 #                                                    __in       D3D12_RESOURCE_STATES   InitialState,
 #                                                    __in const D3D12_CLEAR_VALUE      *pOptimizedClearValue,
 #                                                    __in       REFIID                  riid,
-#                                                    __out      void                  **ppvResource,
+#                                                    __out      VOID                  **ppvResource,
 #                                                    __in       bool                    bTexture2DArrayMipPack,
 #                                                    __in       ID3D12Heap             *pHeap);
 
@@ -14983,12 +14984,12 @@ NvAPI_D3D12_CreateReservedResource.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_CreateHeap = hDll.NvAPI_D3D12_CreateHeap
+NvAPI_D3D12_CreateHeap = hDll.D3D12_CreateHeap
 NvAPI_D3D12_CreateHeap.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_CreateHeap(__in       ID3D12Device     *pDevice,
 #                                        __in const D3D12_HEAP_DESC  *pDesc,
 #                                        __in       REFIID            riid,
-#                                        __out      void            **ppvHeap);
+#                                        __out      VOID            **ppvHeap);
 
 
 # ///////////////////////////////////////////////////////////////////
@@ -15022,7 +15023,7 @@ NvAPI_D3D12_CreateHeap.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_ReservedResourceGetDesc = hDll.NvAPI_D3D12_ReservedResourceGetDesc
+NvAPI_D3D12_ReservedResourceGetDesc = hDll.D3D12_ReservedResourceGetDesc
 NvAPI_D3D12_ReservedResourceGetDesc.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_ReservedResourceGetDesc(__in  ID3D12Resource      *pReservedResource,
 #                                                     __out D3D12_RESOURCE_DESC *pDesc);
@@ -15072,7 +15073,7 @@ NvAPI_D3D12_ReservedResourceGetDesc.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_UpdateTileMappings = hDll.NvAPI_D3D12_UpdateTileMappings
+NvAPI_D3D12_UpdateTileMappings = hDll.D3D12_UpdateTileMappings
 NvAPI_D3D12_UpdateTileMappings.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_UpdateTileMappings(
 #     __in       ID3D12CommandQueue              *pCommandQueue,
@@ -15122,7 +15123,7 @@ NvAPI_D3D12_UpdateTileMappings.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_CopyTileMappings = hDll.NvAPI_D3D12_CopyTileMappings
+NvAPI_D3D12_CopyTileMappings = hDll.D3D12_CopyTileMappings
 NvAPI_D3D12_CopyTileMappings.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_CopyTileMappings(
 #     __in       ID3D12CommandQueue              *pCommandQueue,
@@ -15160,7 +15161,7 @@ NvAPI_D3D12_CopyTileMappings.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_ResourceAliasingBarrier = hDll.NvAPI_D3D12_ResourceAliasingBarrier
+NvAPI_D3D12_ResourceAliasingBarrier = hDll.D3D12_ResourceAliasingBarrier
 NvAPI_D3D12_ResourceAliasingBarrier.restype = NVAPI_INTERFACE
 
 
@@ -15232,7 +15233,7 @@ NV_META_COMMAND_ACTIVATION_MAX_PARAMS = 2
 
 
 def compile_time_assert(b):
-    assert (b, "Compile time assertion failed: " + b)
+    pass
 
 
 class NV_META_COMMAND_TENSOR_DATA_TYPE(ENUM):
@@ -15352,17 +15353,6 @@ NV_META_COMMAND_ACTIVATION_DESC._fields_ = [
 # END IF
 
 
-NV_META_COMMAND_TENSOR_DESC._fields_ = [
-    # true when the tensor isn't needed (e.g, bias is optional)
-    ('IsNull', NV_META_COMMAND_BOOL),
-]
-
-NV_META_COMMAND_ACTIVATION_DESC._fields_ = [
-    # true when activation isn't needed
-    ('IsNull', NV_META_COMMAND_BOOL),
-]
-
-
 class NV_META_COMMAND_PADDING_MODE(ENUM):
     NV_META_COMMAND_PADDING_ZEROS = 1
     NV_META_COMMAND_PADDING_MIRROR = 2
@@ -15444,6 +15434,21 @@ class NV_META_COMMAND_CONVOLUTION_MODE(ENUM):
 NV_META_COMMAND_CONVOLUTION_MODE_CONVOLUTION = NV_META_COMMAND_CONVOLUTION_MODE.NV_META_COMMAND_CONVOLUTION_MODE_CONVOLUTION
 NV_META_COMMAND_CONVOLUTION_MODE_CROSS_CORRELATION = NV_META_COMMAND_CONVOLUTION_MODE.NV_META_COMMAND_CONVOLUTION_MODE_CROSS_CORRELATION
 NV_META_COMMAND_CONVOLUTION_MODE_COUNT = NV_META_COMMAND_CONVOLUTION_MODE.NV_META_COMMAND_CONVOLUTION_MODE_COUNT
+
+
+class NV_META_COMMAND_OPTIONAL_TENSOR_DESC(ctypes.Structure):
+    _fields_ = NV_META_COMMAND_TENSOR_DESC._fields_ + [
+        # true when the tensor isn't needed (e.g, bias is optional)
+        ('IsNull', NV_META_COMMAND_BOOL)
+    ]
+
+
+class NV_META_COMMAND_OPTIONAL_ACTIVATION_DESC(ctypes.Structure):
+    _fields_ = NV_META_COMMAND_ACTIVATION_DESC._fields_ + [
+        # true when activation isn't needed
+        ('IsNull', NV_META_COMMAND_BOOL)
+    ]
+
 
 NV_META_COMMAND_CREATE_CONVOLUTION_EX_DESC._fields_ = [
     # Descriptor of the input tensor
@@ -15544,9 +15549,11 @@ NV_META_COMMAND_CONVOLUTION_FUSE_DESC._fields_ = [
 # uses same structures for init and execute descriptors
 # SkipConnectionResource is used to specify the resource for pre-pool
 # data or residual add
-NV_META_COMMAND_CREATE_CONVOLUTION_EX_DESC._fields_ = [
-    ('FuseDesc', NV_META_COMMAND_CONVOLUTION_FUSE_DESC),
-]
+
+class NV_META_COMMAND_CREATE_CONVOLUTION_EX_FUSED_DESC(ctypes.Structure):
+    _fields_ = NV_META_COMMAND_CREATE_CONVOLUTION_EX_DESC._fields_ + [
+        ('FuseDesc', NV_META_COMMAND_CONVOLUTION_FUSE_DESC),
+    ]
 
 MetaCommand_Gemm = GUID('{8f9ff059-fe72-488e-a066-b14e7948ec08}')
 
@@ -15605,7 +15612,7 @@ NV_META_COMMAND_CREATE_GEMM_DESC._fields_ = [
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_EnumerateMetaCommands = hDll.NvAPI_D3D11_EnumerateMetaCommands
+NvAPI_D3D11_EnumerateMetaCommands = hDll.D3D11_EnumerateMetaCommands
 NvAPI_D3D11_EnumerateMetaCommands.restype = NVAPI_INTERFACE
 
 
@@ -15722,11 +15729,11 @@ ID3D11NvMetaCommand_VER1 = (
 )
 ID3D11NvMetaCommand_VER = ID3D11NvMetaCommand_VER1
 
-NvAPI_D3D11_CreateMetaCommand = hDll.NvAPI_D3D11_CreateMetaCommand
+NvAPI_D3D11_CreateMetaCommand = hDll.D3D11_CreateMetaCommand
 NvAPI_D3D11_CreateMetaCommand.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_CreateMetaCommand(__in                                     ID3D11Device            *pDevice,
 #                                               __in                                     REFGUID                  CommandId,
-#                                               __in_bcount(CreationParametersDataSize)  const void              *pCreationParametersData,
+#                                               __in_bcount(CreationParametersDataSize)  const VOID              *pCreationParametersData,
 #                                               __in                                     NvU32                    CreationParametersDataSize,
 #                                               __out                                    ID3D11NvMetaCommand    **ppMetaCommand);
 
@@ -15754,11 +15761,11 @@ NvAPI_D3D11_CreateMetaCommand.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_InitializeMetaCommand = hDll.NvAPI_D3D11_InitializeMetaCommand
+NvAPI_D3D11_InitializeMetaCommand = hDll.D3D11_InitializeMetaCommand
 NvAPI_D3D11_InitializeMetaCommand.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_InitializeMetaCommand(__in                                          ID3D11DeviceContext       *pDeviceContext,
 #                                                   __in                                          ID3D11NvMetaCommand       *pMetaCommand,
-#                                                   __in_bcount(InitializationParametersDataSize) const void                *pInitializationParametersData,
+#                                                   __in_bcount(InitializationParametersDataSize) const VOID                *pInitializationParametersData,
 #                                                   __in                                          NvU32                      InitializationParametersDataSize);
 
 # ///////////////////////////////////////////////////////////////////
@@ -15784,11 +15791,11 @@ NvAPI_D3D11_InitializeMetaCommand.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_ExecuteMetaCommand = hDll.NvAPI_D3D11_ExecuteMetaCommand
+NvAPI_D3D11_ExecuteMetaCommand = hDll.D3D11_ExecuteMetaCommand
 NvAPI_D3D11_ExecuteMetaCommand.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_ExecuteMetaCommand(__in                                          ID3D11DeviceContext       *pDeviceContext,
 #                                                __in                                          ID3D11NvMetaCommand       *pMetaCommand,
-#                                                __in_bcount(ExecutionParametersDataSize)      const void                *pExecutionParametersData,
+#                                                __in_bcount(ExecutionParametersDataSize)      const VOID                *pExecutionParametersData,
 #                                                __in                                          NvU32                      ExecutionParametersDataSize);
 
 # ///////////////////////////////////////////////////////////////////
@@ -15817,7 +15824,7 @@ NvAPI_D3D11_ExecuteMetaCommand.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_EnumerateMetaCommands = hDll.NvAPI_D3D12_EnumerateMetaCommands
+NvAPI_D3D12_EnumerateMetaCommands = hDll.D3D12_EnumerateMetaCommands
 NvAPI_D3D12_EnumerateMetaCommands.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_EnumerateMetaCommands(__in                                  ID3D12Device                    *pDevice,
 #                                                   __inout                               NvU32                           *pNumMetaCommands,
@@ -15914,12 +15921,12 @@ ID3D12NvMetaCommand_VER1 = (
 )
 ID3D12NvMetaCommand_VER = ID3D12NvMetaCommand_VER1
 
-NvAPI_D3D12_CreateMetaCommand = hDll.NvAPI_D3D12_CreateMetaCommand
+NvAPI_D3D12_CreateMetaCommand = hDll.D3D12_CreateMetaCommand
 NvAPI_D3D12_CreateMetaCommand.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_CreateMetaCommand(__in                                     ID3D12Device            *pDevice,
 #                                               __in                                     REFGUID                  CommandId,
 #                                               __in                                     NvU32                    NodeMask,
-#                                               __in_bcount(CreationParametersDataSize)  const void              *pCreationParametersData,
+#                                               __in_bcount(CreationParametersDataSize)  const VOID              *pCreationParametersData,
 #                                               __in                                     NvU32                    CreationParametersDataSize,
 #                                               __out                                    ID3D12NvMetaCommand    **ppMetaCommand);
 
@@ -15946,11 +15953,11 @@ NvAPI_D3D12_CreateMetaCommand.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_InitializeMetaCommand = hDll.NvAPI_D3D12_InitializeMetaCommand
+NvAPI_D3D12_InitializeMetaCommand = hDll.D3D12_InitializeMetaCommand
 NvAPI_D3D12_InitializeMetaCommand.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_InitializeMetaCommand(__in                                          ID3D12GraphicsCommandList *pCommandlist,
 #                                                   __in                                          ID3D12NvMetaCommand       *pMetaCommand,
-#                                                   __in_bcount(InitializationParametersDataSize) const void                *pInitializationParametersData,
+#                                                   __in_bcount(InitializationParametersDataSize) const VOID                *pInitializationParametersData,
 #                                                   __in                                          NvU32                      InitializationParametersDataSize);
 
 # ///////////////////////////////////////////////////////////////////
@@ -15975,11 +15982,11 @@ NvAPI_D3D12_InitializeMetaCommand.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D12_ExecuteMetaCommand = hDll.NvAPI_D3D12_ExecuteMetaCommand
+NvAPI_D3D12_ExecuteMetaCommand = hDll.D3D12_ExecuteMetaCommand
 NvAPI_D3D12_ExecuteMetaCommand.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_ExecuteMetaCommand(__in                                          ID3D12GraphicsCommandList *pCommandlist,
 #                                                __in                                          ID3D12NvMetaCommand       *pMetaCommand,
-#                                                __in_bcount(ExecutionParametersDataSize)      const void                *pExecutionParametersData,
+#                                                __in_bcount(ExecutionParametersDataSize)      const VOID                *pExecutionParametersData,
 #                                                __in                                          NvU32                      ExecutionParametersDataSize);
 
 # ///////////////////////////////////////////////////////////////////
@@ -16008,7 +16015,7 @@ NvAPI_D3D12_ExecuteMetaCommand.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_IsNvShaderExtnOpCodeSupported = hDll.NvAPI_D3D12_IsNvShaderExtnOpCodeSupported
+NvAPI_D3D12_IsNvShaderExtnOpCodeSupported = hDll.D3D12_IsNvShaderExtnOpCodeSupported
 NvAPI_D3D12_IsNvShaderExtnOpCodeSupported.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_IsNvShaderExtnOpCodeSupported(__in  ID3D12Device *pDevice,
 #                                                           __in  NvU32 opCode,
@@ -16037,7 +16044,7 @@ NvAPI_D3D12_IsNvShaderExtnOpCodeSupported.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_IsGSyncCapable = hDll.NvAPI_D3D_IsGSyncCapable
+NvAPI_D3D_IsGSyncCapable = hDll.D3D_IsGSyncCapable
 NvAPI_D3D_IsGSyncCapable.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_IsGSyncCapable(__in IUnknown *pDeviceOrContext, __in NVDX_ObjectHandle primarySurface, __out BOOL *pIsGsyncCapable);
 
@@ -16066,7 +16073,7 @@ NvAPI_D3D_IsGSyncCapable.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_IsGSyncActive = hDll.NvAPI_D3D_IsGSyncActive
+NvAPI_D3D_IsGSyncActive = hDll.D3D_IsGSyncActive
 NvAPI_D3D_IsGSyncActive.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_IsGSyncActive(__in IUnknown *pDeviceOrContext, __in NVDX_ObjectHandle primarySurface, __out BOOL *pIsGsyncActive);
 
@@ -16087,7 +16094,7 @@ NvAPI_D3D_IsGSyncActive.restype = NVAPI_INTERFACE
 # not \retval ::NVAPI_INVALID_ARGUMENT  Argument passed in is invalid.
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_DisableShaderDiskCache = hDll.NvAPI_D3D1x_DisableShaderDiskCache
+NvAPI_D3D1x_DisableShaderDiskCache = hDll.D3D1x_DisableShaderDiskCache
 NvAPI_D3D1x_DisableShaderDiskCache.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_DisableShaderDiskCache(IUnknown *pDevice);
 
@@ -16153,7 +16160,7 @@ PNV_MULTIGPU_CAPS = PNV_MULTIGPU_CAPS_V2
 NV_MULTIGPU_CAPS = NV_MULTIGPU_CAPS_V1
 PNV_MULTIGPU_CAPS = PNV_MULTIGPU_CAPS_V1
 
-NvAPI_D3D11_MultiGPU_GetCaps = hDll.NvAPI_D3D11_MultiGPU_GetCaps
+NvAPI_D3D11_MultiGPU_GetCaps = hDll.D3D11_MultiGPU_GetCaps
 NvAPI_D3D11_MultiGPU_GetCaps.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_MultiGPU_GetCaps(__inout PNV_MULTIGPU_CAPS pMultiGPUCaps);
 
@@ -16171,7 +16178,7 @@ NvAPI_D3D11_MultiGPU_GetCaps.restype = NVAPI_INTERFACE
 # not \retval ::NVAPI_ERROR   Call failed.
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_MultiGPU_Init = hDll.NvAPI_D3D11_MultiGPU_Init
+NvAPI_D3D11_MultiGPU_Init = hDll.D3D11_MultiGPU_Init
 NvAPI_D3D11_MultiGPU_Init.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_MultiGPU_Init(__in bool bEnable);
 
@@ -16221,8 +16228,11 @@ NVAPI_COPY_P2P_READ = 2
 # not
 NVAPI_CPU_RESOURCE = 0xFFFFFFFF
 
+from .dx.d3d11_h import *
+
 
 class ID3D11MultiGPUDevice_V1(comtypes.IUnknown):
+    _iid_ = GUID()
     _methods_ = [
         # ////////////////////////////   VER1 methods //////////////////////////////////////////
         comtypes.STDMETHOD(
@@ -16548,7 +16558,7 @@ ID3D11MultiGPUDevice_VER = ID3D11MultiGPUDevice_VER3
 ALL_GPUS = 0
 
 # not \ingroup dx
-NvAPI_D3D11_CreateMultiGPUDevice = hDll.NvAPI_D3D11_CreateMultiGPUDevice
+NvAPI_D3D11_CreateMultiGPUDevice = hDll.D3D11_CreateMultiGPUDevice
 NvAPI_D3D11_CreateMultiGPUDevice.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_CreateMultiGPUDevice(__in ID3D11Device *pDevice, __in ULONG version, __out ULONG *currentVersion, __out ID3D11MultiGPUDevice **ppD3D11MultiGPUDevice, __in UINT maxGpus=ALL_GPUS);
 
@@ -16606,7 +16616,7 @@ NV_QUERY_SINGLE_PASS_STEREO_SUPPORT_PARAMS_VER1 = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_QuerySinglePassStereoSupport = hDll.NvAPI_D3D_QuerySinglePassStereoSupport
+NvAPI_D3D_QuerySinglePassStereoSupport = hDll.D3D_QuerySinglePassStereoSupport
 NvAPI_D3D_QuerySinglePassStereoSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_QuerySinglePassStereoSupport(__in IUnknown *pDevice,
 #                                                 __inout NV_QUERY_SINGLE_PASS_STEREO_SUPPORT_PARAMS *pQuerySinglePassStereoSupportedParams);
@@ -16641,7 +16651,7 @@ NvAPI_D3D_QuerySinglePassStereoSupport.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_SetSinglePassStereoMode = hDll.NvAPI_D3D_SetSinglePassStereoMode
+NvAPI_D3D_SetSinglePassStereoMode = hDll.D3D_SetSinglePassStereoMode
 NvAPI_D3D_SetSinglePassStereoMode.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_SetSinglePassStereoMode(__in IUnknown *pDevOrContext, __in NvU32 numViews, __in NvU32 renderTargetIndexOffset, __in NvU8 independentViewportMaskEnable);
 
@@ -16665,7 +16675,7 @@ NvAPI_D3D_SetSinglePassStereoMode.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_QuerySinglePassStereoSupport = hDll.NvAPI_D3D12_QuerySinglePassStereoSupport
+NvAPI_D3D12_QuerySinglePassStereoSupport = hDll.D3D12_QuerySinglePassStereoSupport
 NvAPI_D3D12_QuerySinglePassStereoSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_QuerySinglePassStereoSupport(__in ID3D12Device *pDevice,
 #                                                          __inout NV_QUERY_SINGLE_PASS_STEREO_SUPPORT_PARAMS *pQuerySinglePassStereoSupportedParams);
@@ -16702,7 +16712,7 @@ NvAPI_D3D12_QuerySinglePassStereoSupport.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_SetSinglePassStereoMode = hDll.NvAPI_D3D12_SetSinglePassStereoMode
+NvAPI_D3D12_SetSinglePassStereoMode = hDll.D3D12_SetSinglePassStereoMode
 NvAPI_D3D12_SetSinglePassStereoMode.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_SetSinglePassStereoMode(__in ID3D12GraphicsCommandList* pCommandList,
 #                                                     __in NvU32 numViews,
@@ -16756,7 +16766,7 @@ NV_MULTIVIEW_MAX_SUPPORTED_VIEWS = 4
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_QueryMultiViewSupport = hDll.NvAPI_D3D_QueryMultiViewSupport
+NvAPI_D3D_QueryMultiViewSupport = hDll.D3D_QueryMultiViewSupport
 NvAPI_D3D_QueryMultiViewSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_QueryMultiViewSupport(__in IUnknown *pDevice,
 #                                                 __inout NV_QUERY_MULTIVIEW_SUPPORT_PARAMS *pQueryMultiViewSupportedParams);
@@ -16809,7 +16819,7 @@ NV_MULTIVIEW_PARAMS_VER = NV_MULTIVIEW_PARAMS_VER1
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_SetMultiViewMode = hDll.NvAPI_D3D_SetMultiViewMode
+NvAPI_D3D_SetMultiViewMode = hDll.D3D_SetMultiViewMode
 NvAPI_D3D_SetMultiViewMode.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_SetMultiViewMode(__in IUnknown *pDevOrContext, __in NV_MULTIVIEW_PARAMS *pMultiViewParams);
 
@@ -16850,7 +16860,7 @@ NV_QUERY_MODIFIED_W_SUPPORT_PARAMS_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_QueryModifiedWSupport = hDll.NvAPI_D3D_QueryModifiedWSupport
+NvAPI_D3D_QueryModifiedWSupport = hDll.D3D_QueryModifiedWSupport
 NvAPI_D3D_QueryModifiedWSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_QueryModifiedWSupport(__in IUnknown *pDev,
 #                                             __inout NV_QUERY_MODIFIED_W_SUPPORT_PARAMS *pQueryModifiedWSupportedParams);
@@ -16917,7 +16927,7 @@ NV_MODIFIED_W_PARAMS_VER = NV_MODIFIED_W_PARAMS_VER1
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_SetModifiedWMode = hDll.NvAPI_D3D_SetModifiedWMode
+NvAPI_D3D_SetModifiedWMode = hDll.D3D_SetModifiedWMode
 NvAPI_D3D_SetModifiedWMode.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_SetModifiedWMode(__in IUnknown *pDevOrContext, __in NV_MODIFIED_W_PARAMS *psModifiedWParams);
 
@@ -16941,7 +16951,7 @@ NvAPI_D3D_SetModifiedWMode.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_QueryModifiedWSupport = hDll.NvAPI_D3D12_QueryModifiedWSupport
+NvAPI_D3D12_QueryModifiedWSupport = hDll.D3D12_QueryModifiedWSupport
 NvAPI_D3D12_QueryModifiedWSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_QueryModifiedWSupport(__in ID3D12Device *pDevice,
 #                                                   __inout NV_QUERY_MODIFIED_W_SUPPORT_PARAMS *pQueryModifiedWSupportedParams);
@@ -16975,7 +16985,7 @@ NvAPI_D3D12_QueryModifiedWSupport.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_SetModifiedWMode = hDll.NvAPI_D3D12_SetModifiedWMode
+NvAPI_D3D12_SetModifiedWMode = hDll.D3D12_SetModifiedWMode
 NvAPI_D3D12_SetModifiedWMode.restype = NVAPI_INTERFACE
 
 
@@ -16985,6 +16995,7 @@ NvAPI_D3D12_SetModifiedWMode.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # not See NvAPI_D3D_CreateLateLatchObject
 class ID3DLateLatchObject_V1(comtypes.IUnknown):
+    _iid_ = GUID()
     _methods_ = [
         comtypes.STDMETHOD(
             UINT,
@@ -17009,7 +17020,7 @@ class ID3DLateLatchObject_V1(comtypes.IUnknown):
         comtypes.STDMETHOD(
             NvAPI_Status,
             'UpdateData',
-            (POINTER(POINTER(void)),)
+            (POINTER(POINTER(VOID)),)
         )
     ]
 
@@ -17057,7 +17068,7 @@ NV_D3D_LATELATCH_OBJECT_DESC_VER = NV_D3D_LATELATCH_OBJECT_DESC_VER1
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_CreateLateLatchObject = hDll.NvAPI_D3D_CreateLateLatchObject
+NvAPI_D3D_CreateLateLatchObject = hDll.D3D_CreateLateLatchObject
 NvAPI_D3D_CreateLateLatchObject.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_CreateLateLatchObject(__in IUnknown *pDevice, __inout NV_D3D_LATELATCH_OBJECT_DESC* pLateLatchObjectDesc);
 
@@ -17098,7 +17109,7 @@ NV_QUERY_LATELATCH_SUPPORT_PARAMS_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_QueryLateLatchSupport = hDll.NvAPI_D3D_QueryLateLatchSupport
+NvAPI_D3D_QueryLateLatchSupport = hDll.D3D_QueryLateLatchSupport
 NvAPI_D3D_QueryLateLatchSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_QueryLateLatchSupport(__in IUnknown *pDevice,
 #                                             __inout NV_QUERY_LATELATCH_SUPPORT_PARAMS *pQueryLateLatchSupportParams);
@@ -17120,7 +17131,7 @@ NvAPI_D3D_QueryLateLatchSupport.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_RegisterDevice = hDll.NvAPI_D3D_RegisterDevice
+NvAPI_D3D_RegisterDevice = hDll.D3D_RegisterDevice
 NvAPI_D3D_RegisterDevice.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_RegisterDevice(__in IUnknown *pDev);
 
@@ -17158,7 +17169,7 @@ NvAPI_D3D_RegisterDevice.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
 
-NvAPI_D3D11_MultiDrawInstancedIndirect = hDll.NvAPI_D3D11_MultiDrawInstancedIndirect
+NvAPI_D3D11_MultiDrawInstancedIndirect = hDll.D3D11_MultiDrawInstancedIndirect
 NvAPI_D3D11_MultiDrawInstancedIndirect.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_MultiDrawInstancedIndirect(__in ID3D11DeviceContext *pDevContext11,
 #                                                        __in NvU32                drawCount,
@@ -17199,7 +17210,7 @@ NvAPI_D3D11_MultiDrawInstancedIndirect.restype = NVAPI_INTERFACE
 # is returned.
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_MultiDrawInstancedIndirect = hDll.NvAPI_D3D11_MultiDrawInstancedIndirect
+NvAPI_D3D11_MultiDrawInstancedIndirect = hDll.D3D11_MultiDrawInstancedIndirect
 NvAPI_D3D11_MultiDrawInstancedIndirect.restype = NVAPI_INTERFACE
 
 
@@ -17239,7 +17250,7 @@ class _IMPLICIT_SLI_CONTROL(ENUM):
 IMPLICIT_SLI_CONTROL = _IMPLICIT_SLI_CONTROL
 
 # not \ingroup dx
-NvAPI_D3D_ImplicitSLIControl = hDll.NvAPI_D3D_ImplicitSLIControl
+NvAPI_D3D_ImplicitSLIControl = hDll.D3D_ImplicitSLIControl
 NvAPI_D3D_ImplicitSLIControl.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_ImplicitSLIControl(__in IMPLICIT_SLI_CONTROL implicitSLIControl);
 
@@ -17265,39 +17276,39 @@ NvAPI_D3D_ImplicitSLIControl.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_UseDriverHeapPriorities = hDll.NvAPI_D3D12_UseDriverHeapPriorities
+NvAPI_D3D12_UseDriverHeapPriorities = hDll.D3D12_UseDriverHeapPriorities
 NvAPI_D3D12_UseDriverHeapPriorities.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_UseDriverHeapPriorities(__in ID3D12Device *pDevice);
 
 
 # not SUPPORTED OS: Windows 10 and higher
 # not
-
-_NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS._fields_ = [
-    # not < Structure version
-    ('version', POINTER(NvU32)),
-    # not < The ID3D12Device created by application.
-    ('pDevice', POINTER(ID3D12Device)),
-    # not < The ID3D12Resource part of the application swap chain that
-    # has companion allocations.
-    ('pSwapChainBuffer', POINTER(ID3D12Resource)),
-    # not < The number of ID3D12Resource pointers requested to be
-    # returned in the ppComanionResources array, which should match
-    # ID3D12Device::GetNodeCount for the complete set of companion
-    # allocations.
-    ('companionBufferCount', POINTER(NvU32)),
-    # not < An array of ID3D12Resource pointers sized to match
-    # companionBufferCount, which will receive the companion
-    # allocations.
-    ('ppCompanionResources', POINTER(POINTER(ID3D12Resource))),
-]
-NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS = NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_V1
-NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_VER1 = (
-    MAKE_NVAPI_VERSION(NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_V1, 1)
-)
-NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_VER = (
-    NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_VER1
-)
+#
+# _NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS._fields_ = [
+#     # not < Structure version
+#     ('version', POINTER(NvU32)),
+#     # not < The ID3D12Device created by application.
+#     ('pDevice', POINTER(ID3D12Device)),
+#     # not < The ID3D12Resource part of the application swap chain that
+#     # has companion allocations.
+#     ('pSwapChainBuffer', POINTER(ID3D12Resource)),
+#     # not < The number of ID3D12Resource pointers requested to be
+#     # returned in the ppComanionResources array, which should match
+#     # ID3D12Device::GetNodeCount for the complete set of companion
+#     # allocations.
+#     ('companionBufferCount', POINTER(NvU32)),
+#     # not < An array of ID3D12Resource pointers sized to match
+#     # companionBufferCount, which will receive the companion
+#     # allocations.
+#     ('ppCompanionResources', POINTER(POINTER(ID3D12Resource))),
+# ]
+# NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS = NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_V1
+# NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_VER1 = (
+#     MAKE_NVAPI_VERSION(NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_V1, 1)
+# )
+# NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_VER = (
+#     NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_VER1
+# )
 
 # ///////////////////////////////////////////////////////////////////
 # FUNCTION NAME: NvAPI_D3D12_Mosaic_GetCompanionAllocations
@@ -17319,40 +17330,40 @@ NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_Mosaic_GetCompanionAllocations = hDll.NvAPI_D3D12_Mosaic_GetCompanionAllocations
+NvAPI_D3D12_Mosaic_GetCompanionAllocations = hDll.D3D12_Mosaic_GetCompanionAllocations
 NvAPI_D3D12_Mosaic_GetCompanionAllocations.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_Mosaic_GetCompanionAllocations(__inout NV_D3D12_MOSAIC_GETCOMPANIONALLOCATIONS *params);
 
 
 # not SUPPORTED OS: Windows 10 and higher
 # not
-
-_NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS._fields_ = [
-    # not < Structure version
-    ('version', POINTER(NvU32)),
-    # not < The ID3D12Device created by application.
-    ('pDevice', POINTER(ID3D12Device)),
-    # not < The ID3D12Resource part of the application swap chain.
-    ('pSwapChainBuffer', POINTER(ID3D12Resource)),
-    # not < A variable to receive the number of
-    # NV_MGPU_MOSAIC_DISPLAY_SURFACE_PARTITION elements returned or
-    # that holds the size of pPartitions when it is non-NULL.
-    ('pPartitionCount', POINTER(NvU32)),
-    # not < An optional array to hold the viewport information per
-    # partition. When this is valid pNodeMask must also be valid.
-    ('pViewport', POINTER(RECT)),
-    # not < An optional array to hold the GPU mask where this viewport
-    # must be valid per partition. When this is valid pViewport must
-    # also be valid.
-    ('pNodeMask', POINTER(NvU32)),
-]
-NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS = NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_V1
-NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_VER1 = (
-    MAKE_NVAPI_VERSION(NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_V1, 1)
-)
-NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_VER = (
-    NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_VER1
-)
+#
+# _NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS._fields_ = [
+#     # not < Structure version
+#     ('version', POINTER(NvU32)),
+#     # not < The ID3D12Device created by application.
+#     ('pDevice', POINTER(ID3D12Device)),
+#     # not < The ID3D12Resource part of the application swap chain.
+#     ('pSwapChainBuffer', POINTER(ID3D12Resource)),
+#     # not < A variable to receive the number of
+#     # NV_MGPU_MOSAIC_DISPLAY_SURFACE_PARTITION elements returned or
+#     # that holds the size of pPartitions when it is non-NULL.
+#     ('pPartitionCount', POINTER(NvU32)),
+#     # not < An optional array to hold the viewport information per
+#     # partition. When this is valid pNodeMask must also be valid.
+#     ('pViewport', POINTER(RECT)),
+#     # not < An optional array to hold the GPU mask where this viewport
+#     # must be valid per partition. When this is valid pViewport must
+#     # also be valid.
+#     ('pNodeMask', POINTER(NvU32)),
+# ]
+# NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS = NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_V1
+# NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_VER1 = (
+#     MAKE_NVAPI_VERSION(NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_V1, 1)
+# )
+# NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_VER = (
+#     NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_VER1
+# )
 
 # ///////////////////////////////////////////////////////////////////
 # FUNCTION NAME: NvAPI_D3D12_Mosaic_GetViewportAndGpuPartitions
@@ -17375,7 +17386,7 @@ NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D12_Mosaic_GetViewportAndGpuPartitions = hDll.NvAPI_D3D12_Mosaic_GetViewportAndGpuPartitions
+NvAPI_D3D12_Mosaic_GetViewportAndGpuPartitions = hDll.D3D12_Mosaic_GetViewportAndGpuPartitions
 NvAPI_D3D12_Mosaic_GetViewportAndGpuPartitions.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D12_Mosaic_GetViewportAndGpuPartitions(__inout NV_D3D12_MOSAIC_GETVIEWPORTANDGPUPARTITIONS *params);
 
@@ -17448,7 +17459,7 @@ NV_D3D1x_GRAPHICS_CAPS_VER = NV_D3D1x_GRAPHICS_CAPS_VER2
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_GetGraphicsCapabilities = hDll.NvAPI_D3D1x_GetGraphicsCapabilities
+NvAPI_D3D1x_GetGraphicsCapabilities = hDll.D3D1x_GetGraphicsCapabilities
 NvAPI_D3D1x_GetGraphicsCapabilities.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_GetGraphicsCapabilities(__in IUnknown *pDevice,
 #                                                     __in NvU32 structVersion,
@@ -17513,7 +17524,7 @@ NV_D3D11_EXCLUSIVE_SCISSOR_RECTS_DESC_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_RSSetExclusiveScissorRects = hDll.NvAPI_D3D11_RSSetExclusiveScissorRects
+NvAPI_D3D11_RSSetExclusiveScissorRects = hDll.D3D11_RSSetExclusiveScissorRects
 NvAPI_D3D11_RSSetExclusiveScissorRects.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_RSSetExclusiveScissorRects(__in IUnknown *pContext,
 #                                                        __in NV_D3D11_EXCLUSIVE_SCISSOR_RECTS_DESC *pExclusiveScissorRectsDesc);
@@ -17614,7 +17625,7 @@ NV_D3D11_VIEWPORTS_SHADING_RATE_DESC_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_RSSetViewportsPixelShadingRates = hDll.NvAPI_D3D11_RSSetViewportsPixelShadingRates
+NvAPI_D3D11_RSSetViewportsPixelShadingRates = hDll.D3D11_RSSetViewportsPixelShadingRates
 NvAPI_D3D11_RSSetViewportsPixelShadingRates.restype = NVAPI_INTERFACE
 
 
@@ -17742,7 +17753,7 @@ ID3D11NvShadingRateResourceView_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_CreateShadingRateResourceView = hDll.NvAPI_D3D11_CreateShadingRateResourceView
+NvAPI_D3D11_CreateShadingRateResourceView = hDll.D3D11_CreateShadingRateResourceView
 NvAPI_D3D11_CreateShadingRateResourceView.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_CreateShadingRateResourceView(__in  ID3D11Device *pDevice,
 #                                                           __in  ID3D11Resource *pShadingRateResource,
@@ -17776,7 +17787,7 @@ NvAPI_D3D11_CreateShadingRateResourceView.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_RSSetShadingRateResourceView = hDll.NvAPI_D3D11_RSSetShadingRateResourceView
+NvAPI_D3D11_RSSetShadingRateResourceView = hDll.D3D11_RSSetShadingRateResourceView
 NvAPI_D3D11_RSSetShadingRateResourceView.restype = NVAPI_INTERFACE
 
 
@@ -17951,7 +17962,7 @@ NV_PIXEL_SHADING_RATE_SAMPLE_ORDER_TABLE_VER = (
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_RSGetPixelShadingRateSampleOrder = hDll.NvAPI_D3D11_RSGetPixelShadingRateSampleOrder
+NvAPI_D3D11_RSGetPixelShadingRateSampleOrder = hDll.D3D11_RSGetPixelShadingRateSampleOrder
 NvAPI_D3D11_RSGetPixelShadingRateSampleOrder.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_RSGetPixelShadingRateSampleOrder(__in IUnknown *pContext,
 #                                                              __out NV_PIXEL_SHADING_RATE_SAMPLE_ORDER_TABLE* pSampleOrderTable);
@@ -17979,7 +17990,7 @@ NvAPI_D3D11_RSGetPixelShadingRateSampleOrder.restype = NVAPI_INTERFACE
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D11_RSSetPixelShadingRateSampleOrder = hDll.NvAPI_D3D11_RSSetPixelShadingRateSampleOrder
+NvAPI_D3D11_RSSetPixelShadingRateSampleOrder = hDll.D3D11_RSSetPixelShadingRateSampleOrder
 NvAPI_D3D11_RSSetPixelShadingRateSampleOrder.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D11_RSSetPixelShadingRateSampleOrder(__in IUnknown *pContext,
 #                                                              __in NV_PIXEL_SHADING_RATE_SAMPLE_ORDER_TABLE* pSampleOrderTable);
@@ -18193,6 +18204,7 @@ NV_VRS_HELPER_PURGE_INTERNAL_RESOURCES_PARAMS_VER = (
 
 
 class ID3DNvVRSHelper_V1(comtypes.IUnknown):
+    _iid_ = GUID()
     _methods_ = [
         #  Latches the latest gaze which will be used for subsequent foveated rendering. Recommended to be called once per frame before scene drawing begins.
         comtypes.STDMETHOD(
@@ -18290,7 +18302,7 @@ NV_VRS_HELPER_INIT_PARAMS_VER = NV_VRS_HELPER_INIT_PARAMS_VER1
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_InitializeVRSHelper = hDll.NvAPI_D3D_InitializeVRSHelper
+NvAPI_D3D_InitializeVRSHelper = hDll.D3D_InitializeVRSHelper
 NvAPI_D3D_InitializeVRSHelper.restype = NVAPI_INTERFACE
 
 
@@ -18398,6 +18410,7 @@ NV_FOVEATED_RENDERING_UPDATE_GAZE_DATA_PARAMS_VER = (
 
 
 class ID3DNvGazeHandler_V1(comtypes.IUnknown):
+    _iid_ = GUID()
     _methods_ = [
         #  Updates the gaze data for foveated rendering
         comtypes.STDMETHOD(
@@ -18474,7 +18487,7 @@ NV_GAZE_HANDLER_INIT_PARAMS_VER = NV_GAZE_HANDLER_INIT_PARAMS_VER1
 # not
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_InitializeNvGazeHandler = hDll.NvAPI_D3D_InitializeNvGazeHandler
+NvAPI_D3D_InitializeNvGazeHandler = hDll.D3D_InitializeNvGazeHandler
 NvAPI_D3D_InitializeNvGazeHandler.restype = NVAPI_INTERFACE
 
 
@@ -18679,17 +18692,17 @@ _NV_SMP_ASSIST_REMAPCBDATA_V1._fields_ = [
     ('ClipToWindowSplitsX', FLOAT * 2),
     ('ClipToWindowSplitsY', FLOAT * 2),
     # ClipToWindowX[i][0] is Scale and ClipToWindowX[i][1] is Bias
-    ('ClipToWindowX', (FLOAT * 3)(FLOAT * 2)),
+    ('ClipToWindowX', (FLOAT * 3) * 2),
     # ClipToWindowY[i][0] is Scale and ClipToWindowY[i][1] is Bias
-    ('ClipToWindowY', (FLOAT * 3)(FLOAT * 2)),
+    ('ClipToWindowY', (FLOAT * 3) * 2),
     # ClipToWindowZ[0] is Scale and ClipToWindowZ[1] is Bias
     ('ClipToWindowZ', FLOAT * 2),
     ('WindowToClipSplitsX', FLOAT * 2),
     ('WindowToClipSplitsY', FLOAT * 2),
     # WindowToClipX[i][0] is Scale and WindowToClipX[i][1] is Bias
-    ('WindowToClipX', (FLOAT * 3)(FLOAT * 2)),
+    ('WindowToClipX', (FLOAT * 3) * 2),
     # WindowToClipY[i][0] is Scale and WindowToClipY[i][1] is Bias
-    ('WindowToClipY', (FLOAT * 3)(FLOAT * 2)),
+    ('WindowToClipY', (FLOAT * 3) * 2),
     # WindowToClipZ[0] is Scale and WindowToClipZ[1] is Bias
     ('WindowToClipZ', FLOAT * 2),
     ('BoundingRectOriginX', FLOAT),
@@ -18864,6 +18877,7 @@ NV_SMP_ASSIST_UPDATE_INSTANCEDSTEREO_DATA_PARAMS_VER = (
 # not SUPPORTED OS: Windows 7 and higher
 # not
 class ID3DNvSMPAssist_V1(comtypes.IUnknown):
+    _iid_ = GUID()
     _methods_ = [
         # ////////////////////////////   VER1 methods //////////////////////////////////////////
         #  Disable SMP Assist for further Draw calls
@@ -18949,7 +18963,7 @@ NV_SMP_ASSIST_INITIALIZE_PARAMS_VER = (
 # arguments was NULL
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_InitializeSMPAssist = hDll.NvAPI_D3D_InitializeSMPAssist
+NvAPI_D3D_InitializeSMPAssist = hDll.D3D_InitializeSMPAssist
 NvAPI_D3D_InitializeSMPAssist.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_InitializeSMPAssist(__in IUnknown *pDevice, __inout NV_SMP_ASSIST_INITIALIZE_PARAMS *pSMPAssistInitParams);
 
@@ -19001,7 +19015,7 @@ NV_QUERY_SMP_ASSIST_SUPPORT_PARAMS_VER = (
 # pQuerySMPAssistSupportParams was a NULL pointer
 # not \ingroup dx
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D_QuerySMPAssistSupport = hDll.NvAPI_D3D_QuerySMPAssistSupport
+NvAPI_D3D_QuerySMPAssistSupport = hDll.D3D_QuerySMPAssistSupport
 NvAPI_D3D_QuerySMPAssistSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D_QuerySMPAssistSupport(__in IUnknown *pDev, __inout NV_QUERY_SMP_ASSIST_SUPPORT_PARAMS *pQuerySMPAssistSupportParams);
 
@@ -19485,7 +19499,7 @@ _NVVIOCHANNELSTATUS._fields_ = [
 # not Input device status
 _NVVIOINPUTSTATUS._fields_ = [
     # not < Video input status per channel within a jack
-    ('vidIn', (NVVIOCHANNELSTATUS * NVAPI_MAX_VIO_JACKS)(NVVIOCHANNELSTATUS * NVAPI_MAX_VIO_CHANNELS_PER_JACK)),
+    ('vidIn', (NVVIOCHANNELSTATUS * NVAPI_MAX_VIO_JACKS) * NVAPI_MAX_VIO_CHANNELS_PER_JACK),
     # not < status of video capture
     ('captureStatus', NVVIOCAPTURESTATUS),
 ]
@@ -19653,7 +19667,7 @@ _NVVIOCOLORCONVERSION._fields_ = [
     # not < Structure version
     ('version', NvU32),
     # not < Output[n] =
-    ('colorMatrix', (FLOAT * 3)(FLOAT * 3)),
+    ('colorMatrix', (FLOAT * 3) * 3),
     # not < Input[0] * colorMatrix[n][0] +
     ('colorOffset', FLOAT * 3),
     # not < Input[1] * colorMatrix[n][1] +
@@ -20225,7 +20239,7 @@ NVVIOTOPOLOGY_VER = MAKE_NVAPI_VERSION(NVVIOTOPOLOGY, 1)
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_GetCapabilities = hDll.NvAPI_VIO_GetCapabilities
+NvAPI_VIO_GetCapabilities = hDll.VIO_GetCapabilities
 NvAPI_VIO_GetCapabilities.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_GetCapabilities(NvVioHandle     hVioHandle,
 #                                           NVVIOCAPS       *pAdapterCaps);
@@ -20255,7 +20269,7 @@ NvAPI_VIO_GetCapabilities.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_Open = hDll.NvAPI_VIO_Open
+NvAPI_VIO_Open = hDll.VIO_Open
 NvAPI_VIO_Open.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_Open(NvVioHandle       hVioHandle,
 #                                NvU32             vioClass,
@@ -20284,7 +20298,7 @@ NvAPI_VIO_Open.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_Close = hDll.NvAPI_VIO_Close
+NvAPI_VIO_Close = hDll.VIO_Close
 NvAPI_VIO_Close.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_Close(NvVioHandle       hVioHandle,
 #                                 NvU32             bRelease);
@@ -20307,7 +20321,7 @@ NvAPI_VIO_Close.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_Status = hDll.NvAPI_VIO_Status
+NvAPI_VIO_Status = hDll.VIO_Status
 NvAPI_VIO_Status.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_Status(NvVioHandle     hVioHandle,
 #                                  NVVIOSTATUS     *pStatus);
@@ -20334,7 +20348,7 @@ NvAPI_VIO_Status.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_SyncFormatDetect = hDll.NvAPI_VIO_SyncFormatDetect
+NvAPI_VIO_SyncFormatDetect = hDll.VIO_SyncFormatDetect
 NvAPI_VIO_SyncFormatDetect.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_SyncFormatDetect(NvVioHandle hVioHandle,
 #                                            NvU32       *pWait);
@@ -20358,7 +20372,7 @@ NvAPI_VIO_SyncFormatDetect.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_GetConfig = hDll.NvAPI_VIO_GetConfig
+NvAPI_VIO_GetConfig = hDll.VIO_GetConfig
 NvAPI_VIO_GetConfig.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_GetConfig(NvVioHandle        hVioHandle,
 #                                     NVVIOCONFIG        *pConfig);
@@ -20382,7 +20396,7 @@ NvAPI_VIO_GetConfig.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_SetConfig = hDll.NvAPI_VIO_SetConfig
+NvAPI_VIO_SetConfig = hDll.VIO_SetConfig
 NvAPI_VIO_SetConfig.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_SetConfig(NvVioHandle            hVioHandle,
 #                                     const NVVIOCONFIG      *pConfig);
@@ -20406,7 +20420,7 @@ NvAPI_VIO_SetConfig.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # //////////////////////////////////////////////////////////////////////////////----
-NvAPI_VIO_SetCSC = hDll.NvAPI_VIO_SetCSC
+NvAPI_VIO_SetCSC = hDll.VIO_SetCSC
 NvAPI_VIO_SetCSC.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_SetCSC(NvVioHandle           hVioHandle,
 #                                   NVVIOCOLORCONVERSION  *pCSC);
@@ -20429,7 +20443,7 @@ NvAPI_VIO_SetCSC.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ////////////////////////////////////////////////////////////////////////
-NvAPI_VIO_GetCSC = hDll.NvAPI_VIO_GetCSC
+NvAPI_VIO_GetCSC = hDll.VIO_GetCSC
 NvAPI_VIO_GetCSC.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_GetCSC(NvVioHandle           hVioHandle,
 #                                  NVVIOCOLORCONVERSION  *pCSC);
@@ -20453,7 +20467,7 @@ NvAPI_VIO_GetCSC.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_SetGamma = hDll.NvAPI_VIO_SetGamma
+NvAPI_VIO_SetGamma = hDll.VIO_SetGamma
 NvAPI_VIO_SetGamma.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_SetGamma(NvVioHandle           hVioHandle,
 #                                    NVVIOGAMMACORRECTION  *pGamma);
@@ -20478,7 +20492,7 @@ NvAPI_VIO_SetGamma.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_GetGamma = hDll.NvAPI_VIO_GetGamma
+NvAPI_VIO_GetGamma = hDll.VIO_GetGamma
 NvAPI_VIO_GetGamma.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_GetGamma(NvVioHandle           hVioHandle,
 #                                    NVVIOGAMMACORRECTION* pGamma);
@@ -20502,7 +20516,7 @@ NvAPI_VIO_GetGamma.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_SetSyncDelay = hDll.NvAPI_VIO_SetSyncDelay
+NvAPI_VIO_SetSyncDelay = hDll.VIO_SetSyncDelay
 NvAPI_VIO_SetSyncDelay.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_SetSyncDelay(NvVioHandle            hVioHandle,
 #                                        const NVVIOSYNCDELAY   *pSyncDelay);
@@ -20526,7 +20540,7 @@ NvAPI_VIO_SetSyncDelay.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_GetSyncDelay = hDll.NvAPI_VIO_GetSyncDelay
+NvAPI_VIO_GetSyncDelay = hDll.VIO_GetSyncDelay
 NvAPI_VIO_GetSyncDelay.restype = NVAPI_INTERFACE
 
 
@@ -20591,7 +20605,7 @@ NVVIOPCIINFO_VER = NVVIOPCIINFO_VER1
 # not
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_GetPCIInfo = hDll.NvAPI_VIO_GetPCIInfo
+NvAPI_VIO_GetPCIInfo = hDll.VIO_GetPCIInfo
 NvAPI_VIO_GetPCIInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_GetPCIInfo(__in NvVioHandle hVioHandle,
 #                                             __inout NVVIOPCIINFO* pVioPCIInfo);
@@ -20614,7 +20628,7 @@ NvAPI_VIO_GetPCIInfo.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_IsRunning = hDll.NvAPI_VIO_IsRunning
+NvAPI_VIO_IsRunning = hDll.VIO_IsRunning
 NvAPI_VIO_IsRunning.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_IsRunning(NvVioHandle   hVioHandle);
 
@@ -20638,7 +20652,7 @@ NvAPI_VIO_IsRunning.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_Start = hDll.NvAPI_VIO_Start
+NvAPI_VIO_Start = hDll.VIO_Start
 NvAPI_VIO_Start.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_Start(NvVioHandle     hVioHandle);
 
@@ -20662,7 +20676,7 @@ NvAPI_VIO_Start.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_Stop = hDll.NvAPI_VIO_Stop
+NvAPI_VIO_Stop = hDll.VIO_Stop
 NvAPI_VIO_Stop.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_Stop(NvVioHandle     hVioHandle);
 
@@ -20688,7 +20702,7 @@ NvAPI_VIO_Stop.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_IsFrameLockModeCompatible = hDll.NvAPI_VIO_IsFrameLockModeCompatible
+NvAPI_VIO_IsFrameLockModeCompatible = hDll.VIO_IsFrameLockModeCompatible
 NvAPI_VIO_IsFrameLockModeCompatible.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_IsFrameLockModeCompatible(NvVioHandle              hVioHandle,
 #                                                     NvU32                    srcEnumIndex,
@@ -20718,7 +20732,7 @@ NvAPI_VIO_IsFrameLockModeCompatible.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_EnumDevices = hDll.NvAPI_VIO_EnumDevices
+NvAPI_VIO_EnumDevices = hDll.VIO_EnumDevices
 NvAPI_VIO_EnumDevices.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_EnumDevices(NvVioHandle       hVioHandle[NVAPI_MAX_VIO_DEVICES],
 #                                       NvU32             *vioDeviceCount);
@@ -20741,7 +20755,7 @@ NvAPI_VIO_EnumDevices.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_QueryTopology = hDll.NvAPI_VIO_QueryTopology
+NvAPI_VIO_QueryTopology = hDll.VIO_QueryTopology
 NvAPI_VIO_QueryTopology.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_QueryTopology(NV_VIO_TOPOLOGY   *pNvVIOTopology);
 
@@ -20766,7 +20780,7 @@ NvAPI_VIO_QueryTopology.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_EnumSignalFormats = hDll.NvAPI_VIO_EnumSignalFormats
+NvAPI_VIO_EnumSignalFormats = hDll.VIO_EnumSignalFormats
 NvAPI_VIO_EnumSignalFormats.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_VIO_EnumSignalFormats(NvVioHandle              hVioHandle,
 #                                             NvU32                    enumIndex,
@@ -20792,7 +20806,7 @@ NvAPI_VIO_EnumSignalFormats.restype = NVAPI_INTERFACE
 # not \retval :: NVAPI_NOT_SUPPORTED API is not supported
 # not
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_VIO_EnumDataFormats = hDll.NvAPI_VIO_EnumDataFormats
+NvAPI_VIO_EnumDataFormats = hDll.VIO_EnumDataFormats
 NvAPI_VIO_EnumDataFormats.restype = NVAPI_INTERFACE
 
 
@@ -20874,7 +20888,7 @@ class _NV_StereoRegistryProfileType(ENUM):
 NV_STEREO_REGISTRY_PROFILE_TYPE = _NV_StereoRegistryProfileType
 
 # not \ingroup stereoapi
-NvAPI_Stereo_CreateConfigurationProfileRegistryKey = hDll.NvAPI_Stereo_CreateConfigurationProfileRegistryKey
+NvAPI_Stereo_CreateConfigurationProfileRegistryKey = hDll.Stereo_CreateConfigurationProfileRegistryKey
 NvAPI_Stereo_CreateConfigurationProfileRegistryKey.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_CreateConfigurationProfileRegistryKey(NV_STEREO_REGISTRY_PROFILE_TYPE registryProfileType);
 
@@ -20917,7 +20931,7 @@ NvAPI_Stereo_CreateConfigurationProfileRegistryKey.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_DeleteConfigurationProfileRegistryKey = hDll.NvAPI_Stereo_DeleteConfigurationProfileRegistryKey
+NvAPI_Stereo_DeleteConfigurationProfileRegistryKey = hDll.Stereo_DeleteConfigurationProfileRegistryKey
 NvAPI_Stereo_DeleteConfigurationProfileRegistryKey.restype = NVAPI_INTERFACE
 
 
@@ -20980,9 +20994,9 @@ class _NV_StereoRegistryID(ENUM):
 NV_STEREO_REGISTRY_ID = _NV_StereoRegistryID
 
 # not \ingroup stereoapi
-NvAPI_Stereo_SetConfigurationProfileValue = hDll.NvAPI_Stereo_SetConfigurationProfileValue
+NvAPI_Stereo_SetConfigurationProfileValue = hDll.Stereo_SetConfigurationProfileValue
 NvAPI_Stereo_SetConfigurationProfileValue.restype = NVAPI_INTERFACE
-# NVAPI_INTERFACE NvAPI_Stereo_SetConfigurationProfileValue(NV_STEREO_REGISTRY_PROFILE_TYPE registryProfileType, NV_STEREO_REGISTRY_ID valueRegistryID, void *pValue);
+# NVAPI_INTERFACE NvAPI_Stereo_SetConfigurationProfileValue(NV_STEREO_REGISTRY_PROFILE_TYPE registryProfileType, NV_STEREO_REGISTRY_ID valueRegistryID, VOID *pValue);
 
 # ///////////////////////////////////////////////////////////////////////
 # FUNCTION NAME: NvAPI_Stereo_DeleteConfigurationProfileValue
@@ -21022,7 +21036,7 @@ NvAPI_Stereo_SetConfigurationProfileValue.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_DeleteConfigurationProfileValue = hDll.NvAPI_Stereo_DeleteConfigurationProfileValue
+NvAPI_Stereo_DeleteConfigurationProfileValue = hDll.Stereo_DeleteConfigurationProfileValue
 NvAPI_Stereo_DeleteConfigurationProfileValue.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_DeleteConfigurationProfileValue(NV_STEREO_REGISTRY_PROFILE_TYPE registryProfileType, NV_STEREO_REGISTRY_ID valueRegistryID);
 
@@ -21076,7 +21090,7 @@ NVAPI_STEREO_CAPS = NVAPI_STEREO_CAPS_V1
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_GetStereoSupport = hDll.NvAPI_Stereo_GetStereoSupport
+NvAPI_Stereo_GetStereoSupport = hDll.Stereo_GetStereoSupport
 NvAPI_Stereo_GetStereoSupport.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_GetStereoSupport(__in NvMonitorHandle hMonitor, __out NVAPI_STEREO_CAPS *pCaps);
 
@@ -21108,7 +21122,7 @@ NvAPI_Stereo_GetStereoSupport.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_DecreaseSeparation = hDll.NvAPI_Stereo_DecreaseSeparation
+NvAPI_Stereo_DecreaseSeparation = hDll.Stereo_DecreaseSeparation
 NvAPI_Stereo_DecreaseSeparation.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_DecreaseSeparation(StereoHandle stereoHandle);
 
@@ -21140,7 +21154,7 @@ NvAPI_Stereo_DecreaseSeparation.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_IncreaseSeparation = hDll.NvAPI_Stereo_IncreaseSeparation
+NvAPI_Stereo_IncreaseSeparation = hDll.Stereo_IncreaseSeparation
 NvAPI_Stereo_IncreaseSeparation.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_IncreaseSeparation(StereoHandle stereoHandle);
 
@@ -21171,7 +21185,7 @@ NvAPI_Stereo_IncreaseSeparation.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_DecreaseConvergence = hDll.NvAPI_Stereo_DecreaseConvergence
+NvAPI_Stereo_DecreaseConvergence = hDll.Stereo_DecreaseConvergence
 NvAPI_Stereo_DecreaseConvergence.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_DecreaseConvergence(StereoHandle stereoHandle);
 
@@ -21202,7 +21216,7 @@ NvAPI_Stereo_DecreaseConvergence.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_IncreaseConvergence = hDll.NvAPI_Stereo_IncreaseConvergence
+NvAPI_Stereo_IncreaseConvergence = hDll.Stereo_IncreaseConvergence
 NvAPI_Stereo_IncreaseConvergence.restype = NVAPI_INTERFACE
 
 
@@ -21250,7 +21264,7 @@ class _NV_FrustumAdjustMode(ENUM):
 NV_FRUSTUM_ADJUST_MODE = _NV_FrustumAdjustMode
 
 # not \ingroup stereoapi
-NvAPI_Stereo_GetFrustumAdjustMode = hDll.NvAPI_Stereo_GetFrustumAdjustMode
+NvAPI_Stereo_GetFrustumAdjustMode = hDll.Stereo_GetFrustumAdjustMode
 NvAPI_Stereo_GetFrustumAdjustMode.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_GetFrustumAdjustMode(StereoHandle stereoHandle, NV_FRUSTUM_ADJUST_MODE *pFrustumAdjustMode);
 
@@ -21288,7 +21302,7 @@ NvAPI_Stereo_GetFrustumAdjustMode.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_SetFrustumAdjustMode = hDll.NvAPI_Stereo_SetFrustumAdjustMode
+NvAPI_Stereo_SetFrustumAdjustMode = hDll.Stereo_SetFrustumAdjustMode
 NvAPI_Stereo_SetFrustumAdjustMode.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_SetFrustumAdjustMode(StereoHandle stereoHandle, NV_FRUSTUM_ADJUST_MODE newFrustumAdjustModeValue);
 
@@ -21323,7 +21337,7 @@ NvAPI_Stereo_SetFrustumAdjustMode.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_CaptureJpegImage = hDll.NvAPI_Stereo_CaptureJpegImage
+NvAPI_Stereo_CaptureJpegImage = hDll.Stereo_CaptureJpegImage
 NvAPI_Stereo_CaptureJpegImage.restype = NVAPI_INTERFACE
 
 
@@ -21367,7 +21381,7 @@ class _NVAPI_STEREO_INIT_ACTIVATION_FLAGS(ENUM):
 
 NVAPI_STEREO_INIT_ACTIVATION_FLAGS = _NVAPI_STEREO_INIT_ACTIVATION_FLAGS
 
-NvAPI_Stereo_InitActivation = hDll.NvAPI_Stereo_InitActivation
+NvAPI_Stereo_InitActivation = hDll.Stereo_InitActivation
 NvAPI_Stereo_InitActivation.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_InitActivation(__in StereoHandle hStereoHandle, __in NVAPI_STEREO_INIT_ACTIVATION_FLAGS flags);
 
@@ -21396,7 +21410,7 @@ NvAPI_Stereo_InitActivation.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_Trigger_Activation = hDll.NvAPI_Stereo_Trigger_Activation
+NvAPI_Stereo_Trigger_Activation = hDll.Stereo_Trigger_Activation
 NvAPI_Stereo_Trigger_Activation.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_Trigger_Activation(__in StereoHandle hStereoHandle);
 
@@ -21428,7 +21442,7 @@ NvAPI_Stereo_Trigger_Activation.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_CapturePngImage = hDll.NvAPI_Stereo_CapturePngImage
+NvAPI_Stereo_CapturePngImage = hDll.Stereo_CapturePngImage
 NvAPI_Stereo_CapturePngImage.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_CapturePngImage(StereoHandle stereoHandle);
 
@@ -21486,7 +21500,7 @@ NvAPI_Stereo_CapturePngImage.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_ReverseStereoBlitControl = hDll.NvAPI_Stereo_ReverseStereoBlitControl
+NvAPI_Stereo_ReverseStereoBlitControl = hDll.Stereo_ReverseStereoBlitControl
 NvAPI_Stereo_ReverseStereoBlitControl.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_ReverseStereoBlitControl(StereoHandle hStereoHandle, NvU8 TurnOn);
 
@@ -21541,7 +21555,7 @@ NvAPI_Stereo_ReverseStereoBlitControl.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////////
-NvAPI_Stereo_SetNotificationMessage = hDll.NvAPI_Stereo_SetNotificationMessage
+NvAPI_Stereo_SetNotificationMessage = hDll.Stereo_SetNotificationMessage
 NvAPI_Stereo_SetNotificationMessage.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_Stereo_SetNotificationMessage(StereoHandle hStereoHandle, NvU64 hWnd,NvU64 messageID);
 
@@ -21591,7 +21605,7 @@ NV_STEREO_SWAPCHAIN_MODE = _NV_StereoSwapChainMode
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D1x_CreateSwapChain = hDll.NvAPI_D3D1x_CreateSwapChain
+NvAPI_D3D1x_CreateSwapChain = hDll.D3D1x_CreateSwapChain
 NvAPI_D3D1x_CreateSwapChain.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D1x_CreateSwapChain(StereoHandle hStereoHandle,
 #                                             DXGI_SWAP_CHAIN_DESC* pDesc,
@@ -21630,7 +21644,7 @@ NvAPI_D3D1x_CreateSwapChain.restype = NVAPI_INTERFACE
 # not
 # not \ingroup stereoapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_D3D9_CreateSwapChain = hDll.NvAPI_D3D9_CreateSwapChain
+NvAPI_D3D9_CreateSwapChain = hDll.D3D9_CreateSwapChain
 NvAPI_D3D9_CreateSwapChain.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_D3D9_CreateSwapChain(StereoHandle hStereoHandle,
 #                                            D3DPRESENT_PARAMETERS *pPresentationParameters,
@@ -21956,7 +21970,7 @@ NVDRS_PROFILE_VER = NVDRS_PROFILE_VER1
 # not \retval ::NVAPI_OK SUCCESS
 # not \retval ::NVAPI_ERROR: For miscellaneous errors.
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_CreateSession = hDll.NvAPI_DRS_CreateSession
+NvAPI_DRS_CreateSession = hDll.DRS_CreateSession
 NvAPI_DRS_CreateSession.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_CreateSession(NvDRSSessionHandle *phSession);
 
@@ -21973,7 +21987,7 @@ NvAPI_DRS_CreateSession.restype = NVAPI_INTERFACE
 # not \retval ::NVAPI_OK SUCCESS
 # not \retval ::NVAPI_ERROR For miscellaneous errors.
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_DestroySession = hDll.NvAPI_DRS_DestroySession
+NvAPI_DRS_DestroySession = hDll.DRS_DestroySession
 NvAPI_DRS_DestroySession.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_DestroySession(NvDRSSessionHandle hSession);
 
@@ -21989,7 +22003,7 @@ NvAPI_DRS_DestroySession.restype = NVAPI_INTERFACE
 # not \retval ::NVAPI_OK  SUCCESS
 # not \retval ::NVAPI_ERROR For miscellaneous errors.
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_LoadSettings = hDll.NvAPI_DRS_LoadSettings
+NvAPI_DRS_LoadSettings = hDll.DRS_LoadSettings
 NvAPI_DRS_LoadSettings.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_LoadSettings(NvDRSSessionHandle hSession);
 
@@ -22005,7 +22019,7 @@ NvAPI_DRS_LoadSettings.restype = NVAPI_INTERFACE
 # not \retval ::NVAPI_OK SUCCESS
 # not \retval ::NVAPI_ERROR For miscellaneous errors.
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_SaveSettings = hDll.NvAPI_DRS_SaveSettings
+NvAPI_DRS_SaveSettings = hDll.DRS_SaveSettings
 NvAPI_DRS_SaveSettings.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_SaveSettings(NvDRSSessionHandle hSession);
 
@@ -22022,7 +22036,7 @@ NvAPI_DRS_SaveSettings.restype = NVAPI_INTERFACE
 # not \retval ::NVAPI_OK  SUCCESS
 # not \retval ::NVAPI_ERROR For miscellaneous errors.
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_LoadSettingsFromFile = hDll.NvAPI_DRS_LoadSettingsFromFile
+NvAPI_DRS_LoadSettingsFromFile = hDll.DRS_LoadSettingsFromFile
 NvAPI_DRS_LoadSettingsFromFile.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_LoadSettingsFromFile(NvDRSSessionHandle hSession, NvAPI_UnicodeString fileName);
 
@@ -22039,7 +22053,7 @@ NvAPI_DRS_LoadSettingsFromFile.restype = NVAPI_INTERFACE
 # not \retval ::NVAPI_OK  SUCCESS
 # not \retval ::NVAPI_ERROR For miscellaneous errors.
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_SaveSettingsToFile = hDll.NvAPI_DRS_SaveSettingsToFile
+NvAPI_DRS_SaveSettingsToFile = hDll.DRS_SaveSettingsToFile
 NvAPI_DRS_SaveSettingsToFile.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_SaveSettingsToFile(NvDRSSessionHandle hSession, NvAPI_UnicodeString fileName);
 
@@ -22060,7 +22074,7 @@ NvAPI_DRS_SaveSettingsToFile.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_CreateProfile = hDll.NvAPI_DRS_CreateProfile
+NvAPI_DRS_CreateProfile = hDll.DRS_CreateProfile
 NvAPI_DRS_CreateProfile.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_CreateProfile(NvDRSSessionHandle hSession, NVDRS_PROFILE *pProfileInfo, NvDRSProfileHandle *phProfile);
 
@@ -22080,7 +22094,7 @@ NvAPI_DRS_CreateProfile.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_DeleteProfile = hDll.NvAPI_DRS_DeleteProfile
+NvAPI_DRS_DeleteProfile = hDll.DRS_DeleteProfile
 NvAPI_DRS_DeleteProfile.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_DeleteProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile);
 
@@ -22101,7 +22115,7 @@ NvAPI_DRS_DeleteProfile.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_SetCurrentGlobalProfile = hDll.NvAPI_DRS_SetCurrentGlobalProfile
+NvAPI_DRS_SetCurrentGlobalProfile = hDll.DRS_SetCurrentGlobalProfile
 NvAPI_DRS_SetCurrentGlobalProfile.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_SetCurrentGlobalProfile(NvDRSSessionHandle hSession, NvAPI_UnicodeString wszGlobalProfileName);
 
@@ -22121,7 +22135,7 @@ NvAPI_DRS_SetCurrentGlobalProfile.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetCurrentGlobalProfile = hDll.NvAPI_DRS_GetCurrentGlobalProfile
+NvAPI_DRS_GetCurrentGlobalProfile = hDll.DRS_GetCurrentGlobalProfile
 NvAPI_DRS_GetCurrentGlobalProfile.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetCurrentGlobalProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle *phProfile);
 
@@ -22142,7 +22156,7 @@ NvAPI_DRS_GetCurrentGlobalProfile.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetProfileInfo = hDll.NvAPI_DRS_GetProfileInfo
+NvAPI_DRS_GetProfileInfo = hDll.DRS_GetProfileInfo
 NvAPI_DRS_GetProfileInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetProfileInfo(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_PROFILE *pProfileInfo);
 
@@ -22167,7 +22181,7 @@ NvAPI_DRS_GetProfileInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_SetProfileInfo = hDll.NvAPI_DRS_SetProfileInfo
+NvAPI_DRS_SetProfileInfo = hDll.DRS_SetProfileInfo
 NvAPI_DRS_SetProfileInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_SetProfileInfo(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_PROFILE *pProfileInfo);
 
@@ -22188,7 +22202,7 @@ NvAPI_DRS_SetProfileInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_FindProfileByName = hDll.NvAPI_DRS_FindProfileByName
+NvAPI_DRS_FindProfileByName = hDll.DRS_FindProfileByName
 NvAPI_DRS_FindProfileByName.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_FindProfileByName(NvDRSSessionHandle hSession, NvAPI_UnicodeString profileName, NvDRSProfileHandle* phProfile);
 
@@ -22211,7 +22225,7 @@ NvAPI_DRS_FindProfileByName.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_EnumProfiles = hDll.NvAPI_DRS_EnumProfiles
+NvAPI_DRS_EnumProfiles = hDll.DRS_EnumProfiles
 NvAPI_DRS_EnumProfiles.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_EnumProfiles(NvDRSSessionHandle hSession, NvU32 index, NvDRSProfileHandle *phProfile);
 
@@ -22233,7 +22247,7 @@ NvAPI_DRS_EnumProfiles.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetNumProfiles = hDll.NvAPI_DRS_GetNumProfiles
+NvAPI_DRS_GetNumProfiles = hDll.DRS_GetNumProfiles
 NvAPI_DRS_GetNumProfiles.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetNumProfiles(NvDRSSessionHandle hSession, NvU32 *numProfiles);
 
@@ -22254,7 +22268,7 @@ NvAPI_DRS_GetNumProfiles.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_CreateApplication = hDll.NvAPI_DRS_CreateApplication
+NvAPI_DRS_CreateApplication = hDll.DRS_CreateApplication
 NvAPI_DRS_CreateApplication.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_CreateApplication(NvDRSSessionHandle hSession, NvDRSProfileHandle  hProfile, NVDRS_APPLICATION *pApplication);
 
@@ -22278,7 +22292,7 @@ NvAPI_DRS_CreateApplication.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_DeleteApplicationEx = hDll.NvAPI_DRS_DeleteApplicationEx
+NvAPI_DRS_DeleteApplicationEx = hDll.DRS_DeleteApplicationEx
 NvAPI_DRS_DeleteApplicationEx.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_DeleteApplicationEx(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_APPLICATION *pApp);
 
@@ -22301,7 +22315,7 @@ NvAPI_DRS_DeleteApplicationEx.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_DeleteApplication = hDll.NvAPI_DRS_DeleteApplication
+NvAPI_DRS_DeleteApplication = hDll.DRS_DeleteApplication
 NvAPI_DRS_DeleteApplication.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_DeleteApplication(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvAPI_UnicodeString appName);
 
@@ -22337,7 +22351,7 @@ NvAPI_DRS_DeleteApplication.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetApplicationInfo = hDll.NvAPI_DRS_GetApplicationInfo
+NvAPI_DRS_GetApplicationInfo = hDll.DRS_GetApplicationInfo
 NvAPI_DRS_GetApplicationInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetApplicationInfo(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvAPI_UnicodeString appName, NVDRS_APPLICATION *pApplication);
 
@@ -22364,7 +22378,7 @@ NvAPI_DRS_GetApplicationInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_EnumApplications = hDll.NvAPI_DRS_EnumApplications
+NvAPI_DRS_EnumApplications = hDll.DRS_EnumApplications
 NvAPI_DRS_EnumApplications.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_EnumApplications(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 startIndex, NvU32 *appCount, NVDRS_APPLICATION *pApplication);
 
@@ -22400,7 +22414,7 @@ NvAPI_DRS_EnumApplications.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_FindApplicationByName = hDll.NvAPI_DRS_FindApplicationByName
+NvAPI_DRS_FindApplicationByName = hDll.DRS_FindApplicationByName
 NvAPI_DRS_FindApplicationByName.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_FindApplicationByName(__in NvDRSSessionHandle hSession, __in NvAPI_UnicodeString appName, __out NvDRSProfileHandle *phProfile, __inout NVDRS_APPLICATION *pApplication);
 
@@ -22420,7 +22434,7 @@ NvAPI_DRS_FindApplicationByName.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_SetSetting = hDll.NvAPI_DRS_SetSetting
+NvAPI_DRS_SetSetting = hDll.DRS_SetSetting
 NvAPI_DRS_SetSetting.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_SetSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_SETTING *pSetting);
 
@@ -22441,7 +22455,7 @@ NvAPI_DRS_SetSetting.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetSetting = hDll.NvAPI_DRS_GetSetting
+NvAPI_DRS_GetSetting = hDll.DRS_GetSetting
 NvAPI_DRS_GetSetting.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 settingId, NVDRS_SETTING *pSetting);
 
@@ -22467,7 +22481,7 @@ NvAPI_DRS_GetSetting.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_EnumSettings = hDll.NvAPI_DRS_EnumSettings
+NvAPI_DRS_EnumSettings = hDll.DRS_EnumSettings
 NvAPI_DRS_EnumSettings.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_EnumSettings(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 startIndex, NvU32 *settingsCount, NVDRS_SETTING *pSetting);
 
@@ -22491,7 +22505,7 @@ NvAPI_DRS_EnumSettings.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_EnumAvailableSettingIds = hDll.NvAPI_DRS_EnumAvailableSettingIds
+NvAPI_DRS_EnumAvailableSettingIds = hDll.DRS_EnumAvailableSettingIds
 NvAPI_DRS_EnumAvailableSettingIds.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingIds(NvU32 *pSettingIds, NvU32 *pMaxCount);
 
@@ -22514,7 +22528,7 @@ NvAPI_DRS_EnumAvailableSettingIds.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_EnumAvailableSettingValues = hDll.NvAPI_DRS_EnumAvailableSettingValues
+NvAPI_DRS_EnumAvailableSettingValues = hDll.DRS_EnumAvailableSettingValues
 NvAPI_DRS_EnumAvailableSettingValues.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32 *pMaxNumValues, NVDRS_SETTING_VALUES *pSettingValues);
 
@@ -22536,7 +22550,7 @@ NvAPI_DRS_EnumAvailableSettingValues.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetSettingIdFromName = hDll.NvAPI_DRS_GetSettingIdFromName
+NvAPI_DRS_GetSettingIdFromName = hDll.DRS_GetSettingIdFromName
 NvAPI_DRS_GetSettingIdFromName.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetSettingIdFromName(NvAPI_UnicodeString settingName, NvU32 *pSettingId);
 
@@ -22558,7 +22572,7 @@ NvAPI_DRS_GetSettingIdFromName.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetSettingNameFromId = hDll.NvAPI_DRS_GetSettingNameFromId
+NvAPI_DRS_GetSettingNameFromId = hDll.DRS_GetSettingNameFromId
 NvAPI_DRS_GetSettingNameFromId.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetSettingNameFromId(NvU32 settingId, NvAPI_UnicodeString *pSettingName);
 
@@ -22579,7 +22593,7 @@ NvAPI_DRS_GetSettingNameFromId.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_DeleteProfileSetting = hDll.NvAPI_DRS_DeleteProfileSetting
+NvAPI_DRS_DeleteProfileSetting = hDll.DRS_DeleteProfileSetting
 NvAPI_DRS_DeleteProfileSetting.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_DeleteProfileSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 settingId);
 
@@ -22598,7 +22612,7 @@ NvAPI_DRS_DeleteProfileSetting.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_RestoreAllDefaults = hDll.NvAPI_DRS_RestoreAllDefaults
+NvAPI_DRS_RestoreAllDefaults = hDll.DRS_RestoreAllDefaults
 NvAPI_DRS_RestoreAllDefaults.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_RestoreAllDefaults(NvDRSSessionHandle hSession);
 
@@ -22624,7 +22638,7 @@ NvAPI_DRS_RestoreAllDefaults.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_RestoreProfileDefault = hDll.NvAPI_DRS_RestoreProfileDefault
+NvAPI_DRS_RestoreProfileDefault = hDll.DRS_RestoreProfileDefault
 NvAPI_DRS_RestoreProfileDefault.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_RestoreProfileDefault(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile);
 
@@ -22645,7 +22659,7 @@ NvAPI_DRS_RestoreProfileDefault.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_RestoreProfileDefaultSetting = hDll.NvAPI_DRS_RestoreProfileDefaultSetting
+NvAPI_DRS_RestoreProfileDefaultSetting = hDll.DRS_RestoreProfileDefaultSetting
 NvAPI_DRS_RestoreProfileDefaultSetting.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_RestoreProfileDefaultSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 settingId);
 
@@ -22664,7 +22678,7 @@ NvAPI_DRS_RestoreProfileDefaultSetting.restype = NVAPI_INTERFACE
 # not
 # not \ingroup drsapi
 # ///////////////////////////////////////////////////////////////////
-NvAPI_DRS_GetBaseProfile = hDll.NvAPI_DRS_GetBaseProfile
+NvAPI_DRS_GetBaseProfile = hDll.DRS_GetBaseProfile
 NvAPI_DRS_GetBaseProfile.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_DRS_GetBaseProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle *phProfile);
 
@@ -22799,7 +22813,7 @@ NV_CHIPSET_INFO_VER = NV_CHIPSET_INFO_VER_4
 # version not compatible with driver.
 # not \ingroup sysgeneral
 # ///////////////////////////////////////////////////////////////////
-NvAPI_SYS_GetChipSetInfo = hDll.NvAPI_SYS_GetChipSetInfo
+NvAPI_SYS_GetChipSetInfo = hDll.SYS_GetChipSetInfo
 NvAPI_SYS_GetChipSetInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SYS_GetChipSetInfo(NV_CHIPSET_INFO *pChipSetInfo);
 
@@ -22837,7 +22851,7 @@ NV_LID_DOCK_PARAMS_VER = MAKE_NVAPI_VERSION(NV_LID_DOCK_PARAMS, 1)
 # not
 # not \ingroup sysgeneral
 # ///////////////////////////////////////////////////////////////////
-NvAPI_SYS_GetLidAndDockInfo = hDll.NvAPI_SYS_GetLidAndDockInfo
+NvAPI_SYS_GetLidAndDockInfo = hDll.SYS_GetLidAndDockInfo
 NvAPI_SYS_GetLidAndDockInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SYS_GetLidAndDockInfo(NV_LID_DOCK_PARAMS *pLidAndDock);
 
@@ -22863,7 +22877,7 @@ NvAPI_SYS_GetLidAndDockInfo.restype = NVAPI_INTERFACE
 # not
 # not \ingroup sysgeneral
 # ///////////////////////////////////////////////////////////////////
-NvAPI_SYS_GetDisplayIdFromGpuAndOutputId = hDll.NvAPI_SYS_GetDisplayIdFromGpuAndOutputId
+NvAPI_SYS_GetDisplayIdFromGpuAndOutputId = hDll.SYS_GetDisplayIdFromGpuAndOutputId
 NvAPI_SYS_GetDisplayIdFromGpuAndOutputId.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SYS_GetDisplayIdFromGpuAndOutputId(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputId, NvU32* displayId);
 
@@ -22891,7 +22905,7 @@ NvAPI_SYS_GetDisplayIdFromGpuAndOutputId.restype = NVAPI_INTERFACE
 # not
 # not \ingroup sysgeneral
 # ///////////////////////////////////////////////////////////////////
-NvAPI_SYS_GetGpuAndOutputIdFromDisplayId = hDll.NvAPI_SYS_GetGpuAndOutputIdFromDisplayId
+NvAPI_SYS_GetGpuAndOutputIdFromDisplayId = hDll.SYS_GetGpuAndOutputIdFromDisplayId
 NvAPI_SYS_GetGpuAndOutputIdFromDisplayId.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SYS_GetGpuAndOutputIdFromDisplayId(NvU32 displayId, NvPhysicalGpuHandle *hPhysicalGpu, NvU32 *outputId);
 
@@ -22918,6 +22932,6 @@ NvAPI_SYS_GetGpuAndOutputIdFromDisplayId.restype = NVAPI_INTERFACE
 # not \endcode
 # not \ingroup sysgeneral
 # ///////////////////////////////////////////////////////////////////
-NvAPI_SYS_GetPhysicalGpuFromDisplayId = hDll.NvAPI_SYS_GetPhysicalGpuFromDisplayId
+NvAPI_SYS_GetPhysicalGpuFromDisplayId = hDll.SYS_GetPhysicalGpuFromDisplayId
 NvAPI_SYS_GetPhysicalGpuFromDisplayId.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_SYS_GetPhysicalGpuFromDisplayId(NvU32 displayId, NvPhysicalGpuHandle *hPhysicalGpu);

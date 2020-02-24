@@ -25,7 +25,7 @@ class ENUM(INT):
     pass
 
 from .d3d10_h import *
-from dxgi_h import *
+from .dxgi_h import *
 
 IID_ID3D10Device1 = GUID(
     "{9B7E4C8F-342C-4106-A19F-4F2704F689F0}"
