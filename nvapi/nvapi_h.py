@@ -2711,11 +2711,11 @@ single._fields_ = [
 data.single = single
 
 
-class range(ctypes.Structure):
+class _range(ctypes.Structure):
     pass
 
 
-range._fields_ = [
+_range._fields_ = [
     # not Min clock frequency within given pstate in (kHz)
     ('minFreq_kHz', NvU32),
     # not Max clock frequency within given pstate in (kHz)
@@ -2725,11 +2725,11 @@ range._fields_ = [
     ('minVoltage_uV', NvU32),
     ('maxVoltage_uV', NvU32),
 ]
-data.range = range
+data._range = _range
 
 data._fields_ = [
     ('single', data.single),
-    ('range', data.range),
+    ('range', data._range),
 ]
 NV_GPU_PSTATE20_CLOCK_ENTRY_V1.data = data
 
@@ -3498,6 +3498,7 @@ NV_GPU_CONNECTED_IDS_FLAG_FAKE = NV_BIT(3)
 NV_GPU_CONNECTED_IDS_FLAG_EXCLUDE_MST = NV_BIT(4)
 # not @}
 # not \ingroup gpu
+
 _NV_GPU_DISPLAYIDS._fields_ = [
     ('version', NvU32),
     # not < out: vga, tv, dvi, hdmi and dp. This is reserved for future

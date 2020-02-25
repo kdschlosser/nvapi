@@ -67,6 +67,7 @@ from ctypes.wintypes import BOOL, CHAR, INT,  UINT
 VOID = ctypes.c_void_p
 NULL = None
 
+
 class ENUM(INT):
     pass
 
@@ -161,6 +162,10 @@ def InitNV():
     
     if hDll.hDll is None:
         raise RuntimeError('Unable to locate Nvidia shared library')
+
+    from . import nvapi_h
+
+    nvapi_h.NvAPI_Initialize()
 
 
 class _NV_RECT(ctypes.Structure):
