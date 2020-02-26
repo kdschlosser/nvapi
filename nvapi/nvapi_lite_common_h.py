@@ -751,6 +751,7 @@ NV_DISPLAY_DRIVER_MEMORY_INFO_V2._fields_ = [
     ('curAvailableDedicatedVideoMemory', NvU32),
 ]
 
+
 # not \ingroup driverapi
 # not Used in NvAPI_GPU_GetMemoryInfo().
 NV_DISPLAY_DRIVER_MEMORY_INFO_V3._fields_ = [
