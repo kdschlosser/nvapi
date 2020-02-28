@@ -23,12 +23,7 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-from ctypes.wintypes import INT
-
-
-class ENUM(INT):
-    pass
+from ..utils import *
 
 
 class DXGI_FORMAT(ENUM):

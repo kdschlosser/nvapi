@@ -23,27 +23,7 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-import ctypes
-import comtypes
-from comtypes.GUID import GUID
-from ctypes.wintypes import (
-    INT,
-    UINT,
-    FLOAT,
-    LPCSTR,
-    BOOL
-)
-
-
-class ENUM(INT):
-    pass
-
-
-COMMETHOD = comtypes.COMMETHOD
-POINTER = ctypes.POINTER
-helpstring = comtypes.helpstring
-VOID = ctypes.c_void_p
+from ..utils import *
 
 
 class _D3D10_SHADER_DEBUG_TOKEN_INFO(ctypes.Structure):

@@ -23,41 +23,7 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-import ctypes
-import comtypes
-
-from comtypes.GUID import GUID
-
-from ctypes.wintypes import (
-    BOOL,
-    UINT,
-    INT,
-    FLOAT,
-    BYTE,
-    LPCSTR,
-    LPSTR,
-    HANDLE,
-    RECT
-)
-
-UINT8 = ctypes.c_uint8
-COMMETHOD = comtypes.COMMETHOD
-helpstring = comtypes.helpstring
-POINTER = ctypes.POINTER
-VOID = ctypes.c_void_p
-MIDL_INTERFACE = GUID
-REFIID = POINTER(GUID)
-SIZE_T = ctypes.c_size_t
-REFGUID = POINTER(GUID)
-HRESULT = ctypes.c_long
-UINT64 = ctypes.c_uint64
-D3D10_RECT = RECT
-D3D10_IGNORE_SDK_LAYERS = None
-
-
-class ENUM(INT):
-    pass
+from ..utils import *
 
 
 class _D3D10_SHADER_DESC(ctypes.Structure):

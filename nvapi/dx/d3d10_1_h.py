@@ -23,33 +23,10 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-import ctypes
-import comtypes
-from comtypes.GUID import GUID
-from ctypes.wintypes import (
-    INT,
-    BOOL,
-    UINT,
-    HMODULE
-)
-
-
-VOID = ctypes.c_void_p
-UINT8 = ctypes.c_uint8
-
-HRESULT = ctypes.c_long
-POINTER = ctypes.POINTER
-
-COMMETHOD = comtypes.COMMETHOD
-helpstring = comtypes.helpstring
-
-
-class ENUM(INT):
-    pass
-
 from .d3d10_h import *
 from .dxgi_h import *
+from ..utils import *
+
 
 IID_ID3D10Device1 = GUID(
     "{9B7E4C8F-342C-4106-A19F-4F2704F689F0}"

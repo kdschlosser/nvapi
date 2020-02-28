@@ -476,9 +476,9 @@ NvAPI_Stereo_SetConvergence.restype = NVAPI_INTERFACE
 
 # not \ingroup stereoapi
 class _NV_StereoActiveEye(ENUM):
-    NVAPI_STEREO_EYE_RIGHT = 1
-    NVAPI_STEREO_EYE_LEFT = 2
-    NVAPI_STEREO_EYE_MONO = 3
+    NVAPI_STEREO_EYE_RIGHT = EnumItem(1).set_string('Right')
+    NVAPI_STEREO_EYE_LEFT = EnumItem(2).set_string('Left')
+    NVAPI_STEREO_EYE_MONO = EnumItem(3).set_string('Mono')
 
 
 NV_STEREO_ACTIVE_EYE = _NV_StereoActiveEye
@@ -515,8 +515,8 @@ NvAPI_Stereo_SetActiveEye.restype = NVAPI_INTERFACE
 
 # not \ingroup stereoapi
 class _NV_StereoDriverMode(ENUM):
-    NVAPI_STEREO_DRIVER_MODE_AUTOMATIC = 0
-    NVAPI_STEREO_DRIVER_MODE_DIRECT = 2
+    NVAPI_STEREO_DRIVER_MODE_AUTOMATIC = EnumItem(0).set_string('Automatic')
+    NVAPI_STEREO_DRIVER_MODE_DIRECT = EnumItem(2).set_string('Direct')
 
 
 NV_STEREO_DRIVER_MODE = _NV_StereoDriverMode
@@ -608,9 +608,9 @@ NvAPI_Stereo_IsWindowedModeSupported.restype = NVAPI_INTERFACE
 
 # not \ingroup stereoapi
 class _NVAPI_STEREO_SURFACECREATEMODE(ENUM):
-    NVAPI_STEREO_SURFACECREATEMODE_AUTO = 1
-    NVAPI_STEREO_SURFACECREATEMODE_FORCESTEREO = 2
-    NVAPI_STEREO_SURFACECREATEMODE_FORCEMONO = 3
+    NVAPI_STEREO_SURFACECREATEMODE_AUTO = EnumItem(1).set_string('Auto')
+    NVAPI_STEREO_SURFACECREATEMODE_FORCESTEREO = EnumItem(2).set_string('Force Stereo')
+    NVAPI_STEREO_SURFACECREATEMODE_FORCEMONO = EnumItem(3).set_string('Force Mono')
 
 
 NVAPI_STEREO_SURFACECREATEMODE = _NVAPI_STEREO_SURFACECREATEMODE

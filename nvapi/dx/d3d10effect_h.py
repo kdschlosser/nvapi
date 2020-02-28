@@ -23,29 +23,8 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-import ctypes
-import comtypes
-from ctypes.wintypes import (
-    INT,
-    LPCSTR,
-    BOOL,
-    FLOAT,
-    UINT,
-    BYTE,
-)
-
-from comtypes.GUID import GUID
-
-COMMETHOD = comtypes.COMMETHOD
-POINTER = ctypes.POINTER
-helpstring = comtypes.helpstring
-HRESULT = ctypes.c_long
-VOID = ctypes.c_void_p
-
-
-class ENUM(INT):
-    pass
+from .d3d10_h import *
+from ..utils import *
 
 
 class _D3D10_STATE_BLOCK_MASK(ctypes.Structure):
@@ -146,7 +125,9 @@ class _D3D10_DEVICE_STATE_TYPES(ENUM):
     D3D10_DST_RS_RASTERIZER_STATE = 23
     D3D10_DST_PREDICATION = 24
 
+
 D3D10_DEVICE_STATE_TYPES = _D3D10_DEVICE_STATE_TYPES
+
 
 # ------------------------------------------------------------------
 # D3D10_DEVICE_STATE_TYPES:

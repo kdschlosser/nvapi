@@ -23,13 +23,7 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-import ctypes
-from ctypes.wintypes import UINT, INT
-
-
-class ENUM(INT):
-    pass
+from ..utils import *
 
 
 class DXGI_RATIONAL(ctypes.Structure):

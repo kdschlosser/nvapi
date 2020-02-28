@@ -197,7 +197,7 @@ NvAPI_D3D_GetCurrentSLIState.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # not Valid categories for NvAPI_D3D_SetResourceHint()
 class _NVAPI_D3D_SETRESOURCEHINT_CATEGORY(ENUM):
-    NVAPI_D3D_SRH_CATEGORY_SLI = 1
+    NVAPI_D3D_SRH_CATEGORY_SLI = EnumItem(1).set_string('Srh Category Sli')
 
 
 NVAPI_D3D_SETRESOURCEHINT_CATEGORY = _NVAPI_D3D_SETRESOURCEHINT_CATEGORY
@@ -231,9 +231,9 @@ NVAPI_D3D_SETRESOURCEHINT_CATEGORY = _NVAPI_D3D_SETRESOURCEHINT_CATEGORY
 # not AFR-FriendlyD3DHints.exe name using.
 # not
 class _NVAPI_D3D_SETRESOURCEHINT_SLI(ENUM):
-    NVAPI_D3D_SRH_SLI_APP_CONTROLLED_INTERFRAME_CONTENT_SYNC = 1
-    NVAPI_D3D_SRH_SLI_ASK_FOR_BROADCAST_USAGE = 2
-    NVAPI_D3D_SRH_SLI_RESPECT_DRIVER_INTERFRAME_CONTENT_SYNC = 3
+    NVAPI_D3D_SRH_SLI_APP_CONTROLLED_INTERFRAME_CONTENT_SYNC = EnumItem(1).set_string('App Controlled Interframe Content Sync')
+    NVAPI_D3D_SRH_SLI_ASK_FOR_BROADCAST_USAGE = EnumItem(2).set_string(' Ask For Broadcast Usage')
+    NVAPI_D3D_SRH_SLI_RESPECT_DRIVER_INTERFRAME_CONTENT_SYNC = EnumItem(3).set_string('Respect Driver Interframe Content Sync')
 
 
 NVAPI_D3D_SETRESOURCEHINT_SLI = _NVAPI_D3D_SETRESOURCEHINT_SLI
@@ -281,17 +281,17 @@ NvAPI_D3D_SetResourceHint.restype = NVAPI_INTERFACE
 # not \ingroup dx
 # not Used in NvAPI_D3D_BeginResourceRendering().
 class _NVAPI_D3D_RESOURCERENDERING_FLAG(ENUM):
-    NVAPI_D3D_RR_FLAG_DEFAULTS = 0x00000000
+    NVAPI_D3D_RR_FLAG_DEFAULTS = EnumItem(0x00000000).set_string('Defaults')
     # not < (bit 0) The flag forces to discard previous content of the
     # resource regardless of the NvApiHints_Sli_Disable_InterframeSync hint
-    NVAPI_D3D_RR_FLAG_FORCE_DISCARD_CONTENT = 0x00000001
+    NVAPI_D3D_RR_FLAG_FORCE_DISCARD_CONTENT = EnumItem(0x00000001).set_string('Force Discard Content')
     # not < (bit 1) The flag forces to respect previous content of the
     # resource regardless of the NvApiHints_Sli_Disable_InterframeSync hint
-    NVAPI_D3D_RR_FLAG_FORCE_KEEP_CONTENT = 0x00000002
+    NVAPI_D3D_RR_FLAG_FORCE_KEEP_CONTENT = EnumItem(0x00000002).set_string('Force Keep Content')
     # not < (bit 2) The flag hints the driver that content will be used
     # for many frames. If not specified then the driver assumes that
     # content is used only on the next frame
-    NVAPI_D3D_RR_FLAG_MULTI_FRAME = 0x00000004
+    NVAPI_D3D_RR_FLAG_MULTI_FRAME = EnumItem(0x00000004).set_string('Multi Frame')
 
 
 NVAPI_D3D_RESOURCERENDERING_FLAG = _NVAPI_D3D_RESOURCERENDERING_FLAG

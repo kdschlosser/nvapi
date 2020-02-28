@@ -23,53 +23,7 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-import ctypes
-import comtypes
-
-from comtypes.GUID import GUID
-
-from ctypes.wintypes import (
-    BOOL,
-    UINT,
-    INT,
-    FLOAT,
-    BYTE,
-    LPCSTR,
-    LPSTR,
-    HANDLE,
-    RECT,
-    USHORT,
-    SIZE,
-    LARGE_INTEGER,
-    LONG,
-    DWORD,
-    WCHAR,
-    HDC,
-    HWND,
-    HMODULE,
-    LPCWSTR
-)
-
-ULONGLONG = ctypes.c_ulonglong
-UINT8 = ctypes.c_uint8
-UINT16 = ctypes.c_uint16
-COMMETHOD = comtypes.COMMETHOD
-helpstring = comtypes.helpstring
-POINTER = ctypes.POINTER
-VOID = ctypes.c_void_p
-MIDL_INTERFACE = GUID
-REFIID = POINTER(GUID)
-SIZE_T = ctypes.c_size_t
-REFGUID = POINTER(GUID)
-HRESULT = ctypes.c_long
-UINT64 = ctypes.c_uint64
-INT8 = ctypes.c_int8
-UINT32 = ctypes.c_uint32
-
-
-class ENUM(INT):
-    pass
+from ..utils import *
 
 
 class ID3D12CommandQueue(comtypes.IUnknown):
@@ -4920,12 +4874,12 @@ from .d3d12sdklayers_h import * # NOQA
 # D3D12CreateDevice
 # ///////////////////////////////////////////////////////////////
 # HRESULT (WINAPI* PFN_D3D12_CREATE_DEVICE)( _In_opt_ IUnknown*, D3D_FEATURE_LEVEL, _In_ REFIID, _COM_Outptr_opt_ VOID** );
-PFN_D3D12_CREATE_DEVICE = WINAPI(
+PFN_D3D12_CREATE_DEVICE = ctypes.WINFUNCTYPE(
     HRESULT,
-    _In_opt_,
+    POINTER(comtypes.IUnknown),
     D3D_FEATURE_LEVEL,
-    _In_,
-    _COM_Outptr_opt_,
+    REFIID,
+    POINTER(POINTER(VOID)),
 )
 
 
@@ -4938,10 +4892,10 @@ D3D12CreateDevice = d3d12.D3D12CreateDevice
 D3D12CreateDevice.restype = HRESULT
 
 # HRESULT (WINAPI* PFN_D3D12_GET_DEBUG_INTERFACE)( _In_ REFIID, _COM_Outptr_opt_ VOID** );
-PFN_D3D12_GET_DEBUG_INTERFACE = WINAPI(
+PFN_D3D12_GET_DEBUG_INTERFACE = ctypes.WINFUNCTYPE(
     HRESULT,
-    _In_,
-    _COM_Outptr_opt_,
+    REFIID,
+    POINTER(POINTER(VOID)),
 )
 
 

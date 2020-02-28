@@ -24,45 +24,9 @@
 
 # ***********************************************************************************
 
-import ctypes
-import comtypes
-
-from comtypes.GUID import GUID
-
-from ctypes.wintypes import (
-    BOOL,
-    UINT,
-    INT,
-    FLOAT,
-    BYTE,
-    LPCSTR,
-    LPSTR,
-    HANDLE,
-    RECT,
-    LPCWSTR,
-    DWORD
-)
-
-UINT8 = ctypes.c_uint8
-COMMETHOD = comtypes.COMMETHOD
-helpstring = comtypes.helpstring
-POINTER = ctypes.POINTER
-VOID = ctypes.c_void_p
-MIDL_INTERFACE = GUID
-REFIID = POINTER(GUID)
-SIZE_T = ctypes.c_size_t
-REFGUID = POINTER(GUID)
-HRESULT = ctypes.c_long
-UINT64 = ctypes.c_uint64
-D3D10_RECT = RECT
-D3D10_IGNORE_SDK_LAYERS = None
-
-from dxgi_format_h import *
-from dxgicommon_h import *
-
-
-class ENUM(INT):
-    pass
+from .dxgicommon_h import *
+from .dxgi_format_h import *
+from ..utils import *
 
 
 class ID3D11BlendState1(comtypes.IUnknown):

@@ -62,23 +62,6 @@ import six
 from collections import namedtuple
 
 
-class Chromaticities(ctypes.Structure):
-    pass
-
-
-# Interface for setting UHD metadata
-Chromaticities._fields_ = [
-    ('red_x', float),
-    ('red_y', float),
-    ('green_x', float),
-    ('green_y', float),
-    ('blue_x', float),
-    ('blue_y', float),
-    ('wp_x', float),
-    ('wp_y', float),
-]
-
-
 ColorCoordinates = namedtuple('ColorCoordinates', ['red', 'green', 'blue', 'white'])
 RedCoordinate = namedtuple('RedCoordinate', ['x', 'y'])
 GreenCoordinate = namedtuple('RedCoordinate', ['x', 'y'])
@@ -101,10 +84,11 @@ class Display(object):
 
     # NvAPI_Disp_InfoFrameControl(__in NvU32 displayId, __inout NV_INFOFRAME_DATA *pInfoframeData);
     # NvAPI_Disp_ColorControl(NvU32 displayId, NV_COLOR_DATA *pColorData);
-    # NvAPI_Disp_GetHdrCapabilities(__in NvU32 displayId, __inout NV_HDR_CAPABILITIES *pHdrCapabilities);
-    # NvAPI_Disp_HdrColorControl(__in NvU32 displayId, __inout NV_HDR_COLOR_DATA *pHdrColorData);
     # NvAPI_DISP_GetTiming( __in NvU32 displayId,__in NV_TIMING_INPUT *timingInput, __out NV_TIMING *pTiming);
+
     # NvAPI_DISP_GetMonitorCapabilities(__in NvU32 displayId, __inout NV_MONITOR_CAPABILITIES *pMonitorCapabilities);
+
+
     # NvAPI_DISP_GetMonitorColorCapabilities(__in NvU32 displayId, __inout_ecount_part_opt(*pColorCapsCount, *pColorCapsCount) NV_MONITOR_COLOR_CAPS *pMonitorColorCapabilities, __inout NvU32 *pColorCapsCount);
     # NvAPI_DISP_EnumCustomDisplay( __in NvU32 displayId, __in NvU32 index, __inout NV_CUSTOM_DISPLAY *pCustDisp);
     # NvAPI_DISP_TryCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in_ecount(count) NV_CUSTOM_DISPLAY *pCustDisp);
@@ -208,7 +192,31 @@ class Display(object):
 
         return hdrCapabilities
 
-    def enable_hdr(self, flag):
+    @property
+    def hdr(self):
+        if not self.is_hdr_supported:
+            return False
+
+        hdrColorData = NV_HDR_COLOR_DATA()
+
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_GET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+        return hdrColorData.hdrMode != NV_HDR_MODE_OFF
+
+    @hdr.setter
+    def hdr(self, value):
         if self.is_hdr_supported:
             hdrColorData = NV_HDR_COLOR_DATA()
 
@@ -216,8 +224,8 @@ class Display(object):
             hdrColorData.cmd = NV_HDR_CMD_SET
             hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
 
-            if flag:
-                hdrColorData.hdrMode = NV_HDR_MODE_UHDBD
+            if value:
+                hdrColorData.hdrMode = NV_HDR_MODE_UHDA
             else:
                 hdrColorData.hdrMode = NV_HDR_MODE_OFF
 
@@ -234,20 +242,7 @@ class Display(object):
     @property
     def connector_type(self):
         dd = self.__display_data
-        
-        connector_mapping = {
-            NV_MONITOR_CONN_TYPE_UNINITIALIZED: 'Uninitilized', 
-            NV_MONITOR_CONN_TYPE_VGA: 'VGA',
-            NV_MONITOR_CONN_TYPE_COMPONENT: 'Component',
-            NV_MONITOR_CONN_TYPE_SVIDEO: 'SVideo',
-            NV_MONITOR_CONN_TYPE_HDMI: 'HDMI',
-            NV_MONITOR_CONN_TYPE_DVI: 'DVI',
-            NV_MONITOR_CONN_TYPE_LVDS: 'LVDS (Laptop)',
-            NV_MONITOR_CONN_TYPE_DP: 'DisplayPort',
-            NV_MONITOR_CONN_TYPE_COMPOSITE: 'Composite',
-            NV_MONITOR_CONN_TYPE_UNKNOWN: 'Unknown'
-        }
-        return connector_mapping[dd.connectorType]
+        return NV_MONITOR_CONN_TYPE.get(dd.connectorType)
     
     @property
     def is_dynamic(self):
@@ -319,7 +314,117 @@ class Display(object):
         return bool(self.__hdr_data.isDolbyVisionSupported)
 
     @property
-    def primary_color_coordinates(self):
+    def hdr_dynamic_range(self):
+        hdrColorData = NV_HDR_COLOR_DATA()
+
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_GET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+        return NV_DYNAMIC_RANGE.get(hdrColorData.hdrDynamicRange)
+
+    @hdr_dynamic_range.setter
+    def hdr_dynamic_range(self, value):
+        hdrColorData = NV_HDR_COLOR_DATA()
+
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_GET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+        hdrColorData.cmd = NV_HDR_CMD_SET
+
+        value = NV_DYNAMIC_RANGE.get(value)
+        if value is None:
+            return
+
+        hdrColorData.hdrDynamicRange = value
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+    @property
+    def hdr_color_format(self):
+        hdrColorData = NV_HDR_COLOR_DATA()
+
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_GET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+        return NV_COLOR_FORMAT.get(hdrColorData.hdrColorFormat)
+
+    @hdr_color_format.setter
+    def hdr_color_format(self, value):
+        hdrColorData = NV_HDR_COLOR_DATA()
+
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_GET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+        hdrColorData.cmd = NV_HDR_CMD_SET
+
+        value = NV_DYNAMIC_RANGE.get(value)
+        if value is None:
+            return
+
+        hdrColorData.hdrDynamicRange = value
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+    @property
+    def hdr_primary_color_coordinates(self):
         #  [0x0000-0xC350] = [0.0 - 1.0]
         dd = self.__hdr_data.display_data
 
@@ -335,99 +440,253 @@ class Display(object):
             white=white
         )
 
+    @hdr_primary_color_coordinates.setter
+    def hdr_primary_color_coordinates(self, value):
+        if not self.is_hdr_supported:
+            return
+
+        mdd = self._hdr_mastering_display_data
+        mdd.displayPrimary_x0 = value.red.x
+        mdd.displayPrimary_y0 = value.red.y
+        mdd.displayPrimary_x1 = value.green.x
+        mdd.displayPrimary_y1 = value.green.y
+        mdd.displayPrimary_x2 = value.blue.x
+        mdd.displayPrimary_y2 = value.blue.y
+        mdd.displayWhitePoint_x = value.white.x
+        mdd.displayWhitePoint_y = value.white.y
+
+        hdrColorData = NV_HDR_COLOR_DATA()
+        hdrColorData.mastering_display_data = mdd
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_SET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
     @property
-    def maximum_hdr_luminance(self):
+    def hdr_maximum_content_light_level(self):
+        if not self.is_hdr_supported:
+            return
+
+        return self._hdr_mastering_display_data.max_content_light_level.value
+
+    @hdr_maximum_content_light_level.setter
+    def hdr_maximum_content_light_level(self, value):
+        if not self.is_hdr_supported:
+            return
+
+        mdd = self._hdr_mastering_display_data
+        mdd.max_content_light_level = value
+
+        hdrColorData = NV_HDR_COLOR_DATA()
+        hdrColorData.mastering_display_data = mdd
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_SET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+    @property
+    def _hdr_mastering_display_data(self):
+        hdrColorData = NV_HDR_COLOR_DATA()
+
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_GET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
+        return hdrColorData.mastering_display_data
+
+    @property
+    def hdr_maximum_luminance(self):
         # Maximum display luminance = desired max luminance of HDR
         # content ([0x0001-0xFFFF] = [1.0 - 65535.0] cd/m^2)
         dd = self.__hdr_data.display_data
         return dd.desired_content_max_luminance
 
+    @hdr_maximum_luminance.setter
+    def hdr_maximum_luminance(self, value):
+        if not self.is_hdr_supported:
+            return
+
+        mdd = self._hdr_mastering_display_data
+        mdd.max_display_mastering_luminance = value
+
+        hdrColorData = NV_HDR_COLOR_DATA()
+        hdrColorData.mastering_display_data = mdd
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_SET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
     @property
-    def minimum_hdr_luminance(self):
+    def hdr_minimum_luminance(self):
         # Minimum display luminance = desired min luminance of HDR
         # content ([0x0001-0xFFFF] = [1.0 - 6.55350] cd/m^2)
         dd = self.__hdr_data.display_data
         return dd.desired_content_min_luminance
 
+    @hdr_minimum_luminance.setter
+    def hdr_minimum_luminance(self, value):
+        if not self.is_hdr_supported:
+            return
+
+        mdd = self._hdr_mastering_display_data
+        mdd.min_display_mastering_luminance = value
+
+        hdrColorData = NV_HDR_COLOR_DATA()
+        hdrColorData.mastering_display_data = mdd
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_SET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+
     @property
-    def maximum_frame_average_hdr_luminance(self):
+    def hdr_maximum_frame_average_luminance(self):
         # Desired maximum Frame-Average Light Level (MaxFALL) of HDR
         # content ([0x0001-0xFFFF] = [1.0 - 65535.0] cd/m^2)
         dd = self.__hdr_data.display_data
-        return dd.desired_content_max_frame_average_luminance
+        return dd.desired_content_max_frame_average_luminance.value
+
+    @hdr_maximum_frame_average_luminance.setter
+    def hdr_maximum_frame_average_luminance(self, value):
+        if not self.is_hdr_supported:
+            return
+
+        mdd = self._hdr_mastering_display_data
+        mdd.max_frame_average_light_level = value
+
+        hdrColorData = NV_HDR_COLOR_DATA()
+        hdrColorData.mastering_display_data = mdd
+        hdrColorData.version = NV_HDR_COLOR_DATA_VER
+        hdrColorData.cmd = NV_HDR_CMD_SET
+        hdrColorData.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1
+
+        nvStatus = NvAPI_Disp_HdrColorControl(
+            self.display_id,
+            ctypes.byref(hdrColorData)
+        )
+
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
 
     @property
-    def supports_2160p60hz(self):
+    def hdr_supports_2160p60hz(self):
         # If set sink is capable of 4kx2k @ 60hz
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_2160p60hz)
+        return bool(dvsm.supports_2160p60hz.value)
 
     @property
-    def supports_yuv422_12bit(self):
+    def hdr_supports_yuv422_12bit(self):
         # If set, sink is capable of YUV422-12 bit
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_YUV422_12bit)
+        return bool(dvsm.supports_YUV422_12bit.value)
 
     @property
-    def supports_global_dimming(self):
+    def hdr_supports_global_dimming(self):
         # Indicates if sink supports global dimming
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_global_dimming)
+        return bool(dvsm.supports_global_dimming.value)
 
     @property
-    def colorimetry(self):
+    def hdr_colorimetry(self):
         # If set indicates sink supports DCI P3 colorimetry, REc709 otherwise
         dvsm = self.__hdr_data.dv_static_metadata
-        if bool(dvsm.colorimetry):
+        if bool(dvsm.colorimetry.value):
             return 'DCI P3'
         else:
             return 'REc709'
 
     @property
-    def supports_backlight_control(self):
+    def hdr_supports_backlight_control(self):
         # This is set when sink is using lowlatency interface and can control its backlight.
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_backlight_control)
+        return bool(dvsm.supports_backlight_control.value)
 
     @property
-    def backlight_minimum(self):
+    def hdr_backlight_minimum(self):
         # It is the level for Backlt min luminance value.
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.backlt_min_luma
+        return dvsm.backlt_min_luma.value
 
     @property
-    def interface_supported_by_sink(self):
+    def hdr_interface_supported_by_sink(self):
         # Indicates the interface (standard or low latency) supported by the sink.
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.interface_supported_by_sink
+        return dvsm.interface_supported_by_sink.value
 
     @property
-    def supports_10b_12b_444(self):
+    def hdr_supports_10b_12b_444(self):
         # It is set when interface supported is low latency,
         # it tells whether it supports 10 bit or 12 bit RGB 4:4:4 or YCbCr 4:4:4 or both.
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.supports_10b_12b_444
+        return dvsm.supports_10b_12b_444.value
 
     @property
-    def minimum_sink_luminance(self):
+    def hdr_minimum_sink_luminance(self):
         # Represents min luminance level of Sink
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.target_min_luminance
+        return dvsm.target_min_luminance.value
 
     @property
-    def maximum_sink_luminance(self):
+    def hdr_maximum_sink_luminance(self):
         # Represents max luminance level of sink
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.target_max_luminance
+        return dvsm.target_max_luminance.value
 
     @property
-    def primary_chromaticity_coordinates(self):
+    def hdr_primary_chromaticity_coordinates(self):
         dvsm = self.__hdr_data.dv_static_metadata
 
         red = RedCoordinate(x=dvsm.cc_red_x, y=dvsm.cc_red_y)
-        green = GreenCoordinate(x=dvsm.cc_green_x, y=dvsm.cc_green_y)
-        blue = BlueCoordinate(x=dvsm.cc_blue_x, y=dvsm.cc_blue_y)
-        white = WhiteCoordinate(x=dvsm.cc_white_x, y=dvsm.cc_white_y)
+        green = GreenCoordinate(x=dvsm.cc_green_x.value, y=dvsm.cc_green_y.value)
+        blue = BlueCoordinate(x=dvsm.cc_blue_x.value, y=dvsm.cc_blue_y.value)
+        white = WhiteCoordinate(x=dvsm.cc_white_x.value, y=dvsm.cc_white_y.value)
 
         return ColorCoordinates(
             red=red,
@@ -455,33 +714,18 @@ class PhysicalGPU(object):
 
     @property
     def hdcp_fuse_state(self):
-        state_mapping = {
-            NV_GPU_HDCP_FUSE_STATE.NV_GPU_HDCP_FUSE_STATE_DISABLED: 'Disabled',
-            NV_GPU_HDCP_FUSE_STATE.NV_GPU_HDCP_FUSE_STATE_ENABLED: 'Enabled',
-            NV_GPU_HDCP_FUSE_STATE.NV_GPU_HDCP_FUSE_STATE_UNKNOWN: 'Unknown'
-        }
-        return state_mapping[self._hdcp_support_status.hdcpFuseState]
+
+        return NV_GPU_HDCP_FUSE_STATE.get(self._hdcp_support_status.hdcpFuseState)
 
     @property
     def hdcp_key_source(self):
-        source_mapping = {
-            NV_GPU_HDCP_KEY_SOURCE.NV_GPU_HDCP_KEY_SOURCE_CRYPTO_ROM: 'Crypto Rom',
-            NV_GPU_HDCP_KEY_SOURCE.NV_GPU_HDCP_KEY_SOURCE_FUSES: 'Fuses',
-            NV_GPU_HDCP_KEY_SOURCE.NV_GPU_HDCP_KEY_SOURCE_I2C_ROM: 'I2C Rom',
-            NV_GPU_HDCP_KEY_SOURCE.NV_GPU_HDCP_KEY_SOURCE_NONE: 'None',
-            NV_GPU_HDCP_KEY_SOURCE.NV_GPU_HDCP_KEY_SOURCE_SBIOS: 'SBios',
-            NV_GPU_HDCP_KEY_SOURCE.NV_GPU_HDCP_KEY_SOURCE_UNKNOWN: 'Unknown'
-        }
-        return source_mapping[self._hdcp_support_status.hdcpKeySource]
+
+        return NV_GPU_HDCP_KEY_SOURCE.get(self._hdcp_support_status.hdcpKeySource)
 
     @property
     def hdcp_key_source_state(self):
-        state_mapping = {
-            NV_GPU_HDCP_KEY_SOURCE_STATE.NV_GPU_HDCP_KEY_SOURCE_STATE_PRESENT: 'Present',
-            NV_GPU_HDCP_KEY_SOURCE_STATE.NV_GPU_HDCP_KEY_SOURCE_STATE_ABSENT: 'Absent',
-            NV_GPU_HDCP_KEY_SOURCE_STATE.NV_GPU_HDCP_KEY_SOURCE_STATE_UNKNOWN: 'Unknown'
-        }
-        return state_mapping[self._hdcp_support_status.hdcpKeySourceState]
+
+        return NV_GPU_HDCP_KEY_SOURCE_STATE.get(self._hdcp_support_status.hdcpKeySourceState)
 
     @property
     def shader_sub_pipe_count(self):
@@ -515,12 +759,6 @@ class PhysicalGPU(object):
 
     @property
     def system_type(self):
-        system_mapping = {
-            NV_SYSTEM_TYPE.NV_SYSTEM_TYPE_DESKTOP: 'Desktop',
-            NV_SYSTEM_TYPE.NV_SYSTEM_TYPE_LAPTOP: 'Laptop',
-            NV_SYSTEM_TYPE.NV_SYSTEM_TYPE_UNKNOWN: 'Unknown'
-        }
-
         pSystemType = NV_SYSTEM_TYPE()
         nvStatus = NvAPI_GPU_GetSystemType(self._hPhysicalGpu,  ctypes.byref(pSystemType))
         if NvAPI_Status.NVAPI_OK != nvStatus:
@@ -528,7 +766,7 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc, nvStatus))
 
-        return system_mapping[pSystemType]
+        return NV_SYSTEM_TYPE.get(pSystemType)
 
     # NvAPI_GPU_GetActiveOutputs(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
     # NvAPI_GPU_GetOutputType(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputId, NV_GPU_OUTPUT_TYPE *pOutputType);
@@ -585,13 +823,7 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetGPUType returned %s (%d)" % (szDesc, nvStatus))
 
-        gpu_mapping = {
-            NV_GPU_TYPE.NV_SYSTEM_TYPE_DGPU: 'DGPU',
-            NV_GPU_TYPE.NV_SYSTEM_TYPE_GPU_UNKNOWN: 'Unknown',
-            NV_GPU_TYPE.NV_SYSTEM_TYPE_IGPU: 'IGPU'
-        }
-
-        return gpu_mapping[pGpuType]
+        return NV_GPU_TYPE.get(pGpuType)
 
     @property
     def bus_type(self):
@@ -602,15 +834,7 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetBusType returned %s (%d)" % (szDesc, nvStatus))
 
-        bus_type_mapping = {
-            NV_GPU_BUS_TYPE.NVAPI_GPU_BUS_TYPE_UNDEFINED: 'Undefined',
-            NV_GPU_BUS_TYPE.NVAPI_GPU_BUS_TYPE_PCI: 'PCI',
-            NV_GPU_BUS_TYPE.NVAPI_GPU_BUS_TYPE_AGP: 'AGP',
-            NV_GPU_BUS_TYPE.NVAPI_GPU_BUS_TYPE_PCI_EXPRESS: 'PCIe',
-            NV_GPU_BUS_TYPE.NVAPI_GPU_BUS_TYPE_FPCI: 'FPCI',
-            NV_GPU_BUS_TYPE.NVAPI_GPU_BUS_TYPE_AXI: 'AXI'
-        }
-        return bus_type_mapping[pBusType]
+        return NV_GPU_BUS_TYPE.get(pBusType)
 
     @property
     def bus_id(self):
@@ -738,7 +962,7 @@ class PhysicalGPU(object):
     @property
     def quadro_status(self):
         pStatus = NvU32()
-        nvStatus = NvAPI_GPU_GetQuadroStatus(self._hPhysicalGPU, ctypes.byref(pStatus))
+        nvStatus = NvAPI_GPU_GetQuadroStatus(self._hPhysicalGpu, ctypes.byref(pStatus))
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
@@ -818,24 +1042,10 @@ class PhysicalGPU(object):
                 for j in range(pPerfPstatesInfo.numClocks.value):
                     clock = pstate.clocks[j]
                     state_info_clock = state_info.clocks[j]
-                    clock_type_mapping = {
-                        NVAPI_GPU_PERF_PSTATE20_CLOCK_TYPE_SINGLE: 'Single',
-                        NVAPI_GPU_PERF_PSTATE20_CLOCK_TYPE_RANGE: 'Range'
-                    }
-
-                    type_id = clock_type_mapping[clock.typeId]
-
-
-                    clock_id_mapping = {
-                        NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_GRAPHICS: 'Graphics',
-                        NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_MEMORY: 'Memory',
-                        NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_PROCESSOR: 'Processor',
-                        NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_VIDEO: 'Video',
-                        NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_UNDEFINED: 'Undefined'
-                    }
+                    type_id = NV_GPU_PERF_PSTATE20_CLOCK_TYPE_ID.get(clock.typeId)
 
                     data = {
-                        'type': clock_id_mapping[clock.domainId],
+                        'type': NV_GPU_PUBLIC_CLOCK_ID.get(clock.domainId),
                         'info_type': type_id,
                         'freq_delta_khz': state_info_clock.freqDelta_kHz.value.value,
                         'freq_delta_maximum_khz': state_info_clock.freqDelta_kHz.valueRange.max.value,
@@ -858,14 +1068,9 @@ class PhysicalGPU(object):
                     voltage = pstate.voltages[j]
                     base_voltage = state_info.baseVoltages[j]
 
-                    voltage_id_mapping = {
-                        NV_GPU_PERF_VOLTAGE_INFO_DOMAIN_ID.NVAPI_GPU_PERF_VOLTAGE_INFO_DOMAIN_CORE: 'Core',
-                        NV_GPU_PERF_VOLTAGE_INFO_DOMAIN_ID.NVAPI_GPU_PERF_VOLTAGE_INFO_DOMAIN_UNDEFINED: 'Undefined'
-                    }
-
                     ps['voltages'] += [
                         {
-                            'type': voltage_id_mapping[voltage.domainId],
+                            'type': NV_GPU_PERF_VOLTAGE_INFO_DOMAIN_ID.get(voltage.domainId),
                             'mvolt': voltage.mvolt.value,
                             'volt': base_voltage.volt_uV.value,
                             'volt_delta': base_voltage.voltDelta_uV.value.value,
@@ -903,64 +1108,28 @@ class PhysicalGPU(object):
 
         res = []
 
-        target_mapping = {
-            NVAPI_THERMAL_TARGET_NONE: 'None',
-            NVAPI_THERMAL_TARGET_GPU: 'GPU',
-            NVAPI_THERMAL_TARGET_MEMORY: 'Memory',
-            NVAPI_THERMAL_TARGET_POWER_SUPPLY: 'Power Supply',
-            NVAPI_THERMAL_TARGET_BOARD: 'Board',
-            NVAPI_THERMAL_TARGET_VCD_BOARD: 'VCD Board',
-            NVAPI_THERMAL_TARGET_VCD_INLET: 'VCD Inlet',
-            NVAPI_THERMAL_TARGET_VCD_OUTLET: 'VCD Outlet',
-            NVAPI_THERMAL_TARGET_ALL: 'All',
-            NVAPI_THERMAL_TARGET_UNKNOWN: 'Unknown'
-        }
-
-        controller_mapping = {
-            NVAPI_THERMAL_CONTROLLER_NONE: 'None',
-            NVAPI_THERMAL_CONTROLLER_GPU_INTERNAL: 'GPU Internal',
-            NVAPI_THERMAL_CONTROLLER_ADM1032: 'ADM1032',
-            NVAPI_THERMAL_CONTROLLER_MAX6649: 'MAX6649',
-            NVAPI_THERMAL_CONTROLLER_MAX1617: 'MAX1617',
-            NVAPI_THERMAL_CONTROLLER_LM99: 'LM99',
-            NVAPI_THERMAL_CONTROLLER_LM89: 'LM89',
-            NVAPI_THERMAL_CONTROLLER_LM64: 'LM64',
-            NVAPI_THERMAL_CONTROLLER_ADT7473: 'ADT7473',
-            NVAPI_THERMAL_CONTROLLER_SBMAX6649: 'SBMAX6649',
-            NVAPI_THERMAL_CONTROLLER_VBIOSEVT: 'VBIOSEVT',
-            NVAPI_THERMAL_CONTROLLER_OS: 'OS',
-            NVAPI_THERMAL_CONTROLLER_UNKNOWN: 'Unknown'
-        }
-
         for i in range(pThermalSettings.count.value):
             sensr = pThermalSettings.sensor[i]
             res += [
                 {
-                    'controller': controller_mapping[sensr.controller],
+                    'controller': NV_THERMAL_CONTROLLER.get(sensr.controller),
                     'default_minimum_temp': sensr.defaultMinTemp.value,
                     'default_maximum_temp': sensr.defaultMaxTemp.value,
                     'current_temp': sensr.currentTemp.value,
-                    'target': target_mapping[sensr.target]
+                    'target': NV_THERMAL_TARGET.get(sensr.target)
                 }
             ]
 
     @property
     def clock_frequencies(self):
         pClkFreqs = NV_GPU_CLOCK_FREQUENCIES()
-        nvStatus = NvAPI_GPU_GetAllClockFrequencies(self._hPhysicalGPU,  ctypes.byref(pClkFreqs))
+        nvStatus = NvAPI_GPU_GetAllClockFrequencies(self._hPhysicalGpu,  ctypes.byref(pClkFreqs))
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetThermalSettings returned %s (%d)" % (szDesc, nvStatus))
 
         res = []
-
-        clock_type_mapping = {
-            NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ: 'Current',
-            NV_GPU_CLOCK_FREQUENCIES_BASE_CLOCK: 'Base',
-            NV_GPU_CLOCK_FREQUENCIES_BOOST_CLOCK:'Boost',
-            NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE_NUM: 'Num'
-        }
 
         for i in range(NVAPI_MAX_GPU_PUBLIC_CLOCKS):
             dmain = pClkFreqs.domain[i]
@@ -973,7 +1142,7 @@ class PhysicalGPU(object):
             res += [
                 {
                     'frequency': freq,
-                    'type': clock_type_mapping[domain.ClockType.value]
+                    'type': NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE.get(domain.ClockType.value)
                 }
             ]
 

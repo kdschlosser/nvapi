@@ -23,29 +23,7 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # ***********************************************************************************
-
-import ctypes
-import comtypes
-
-from comtypes.GUID import GUID
-from ctypes.wintypes import (
-    INT,
-    LPCVOID,
-    UINT,
-    LPCSTR,
-    LPVOID,
-)
-
-VOID = ctypes.c_void_p
-HRESULT = ctypes.c_long
-SIZE_T = ctypes.c_size_t
-POINTER = ctypes.POINTER
-COMMETHOD = comtypes.COMMETHOD
-helpstring = comtypes.helpstring
-
-
-class ENUM(INT):
-    pass
+from ..utils import *
 
 
 class _D3D_SHADER_MACRO(ctypes.Structure):

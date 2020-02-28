@@ -63,13 +63,11 @@ import sys
 
 from ctypes.wintypes import BOOL, CHAR, INT,  UINT
 
+from .utils import *
+
 
 VOID = ctypes.c_void_p
 NULL = None
-
-
-class ENUM(INT):
-    pass
 
 
 if ctypes.sizeof(ctypes.c_void_p) == 8:
@@ -447,241 +445,241 @@ def GET_NVAPI_SIZE(ver):
 # not \ingroup nvapistatus
 # == == == == == == == == == == == == == == == == == == == == == == == == == ==
 class _NvAPI_Status(ENUM):
-    NVAPI_OK = 0
-    NVAPI_ERROR = - 1
-    NVAPI_LIBRARY_NOT_FOUND = - 2
-    NVAPI_NO_IMPLEMENTATION = - 3
-    NVAPI_API_NOT_INITIALIZED = - 4
-    NVAPI_INVALID_ARGUMENT = - 5
+    NVAPI_OK = EnumItem(0).set_string('OK')
+    NVAPI_ERROR = EnumItem(-1).set_string('Error')
+    NVAPI_LIBRARY_NOT_FOUND = EnumItem(-2).set_string('Library Not Found')
+    NVAPI_NO_IMPLEMENTATION = - EnumItem(-3).set_string('No Implementation')
+    NVAPI_API_NOT_INITIALIZED = EnumItem(-4).set_string('API Not Initilized')
+    NVAPI_INVALID_ARGUMENT = EnumItem(-5).set_string('Invalid Argument')
 
     # not < No NVIDIA display driver, or NVIDIA GPU driving a display, was
     # found.
-    NVAPI_NVIDIA_DEVICE_NOT_FOUND = - 6
-    NVAPI_END_ENUMERATION = - 7
-    NVAPI_INVALID_HANDLE = - 8
-    NVAPI_INCOMPATIBLE_STRUCT_VERSION = - 9
+    NVAPI_NVIDIA_DEVICE_NOT_FOUND = EnumItem(-6).set_string('Nvidia Device Not Found')
+    NVAPI_END_ENUMERATION = EnumItem(-7).set_string('End Enumeration')
+    NVAPI_INVALID_HANDLE = EnumItem(-8).set_string('Invalid Handle')
+    NVAPI_INCOMPATIBLE_STRUCT_VERSION = EnumItem(-9).set_string('Incompatible Struct Version')
 
     # not < The handle is no longer valid
     # (likely due to GPU or display re-configuration)
-    NVAPI_HANDLE_INVALIDATED = - 10
-    NVAPI_OPENGL_CONTEXT_NOT_CURRENT = - 11
-    NVAPI_INVALID_POINTER = - 14
-    NVAPI_NO_GL_EXPERT = - 12
+    NVAPI_HANDLE_INVALIDATED = EnumItem(-10).set_string('Handle Invalidated')
+    NVAPI_OPENGL_CONTEXT_NOT_CURRENT = EnumItem(-11).set_string('Opengl Context Not Current')
+    NVAPI_INVALID_POINTER = EnumItem(-14).set_string('Invalid Pointer')
+    NVAPI_NO_GL_EXPERT = EnumItem(-12).set_string('No Gl Expert')
 
     # not < OpenGL Expert is supported, but driver instrumentation is
     # currently disabled
-    NVAPI_INSTRUMENTATION_DISABLED = - 13
-    NVAPI_NO_GL_NSIGHT = - 15
-    NVAPI_EXPECTED_LOGICAL_GPU_HANDLE = - 100
-    NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE = - 101
-    NVAPI_EXPECTED_DISPLAY_HANDLE = - 102
-    NVAPI_INVALID_COMBINATION = - 103
-    NVAPI_NOT_SUPPORTED = - 104
-    NVAPI_PORTID_NOT_FOUND = - 105
+    NVAPI_INSTRUMENTATION_DISABLED = EnumItem(-13).set_string('Instrumentation Disabled')
+    NVAPI_NO_GL_NSIGHT = EnumItem(-15).set_string('No Gl Nsight')
+    NVAPI_EXPECTED_LOGICAL_GPU_HANDLE = EnumItem(-100).set_string('Expected Logical Gpu Handle')
+    NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE = EnumItem(-101).set_string('Expected Physical Gpu Handle')
+    NVAPI_EXPECTED_DISPLAY_HANDLE = EnumItem(-102).set_string('Expected Display Handle')
+    NVAPI_INVALID_COMBINATION = EnumItem(-103).set_string('Invalid Combination')
+    NVAPI_NOT_SUPPORTED = EnumItem(-104).set_string('Not Supported')
+    NVAPI_PORTID_NOT_FOUND = EnumItem(-105).set_string('Portid Not Found')
 
     # not < Expected an unattached display handle as one of the input
     # parameters.
-    NVAPI_EXPECTED_UNATTACHED_DISPLAY_HANDLE = - 106
-    NVAPI_INVALID_PERF_LEVEL = - 107
-    NVAPI_DEVICE_BUSY = - 108
-    NVAPI_NV_PERSIST_FILE_NOT_FOUND = - 109
-    NVAPI_PERSIST_DATA_NOT_FOUND = - 110
-    NVAPI_EXPECTED_TV_DISPLAY = - 111
-    NVAPI_EXPECTED_TV_DISPLAY_ON_DCONNECTOR = - 112
-    NVAPI_NO_ACTIVE_SLI_TOPOLOGY = - 113
-    NVAPI_SLI_RENDERING_MODE_NOTALLOWED = - 114
-    NVAPI_EXPECTED_DIGITAL_FLAT_PANEL = - 115
-    NVAPI_ARGUMENT_EXCEED_MAX_SIZE = - 116
+    NVAPI_EXPECTED_UNATTACHED_DISPLAY_HANDLE = EnumItem(-106).set_string('Expected Unattached Display Handle')
+    NVAPI_INVALID_PERF_LEVEL = EnumItem(-107).set_string('Invalid Perf Level')
+    NVAPI_DEVICE_BUSY = EnumItem(-108).set_string('Device Busy')
+    NVAPI_NV_PERSIST_FILE_NOT_FOUND = EnumItem(-109).set_string('Nv Persist File Not Found')
+    NVAPI_PERSIST_DATA_NOT_FOUND = EnumItem(-110).set_string('Persist Data Not Found')
+    NVAPI_EXPECTED_TV_DISPLAY = EnumItem(-111).set_string('Expected Tv Display')
+    NVAPI_EXPECTED_TV_DISPLAY_ON_DCONNECTOR = EnumItem(-112).set_string('Expected Tv Display On Dconnector')
+    NVAPI_NO_ACTIVE_SLI_TOPOLOGY = EnumItem(-113).set_string('No Active Sli Topology')
+    NVAPI_SLI_RENDERING_MODE_NOTALLOWED = EnumItem(-114).set_string('Sli Rendering Mode Notallowed')
+    NVAPI_EXPECTED_DIGITAL_FLAT_PANEL = EnumItem(-115).set_string('Expected Digital Flat Panel')
+    NVAPI_ARGUMENT_EXCEED_MAX_SIZE = EnumItem(-116).set_string('Argument Exceed Max Size')
 
     # not < Inhibit is ON due to one of the flags in
     # NV_GPU_DISPLAY_CHANGE_INHIBIT or SLI active.
-    NVAPI_DEVICE_SWITCHING_NOT_ALLOWED = - 117
-    NVAPI_TESTING_CLOCKS_NOT_SUPPORTED = - 118
-    NVAPI_UNKNOWN_UNDERSCAN_CONFIG = - 119
-    NVAPI_TIMEOUT_RECONFIGURING_GPU_TOPO = - 120
-    NVAPI_DATA_NOT_FOUND = - 121
-    NVAPI_EXPECTED_ANALOG_DISPLAY = - 122
-    NVAPI_NO_VIDLINK = - 123
-    NVAPI_REQUIRES_REBOOT = - 124
-    NVAPI_INVALID_HYBRID_MODE = - 125
-    NVAPI_MIXED_TARGET_TYPES = - 126
-    NVAPI_SYSWOW64_NOT_SUPPORTED = - 127
+    NVAPI_DEVICE_SWITCHING_NOT_ALLOWED = EnumItem(-117).set_string('Device Switching Not Allowed')
+    NVAPI_TESTING_CLOCKS_NOT_SUPPORTED = EnumItem(-118).set_string('Testing Clocks Not Supported')
+    NVAPI_UNKNOWN_UNDERSCAN_CONFIG = EnumItem(-119).set_string('Unknown Underscan Config')
+    NVAPI_TIMEOUT_RECONFIGURING_GPU_TOPO = EnumItem(-120).set_string('Timeout Reconfiguring GPU Topo')
+    NVAPI_DATA_NOT_FOUND = EnumItem(-121).set_string('Data Not Found')
+    NVAPI_EXPECTED_ANALOG_DISPLAY = EnumItem(-122).set_string('Expected Analog Display')
+    NVAPI_NO_VIDLINK = EnumItem(-123).set_string('No Vidlink')
+    NVAPI_REQUIRES_REBOOT = EnumItem(-124).set_string('Requires Reboot')
+    NVAPI_INVALID_HYBRID_MODE = EnumItem(-125).set_string('Invalid Hybrid Mode')
+    NVAPI_MIXED_TARGET_TYPES = EnumItem(-126).set_string('Mixed Target Types')
+    NVAPI_SYSWOW64_NOT_SUPPORTED = EnumItem(-127).set_string('Syswow64 Not Supported')
 
     # not < There is no implicit GPU topology active. Use NVAPI_SetHybridMode
     # to change topology.
-    NVAPI_IMPLICIT_SET_GPU_TOPOLOGY_CHANGE_NOT_ALLOWED = - 128
-    NVAPI_REQUEST_USER_TO_CLOSE_NON_MIGRATABLE_APPS = - 129
-    NVAPI_OUT_OF_MEMORY = - 130
+    NVAPI_IMPLICIT_SET_GPU_TOPOLOGY_CHANGE_NOT_ALLOWED = EnumItem(-128).set_string('Implicit Set GPU Topology Change Not Allowed')
+    NVAPI_REQUEST_USER_TO_CLOSE_NON_MIGRATABLE_APPS = EnumItem(-129).set_string('Request User To Close Non Migratable Apps')
+    NVAPI_OUT_OF_MEMORY = EnumItem(-130).set_string('Out Of Memory')
 
     # not < The previous operation that is transferring information to or from
     # this surface is incomplete.
-    NVAPI_WAS_STILL_DRAWING = - 131
-    NVAPI_FILE_NOT_FOUND = - 132
+    NVAPI_WAS_STILL_DRAWING = EnumItem(-131).set_string('Was Still Drawing')
+    NVAPI_FILE_NOT_FOUND = EnumItem(-132).set_string('File Not Found')
 
     # not < There are too many unique instances of a particular type of state
     # object.
-    NVAPI_TOO_MANY_UNIQUE_STATE_OBJECTS = - 133
+    NVAPI_TOO_MANY_UNIQUE_STATE_OBJECTS = EnumItem(-133).set_string('Too Many Unique State Objects')
 
     # not < The method call is invalid. For example, a method's parameter may
     # not be a valid pointer.
-    NVAPI_INVALID_CALL = - 134
-    NVAPI_D3D10_1_LIBRARY_NOT_FOUND = - 135
-    NVAPI_FUNCTION_NOT_FOUND = - 136
+    NVAPI_INVALID_CALL = EnumItem(-134).set_string('Invalid Call')
+    NVAPI_D3D10_1_LIBRARY_NOT_FOUND = EnumItem(-135).set_string('D3D10 1 Library Not Found')
+    NVAPI_FUNCTION_NOT_FOUND = EnumItem(-136).set_string('Function Not Found')
 
     # not < The application will require Administrator privileges to access
     # this API.
-    NVAPI_INVALID_USER_PRIVILEGE = - 137
-    NVAPI_EXPECTED_NON_PRIMARY_DISPLAY_HANDLE = - 138
-    NVAPI_EXPECTED_COMPUTE_GPU_HANDLE = - 139
+    NVAPI_INVALID_USER_PRIVILEGE = EnumItem(-137).set_string('Invalid User Privilege')
+    NVAPI_EXPECTED_NON_PRIMARY_DISPLAY_HANDLE = EnumItem(-138).set_string('Expected Non Primary Display Handle')
+    NVAPI_EXPECTED_COMPUTE_GPU_HANDLE = EnumItem(-139).set_string('Expected Compute GPU Handle')
 
     # not < The Stereo part of NVAPI failed to initialize completely. Check if
     # the stereo driver is installed.
-    NVAPI_STEREO_NOT_INITIALIZED = - 140
-    NVAPI_STEREO_REGISTRY_ACCESS_FAILED = - 141
-    NVAPI_STEREO_REGISTRY_PROFILE_TYPE_NOT_SUPPORTED = - 142
-    NVAPI_STEREO_REGISTRY_VALUE_NOT_SUPPORTED = - 143
+    NVAPI_STEREO_NOT_INITIALIZED = EnumItem(-140).set_string('Stereo Not Initialized')
+    NVAPI_STEREO_REGISTRY_ACCESS_FAILED = EnumItem(-141).set_string('Stereo Registry Access Failed')
+    NVAPI_STEREO_REGISTRY_PROFILE_TYPE_NOT_SUPPORTED = EnumItem(-142).set_string('Stereo Registry Profile Type Not Supported')
+    NVAPI_STEREO_REGISTRY_VALUE_NOT_SUPPORTED = EnumItem(-143).set_string('Stereo Registry Value Not Supported')
 
     # not < Stereo is not enabled and the function needed it to execute
     # completely.
-    NVAPI_STEREO_NOT_ENABLED = - 144
+    NVAPI_STEREO_NOT_ENABLED = EnumItem(-144).set_string('Stereo Not Enabled')
 
     # not < Stereo is not turned on and the function needed it to execute
     # completely.
-    NVAPI_STEREO_NOT_TURNED_ON = - 145
-    NVAPI_STEREO_INVALID_DEVICE_INTERFACE = - 146
+    NVAPI_STEREO_NOT_TURNED_ON = EnumItem(-145).set_string('Stereo Not Turned On')
+    NVAPI_STEREO_INVALID_DEVICE_INTERFACE = EnumItem(-146).set_string('Stereo Invalid Device Interface')
 
     # not < Separation percentage or JPEG image capture quality is out of
     # [0-100] range.
-    NVAPI_STEREO_PARAMETER_OUT_OF_RANGE = - 147
-    NVAPI_STEREO_FRUSTUM_ADJUST_MODE_NOT_SUPPORTED = - 148
+    NVAPI_STEREO_PARAMETER_OUT_OF_RANGE = EnumItem(-147).set_string('Stereo Parameter Out Of Range')
+    NVAPI_STEREO_FRUSTUM_ADJUST_MODE_NOT_SUPPORTED = EnumItem(-148).set_string('Stereo Frustum Adjust Mode Not Supported')
 
     # not < The mosaic topology is not possible given the current state of the
     # hardware.
-    NVAPI_TOPO_NOT_POSSIBLE = - 149
-    NVAPI_MODE_CHANGE_FAILED = - 150
-    NVAPI_D3D11_LIBRARY_NOT_FOUND = - 151
-    NVAPI_INVALID_ADDRESS = - 152
-    NVAPI_STRING_TOO_SMALL = - 153
-    NVAPI_MATCHING_DEVICE_NOT_FOUND = - 154
-    NVAPI_DRIVER_RUNNING = - 155
-    NVAPI_DRIVER_NOTRUNNING = - 156
-    NVAPI_ERROR_DRIVER_RELOAD_REQUIRED = - 157
-    NVAPI_SET_NOT_ALLOWED = - 158
-    NVAPI_ADVANCED_DISPLAY_TOPOLOGY_REQUIRED = - 159
-    NVAPI_SETTING_NOT_FOUND = - 160
-    NVAPI_SETTING_SIZE_TOO_LARGE = - 161
-    NVAPI_TOO_MANY_SETTINGS_IN_PROFILE = - 162
-    NVAPI_PROFILE_NOT_FOUND = - 163
-    NVAPI_PROFILE_NAME_IN_USE = - 164
-    NVAPI_PROFILE_NAME_EMPTY = - 165
-    NVAPI_EXECUTABLE_NOT_FOUND = - 166
-    NVAPI_EXECUTABLE_ALREADY_IN_USE = - 167
-    NVAPI_DATATYPE_MISMATCH = - 168
+    NVAPI_TOPO_NOT_POSSIBLE = EnumItem(-149).set_string('Topo Not Possible')
+    NVAPI_MODE_CHANGE_FAILED = EnumItem(-150).set_string('Mode Change Failed')
+    NVAPI_D3D11_LIBRARY_NOT_FOUND = EnumItem(-151).set_string('D3D11 Library Not Found')
+    NVAPI_INVALID_ADDRESS = EnumItem(-152).set_string('Invalid Address')
+    NVAPI_STRING_TOO_SMALL = EnumItem(-153).set_string('String Too Small')
+    NVAPI_MATCHING_DEVICE_NOT_FOUND = EnumItem(-154).set_string('Matching Device Not Found')
+    NVAPI_DRIVER_RUNNING = EnumItem(-155).set_string('Driver Running')
+    NVAPI_DRIVER_NOTRUNNING = EnumItem(-156).set_string('Driver Notrunning')
+    NVAPI_ERROR_DRIVER_RELOAD_REQUIRED = EnumItem(-157).set_string('Error Driver Reload Required')
+    NVAPI_SET_NOT_ALLOWED = EnumItem(-158).set_string('Set Not Allowed')
+    NVAPI_ADVANCED_DISPLAY_TOPOLOGY_REQUIRED = EnumItem(-159).set_string('Advanced Display Topology Required')
+    NVAPI_SETTING_NOT_FOUND = EnumItem(-160).set_string('Setting Not Found')
+    NVAPI_SETTING_SIZE_TOO_LARGE = EnumItem(-161).set_string('Setting Size Too Large')
+    NVAPI_TOO_MANY_SETTINGS_IN_PROFILE = EnumItem(-162).set_string('Too Many Settings In Profile')
+    NVAPI_PROFILE_NOT_FOUND = EnumItem(-163).set_string('Profile Not Found')
+    NVAPI_PROFILE_NAME_IN_USE = EnumItem(-164).set_string('Profile Name In Use')
+    NVAPI_PROFILE_NAME_EMPTY = EnumItem(-165).set_string('Profile Name Empty')
+    NVAPI_EXECUTABLE_NOT_FOUND = EnumItem(-166).set_string('Executable Not Found')
+    NVAPI_EXECUTABLE_ALREADY_IN_USE = EnumItem(-167).set_string('Executable Already In Use')
+    NVAPI_DATATYPE_MISMATCH = EnumItem(-168).set_string('Datatype Mismatch')
 
     # not < The profile passed as parameter has been removed and is no longer
     # valid.
-    NVAPI_PROFILE_REMOVED = - 169
-    NVAPI_UNREGISTERED_RESOURCE = - 170
+    NVAPI_PROFILE_REMOVED = EnumItem(-169).set_string('Profile Removed')
+    NVAPI_UNREGISTERED_RESOURCE = EnumItem(-170).set_string('Unregistered Resource')
 
     # not < The DisplayId corresponds to a display which is not within the
     # normal outputId range.
-    NVAPI_ID_OUT_OF_RANGE = - 171
+    NVAPI_ID_OUT_OF_RANGE = EnumItem(-171).set_string('Id Out Of Range')
 
     # not < Display topology is not valid so the driver cannot do a mode set
     # on this configuration.
-    NVAPI_DISPLAYCONFIG_VALIDATION_FAILED = - 172
-    NVAPI_DPMST_CHANGED = - 173
-    NVAPI_INSUFFICIENT_BUFFER = - 174
-    NVAPI_ACCESS_DENIED = - 175
+    NVAPI_DISPLAYCONFIG_VALIDATION_FAILED = EnumItem(-172).set_string('Displayconfig Validation Failed')
+    NVAPI_DPMST_CHANGED = EnumItem(-173).set_string('DPMST Changed')
+    NVAPI_INSUFFICIENT_BUFFER = EnumItem(-174).set_string('Insufficient Buffer')
+    NVAPI_ACCESS_DENIED = EnumItem(-175).set_string('Access Denied')
 
     # not < The requested action cannot be performed without Mosaic being
     # enabled.
-    NVAPI_MOSAIC_NOT_ACTIVE = - 176
-    NVAPI_SHARE_RESOURCE_RELOCATED = - 177
-    NVAPI_REQUEST_USER_TO_DISABLE_DWM = - 178
+    NVAPI_MOSAIC_NOT_ACTIVE = EnumItem(-176).set_string('Mosaic Not Active')
+    NVAPI_SHARE_RESOURCE_RELOCATED = EnumItem(-177).set_string('Share Resource Relocated')
+    NVAPI_REQUEST_USER_TO_DISABLE_DWM = EnumItem(-178).set_string('Request User To Disable Dwm')
 
     # not < D3D device status is D3DERR_DEVICELOST or D3DERR_DEVICENOTRESET -
     # the user has to reset the device.
-    NVAPI_D3D_DEVICE_LOST = - 179
-    NVAPI_INVALID_CONFIGURATION = - 180
-    NVAPI_STEREO_HANDSHAKE_NOT_DONE = - 181
+    NVAPI_D3D_DEVICE_LOST = EnumItem(-179).set_string('D3D Device Lost')
+    NVAPI_INVALID_CONFIGURATION = EnumItem(-180).set_string('Invalid Configuration')
+    NVAPI_STEREO_HANDSHAKE_NOT_DONE = EnumItem(-181).set_string('Stereo Handshake Not Done')
 
     # not < The path provided was too SHORT to determine the correct
     # NVDRS_APPLICATION
-    NVAPI_EXECUTABLE_PATH_IS_AMBIGUOUS = - 182
-    NVAPI_DEFAULT_STEREO_PROFILE_IS_NOT_DEFINED = - 183
-    NVAPI_DEFAULT_STEREO_PROFILE_DOES_NOT_EXIST = - 184
-    NVAPI_CLUSTER_ALREADY_EXISTS = - 185
+    NVAPI_EXECUTABLE_PATH_IS_AMBIGUOUS = EnumItem(-182).set_string('Executable Path Is Ambiguous')
+    NVAPI_DEFAULT_STEREO_PROFILE_IS_NOT_DEFINED = EnumItem(-183).set_string('Default Stereo Profile Is Not Defined')
+    NVAPI_DEFAULT_STEREO_PROFILE_DOES_NOT_EXIST = EnumItem(-184).set_string('Default Stereo Profile Does Not Exist')
+    NVAPI_CLUSTER_ALREADY_EXISTS = EnumItem(-185).set_string('Cluster Already Exists')
 
     # not < The input display id is not that of a multi stream enabled
     # connector or a display device in a multi stream topology
-    NVAPI_DPMST_DISPLAY_ID_EXPECTED = - 186
+    NVAPI_DPMST_DISPLAY_ID_EXPECTED = EnumItem(-186).set_string('DPMST Display Id Expected')
 
     # not < The input display id is not valid or the monitor associated to it
     # does not support the current operation
-    NVAPI_INVALID_DISPLAY_ID = - 187
-    NVAPI_STREAM_IS_OUT_OF_SYNC = - 188
-    NVAPI_INCOMPATIBLE_AUDIO_DRIVER = - 189
-    NVAPI_VALUE_ALREADY_SET = - 190
-    NVAPI_TIMEOUT = - 191
+    NVAPI_INVALID_DISPLAY_ID = EnumItem(-187).set_string('Invalid Display Id')
+    NVAPI_STREAM_IS_OUT_OF_SYNC = EnumItem(-188).set_string('Stream Is Out Of Sync')
+    NVAPI_INCOMPATIBLE_AUDIO_DRIVER = EnumItem(-189).set_string('Incompatible Audio Driver')
+    NVAPI_VALUE_ALREADY_SET = EnumItem(-190).set_string('Value Already Set')
+    NVAPI_TIMEOUT = EnumItem(-191).set_string('Timeout')
 
     # not < The requested workstation feature set has incomplete driver
     # internal allocation resources
-    NVAPI_GPU_WORKSTATION_FEATURE_INCOMPLETE = - 192
-    NVAPI_STEREO_INIT_ACTIVATION_NOT_DONE = - 193
+    NVAPI_GPU_WORKSTATION_FEATURE_INCOMPLETE = EnumItem(-192).set_string('GPU Workstation Feature Incomplete')
+    NVAPI_STEREO_INIT_ACTIVATION_NOT_DONE = EnumItem(-193).set_string('Stereo Init Activation Not Done')
 
     # not < The requested action cannot be performed without Sync being
     # enabled.
-    NVAPI_SYNC_NOT_ACTIVE = - 194
+    NVAPI_SYNC_NOT_ACTIVE = EnumItem(-194).set_string('Sync Not Active')
 
     # not < The requested action cannot be performed without Sync Master being
     # enabled.
-    NVAPI_SYNC_MASTER_NOT_FOUND = - 195
-    NVAPI_INVALID_SYNC_TOPOLOGY = - 196
+    NVAPI_SYNC_MASTER_NOT_FOUND = EnumItem(-195).set_string('Sync Master Not Found')
+    NVAPI_INVALID_SYNC_TOPOLOGY = EnumItem(-196).set_string('Invalid Sync Topology')
 
     # not < The specified signing algorithm is not supported. Either an
     # incorrect value was entered or the current installed driver/hardware
     # does not support the input value.
-    NVAPI_ECID_SIGN_ALGO_UNSUPPORTED = - 197
-    NVAPI_ECID_KEY_VERIFICATION_FAILED = - 198
-    NVAPI_FIRMWARE_OUT_OF_DATE = - 199
-    NVAPI_FIRMWARE_REVISION_NOT_SUPPORTED = - 200
-    NVAPI_LICENSE_CALLER_AUTHENTICATION_FAILED = - 201
+    NVAPI_ECID_SIGN_ALGO_UNSUPPORTED = EnumItem(-197).set_string('ECID Sign Algo Unsupported')
+    NVAPI_ECID_KEY_VERIFICATION_FAILED = EnumItem(-198).set_string('ECID Key Verification Failed')
+    NVAPI_FIRMWARE_OUT_OF_DATE = EnumItem(-199).set_string('Firmware Out Of Date')
+    NVAPI_FIRMWARE_REVISION_NOT_SUPPORTED = EnumItem(-200).set_string('Firmware Revision Not Supported')
+    NVAPI_LICENSE_CALLER_AUTHENTICATION_FAILED = EnumItem(-201).set_string('License Caller Authentication Failed')
 
     # not < The user tried to use a deferred context without registering the
     # device first
-    NVAPI_D3D_DEVICE_NOT_REGISTERED = - 202
+    NVAPI_D3D_DEVICE_NOT_REGISTERED = EnumItem(-202).set_string('D3D Device Not Registered')
 
     # not < Head or SourceId was not reserved for the VR Display before doing
     # the Modeset.
-    NVAPI_RESOURCE_NOT_ACQUIRED = - 203
-    NVAPI_TIMING_NOT_SUPPORTED = - 204
+    NVAPI_RESOURCE_NOT_ACQUIRED = EnumItem(-203).set_string('Resource Not Acquired')
+    NVAPI_TIMING_NOT_SUPPORTED = EnumItem(-204).set_string('Timing Not Supported')
 
     # not < HDCP Encryption Failed for the device. Would be applicable when
     # the device is HDCP Capable.
-    NVAPI_HDCP_ENCRYPTION_FAILED = - 205
-    NVAPI_PCLK_LIMITATION_FAILED = - 206
-    NVAPI_NO_CONNECTOR_FOUND = - 207
+    NVAPI_HDCP_ENCRYPTION_FAILED = EnumItem(-205).set_string('HDCP Encryption Failed')
+    NVAPI_PCLK_LIMITATION_FAILED = EnumItem(-206).set_string('PCLK Limitation Failed')
+    NVAPI_NO_CONNECTOR_FOUND = EnumItem(-207).set_string('No Connector Found')
 
     # not < When a non-HDCP capable HMD is connected, we would inform user by
     # this code.
-    NVAPI_HDCP_DISABLED = - 208
-    NVAPI_API_IN_USE = - 209
-    NVAPI_NVIDIA_DISPLAY_NOT_FOUND = - 210
-    NVAPI_PRIV_SEC_VIOLATION = - 211
-    NVAPI_INCORRECT_VENDOR = - 212
-    NVAPI_DISPLAY_IN_USE = - 213
-    NVAPI_UNSUPPORTED_CONFIG_NON_HDCP_HMD = - 214
-    NVAPI_MAX_DISPLAY_LIMIT_REACHED = - 215
-    NVAPI_INVALID_DIRECT_MODE_DISPLAY = - 216
-    NVAPI_GPU_IN_DEBUG_MODE = - 217
-    NVAPI_D3D_CONTEXT_NOT_FOUND = - 218
-    NVAPI_STEREO_VERSION_MISMATCH = - 219
-    NVAPI_GPU_NOT_POWERED = - 220
-    NVAPI_ERROR_DRIVER_RELOAD_IN_PROGRESS = - 221
-    NVAPI_WAIT_FOR_HW_RESOURCE = - 222
-    NVAPI_REQUIRE_FURTHER_HDCP_ACTION = - 223
-    NVAPI_DISPLAY_MUX_TRANSITION_FAILED = - 224
+    NVAPI_HDCP_DISABLED = EnumItem(-208).set_string('HDCP Disabled')
+    NVAPI_API_IN_USE = EnumItem(-209).set_string('API In Use')
+    NVAPI_NVIDIA_DISPLAY_NOT_FOUND = EnumItem(-210).set_string('Nvidia Display Not Found')
+    NVAPI_PRIV_SEC_VIOLATION = EnumItem(-211).set_string('Priv Sec Violation')
+    NVAPI_INCORRECT_VENDOR = EnumItem(-212).set_string('Incorrect Vendor')
+    NVAPI_DISPLAY_IN_USE = EnumItem(-213).set_string('Display In Use')
+    NVAPI_UNSUPPORTED_CONFIG_NON_HDCP_HMD = EnumItem(-214).set_string('Unsupported Config Non HDCP Hmd')
+    NVAPI_MAX_DISPLAY_LIMIT_REACHED = EnumItem(-215).set_string('Max Display Limit Reached')
+    NVAPI_INVALID_DIRECT_MODE_DISPLAY = EnumItem(-216).set_string('Invalid Direct Mode Display')
+    NVAPI_GPU_IN_DEBUG_MODE = EnumItem(-217).set_string('GPU In Debug Mode')
+    NVAPI_D3D_CONTEXT_NOT_FOUND = EnumItem(-218).set_string('D3D Context Not Found')
+    NVAPI_STEREO_VERSION_MISMATCH = EnumItem(-219).set_string('Stereo Version Mismatch')
+    NVAPI_GPU_NOT_POWERED = EnumItem(-220).set_string('GPU Not Powered')
+    NVAPI_ERROR_DRIVER_RELOAD_IN_PROGRESS = EnumItem(-221).set_string('Error Driver Reload In Progress')
+    NVAPI_WAIT_FOR_HW_RESOURCE = EnumItem(-222).set_string('Wait For Hw Resource')
+    NVAPI_REQUIRE_FURTHER_HDCP_ACTION = EnumItem(-223).set_string('Require Further HDCP Action')
+    NVAPI_DISPLAY_MUX_TRANSITION_FAILED = EnumItem(-224).set_string('Display Mux Transition Failed')
 
 
 NvAPI_Status = _NvAPI_Status
