@@ -1363,9 +1363,20 @@ class GPUs(object):
         InitNV()
     
     def __iter__(self):
+        # NvAPI_EnumNvidiaDisplayHandle enumerates per-DISPLAY, not
+        # per-GPU -- a single logical GPU driving 3 monitors resolves to
+        # the same NvLogicalGpuHandle 3 times (once per display index).
+        # LogicalGPU(count) itself re-derives everything it needs (its
+        # physical GPUs, and via those all of their displays) from
+        # `count` independently, so it's enough to remember which actual
+        # GPU handle each count already resolved to and only yield the
+        # first display index that reaches a given GPU -- iterating the
+        # yielded LogicalGPU still walks its *entire* display set, not
+        # just the one display used to find it.
         count = 0
         hNvDisplay = NvDisplayHandle()
         nvStatus = NvAPI_EnumNvidiaDisplayHandle(NvU32(count), ctypes.byref(hNvDisplay))
+        seen_gpu_handles = set()
 
         while nvStatus == NvAPI_Status.NVAPI_OK:
             pLogicalGPU = NvLogicalGpuHandle()
@@ -1374,7 +1385,10 @@ class GPUs(object):
                     ctypes.byref(pLogicalGPU)
             ) == NvAPI_Status.NVAPI_OK:
 
-                yield LogicalGPU(count)
+                handle_value = ctypes.cast(pLogicalGPU, ctypes.c_void_p).value
+                if handle_value not in seen_gpu_handles:
+                    seen_gpu_handles.add(handle_value)
+                    yield LogicalGPU(count)
 
             count += 1
             nvStatus = NvAPI_EnumNvidiaDisplayHandle(NvU32(count), ctypes.byref(hNvDisplay))
