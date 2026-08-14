@@ -57,6 +57,7 @@
 # **********************************************************************************************************************
 
 from .nvapi_h import *
+from .nvapi_gpu_info_ext_h import *  # noqa
 import ctypes
 import six
 from collections import namedtuple
@@ -1220,6 +1221,187 @@ class PhysicalGPU(object):
         # Indicates the number of eviction events that caused an allocation
         # to be removed from dedicated video memory to free GPU
         return self._memory_info.dedicatedVideoMemoryEvictionCount
+
+    @property
+    def physical_gpu_id(self):
+        pGpuId = NvU32()
+        nvStatus = NvAPI_GetGPUIDfromPhysicalGPU(self._hPhysicalGpu, ctypes.byref(pGpuId))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetGPUIDfromPhysicalGPU returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pGpuId.value
+
+    @property
+    def ram_bus_width(self):
+        pBusWidth = NvU32()
+        nvStatus = NvAPI_GPU_GetRamBusWidth(self._hPhysicalGpu, ctypes.byref(pBusWidth))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetRamBusWidth returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pBusWidth.value
+
+    @property
+    def architecture_info(self):
+        pArchInfo = NV_GPU_ARCH_INFO()
+        pArchInfo.version = NV_GPU_ARCH_INFO_VER
+        nvStatus = NvAPI_GPU_GetArchInfo(self._hPhysicalGpu, ctypes.byref(pArchInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetArchInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return {
+            'architecture': pArchInfo.architecture,
+            'implementation': pArchInfo.implementation,
+            'revision': pArchInfo.revision,
+        }
+
+    @property
+    def uuid(self):
+        # requires driver release 595+
+        pGpuUuid = NV_GPU_UUID()
+        pGpuUuid.version = NV_GPU_UUID_VER
+        nvStatus = NvAPI_GPU_GetUUID(self._hPhysicalGpu, ctypes.byref(pGpuUuid))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetUUID returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bytes(pGpuUuid.uuid).hex()
+
+    @property
+    def virtualization_mode(self):
+        pVirtualizationInfo = NV_GPU_VIRTUALIZATION_INFO()
+        pVirtualizationInfo.version = NV_GPU_VIRTUALIZATION_INFO_VER
+        nvStatus = NvAPI_GPU_GetVirtualizationInfo(self._hPhysicalGpu, ctypes.byref(pVirtualizationInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetVirtualizationInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_VIRTUALIZATION_MODE.get(pVirtualizationInfo.virtualizationMode)
+
+    @property
+    def licensable_features(self):
+        pLicensableFeatures = NV_LICENSABLE_FEATURES()
+        pLicensableFeatures.version = NV_LICENSABLE_FEATURES_VER
+        nvStatus = NvAPI_GPU_GetLicensableFeatures(self._hPhysicalGpu, ctypes.byref(pLicensableFeatures))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetLicensableFeatures returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        features = []
+        for i in range(pLicensableFeatures.licensableFeatureCount):
+            detail = pLicensableFeatures.licenseDetails[i]
+            features += [{
+                'is_enabled': bool(detail.flags & 1),
+                'is_feature_enabled': bool(detail.flags & 2),
+                'feature_code': NV_LICENSE_FEATURE_TYPE.get(detail.featureCode),
+                'product_name': detail.productName.decode('ascii', 'replace').rstrip('\x00'),
+            }]
+
+        return {
+            'is_license_supported': bool(pLicensableFeatures.flags & 1),
+            'features': features,
+        }
+
+    @property
+    def gpu_info(self):
+        pGpuInfo = NV_GPU_INFO()
+        pGpuInfo.version = NV_GPU_INFO_VER
+        nvStatus = NvAPI_GPU_GetGPUInfo(self._hPhysicalGpu, ctypes.byref(pGpuInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetGPUInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return {
+            'is_external_gpu': bool(pGpuInfo.flags & 1),
+            'ray_tracing_cores': pGpuInfo.rayTracingCores,
+            'tensor_cores': pGpuInfo.tensorCores,
+        }
+
+    @property
+    def is_vr_ready(self):
+        pGpuVrReadyData = NV_GPU_VR_READY()
+        pGpuVrReadyData.version = NV_GPU_VR_READY_VER
+        nvStatus = NvAPI_GPU_GetVRReadyData(self._hPhysicalGpu, ctypes.byref(pGpuVrReadyData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetVRReadyData returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(pGpuVrReadyData.flags & 1)
+
+    @property
+    def gsp_firmware_version(self):
+        pGspInfo = NV_GPU_GSP_INFO()
+        pGspInfo.version = NV_GPU_GSP_INFO_VER
+        nvStatus = NvAPI_GPU_GetGspFeatures(self._hPhysicalGpu, ctypes.byref(pGspInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetGspFeatures returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bytes(pGspInfo.firmwareVersion).split(b'\x00')[0].decode('ascii', 'replace')
+
+    @property
+    def is_overclocking_detected(self):
+        # requires a recent driver
+        pOverclockStatus = NV_GPU_OVERCLOCK_STATUS()
+        pOverclockStatus.version = NV_GPU_OVERCLOCK_STATUS_VER
+        nvStatus = NvAPI_GPU_GetOverclockStatus(self._hPhysicalGpu, ctypes.byref(pOverclockStatus))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetOverclockStatus returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(pOverclockStatus.flags & 1)
+
+    @property
+    def memory_info_ex(self):
+        # modern replacement for _memory_info (NvAPI_GPU_GetMemoryInfo has
+        # been deprecated since driver release 520); units are bytes here,
+        # not KB, and it adds eviction/promotion accounting the older call
+        # doesn't have
+        pMemoryInfo = NV_GPU_MEMORY_INFO_EX()
+        pMemoryInfo.version = NV_GPU_MEMORY_INFO_EX_VER
+        nvStatus = NvAPI_GPU_GetMemoryInfoEx(self._hPhysicalGpu, ctypes.byref(pMemoryInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetMemoryInfoEx returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return {
+            'dedicated_video_memory': pMemoryInfo.dedicatedVideoMemory,
+            'available_dedicated_video_memory': pMemoryInfo.availableDedicatedVideoMemory,
+            'system_video_memory': pMemoryInfo.systemVideoMemory,
+            'shared_system_memory': pMemoryInfo.sharedSystemMemory,
+            'current_available_dedicated_video_memory': pMemoryInfo.curAvailableDedicatedVideoMemory,
+            'dedicated_video_memory_evictions_size': pMemoryInfo.dedicatedVideoMemoryEvictionsSize,
+            'dedicated_video_memory_eviction_count': pMemoryInfo.dedicatedVideoMemoryEvictionCount,
+            'dedicated_video_memory_promotions_size': pMemoryInfo.dedicatedVideoMemoryPromotionsSize,
+            'dedicated_video_memory_promotion_count': pMemoryInfo.dedicatedVideoMemoryPromotionCount,
+        }
+
+    @property
+    def adapter_luid(self):
+        pOSAdapterId = NvLUID()
+        nvStatus = NvAPI_GPU_GetAdapterIdFromPhysicalGpu(self._hPhysicalGpu, ctypes.byref(pOSAdapterId))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetAdapterIdFromPhysicalGpu returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return '%08x-%04x-%04x-%s' % (
+            pOSAdapterId.data1, pOSAdapterId.data2, pOSAdapterId.data3,
+            bytes(pOSAdapterId.data4[:]).hex()
+        )
 
     @property
     def _hPhysicalGpu(self):
