@@ -69,6 +69,32 @@ GreenCoordinate = namedtuple('RedCoordinate', ['x', 'y'])
 BlueCoordinate = namedtuple('RedCoordinate', ['x', 'y'])
 WhiteCoordinate = namedtuple('RedCoordinate', ['x', 'y'])
 
+ArchitectureInfo = namedtuple('ArchitectureInfo', ['architecture', 'implementation', 'revision'])
+LicenseFeatureDetail = namedtuple('LicenseFeatureDetail', ['is_enabled', 'is_feature_enabled', 'feature_code', 'product_name'])
+LicensableFeatures = namedtuple('LicensableFeatures', ['is_license_supported', 'features'])
+GPUInfo = namedtuple('GPUInfo', ['is_external_gpu', 'ray_tracing_cores', 'tensor_cores'])
+MemoryInfoEx = namedtuple('MemoryInfoEx', [
+    'dedicated_video_memory',
+    'available_dedicated_video_memory',
+    'system_video_memory',
+    'shared_system_memory',
+    'current_available_dedicated_video_memory',
+    'dedicated_video_memory_evictions_size',
+    'dedicated_video_memory_eviction_count',
+    'dedicated_video_memory_promotions_size',
+    'dedicated_video_memory_promotion_count',
+])
+NVLinkCaps = namedtuple('NVLinkCaps', [
+    'caps_table', 'lowest_nvlink_version', 'highest_nvlink_version',
+    'lowest_nci_version', 'highest_nci_version', 'link_mask',
+])
+NVLinkLinkStatus = namedtuple('NVLinkLinkStatus', [
+    'link_index', 'is_connected', 'link_state', 'sublink_width',
+    'nvlink_version', 'nci_version', 'nvlink_common_clock_speed_mhz',
+    'nvlink_link_clock_mhz', 'remote_device_uuid',
+])
+NVLinkStatus = namedtuple('NVLinkStatus', ['link_mask', 'links'])
+
 
 class Display(object):
     # NvAPI_GPU_GetEDID(NvPhysicalGpuHandle hPhysicalGpu, NvU32 displayOutputId, NV_EDID *pEDID);
@@ -1254,11 +1280,11 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetArchInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        return {
-            'architecture': pArchInfo.architecture,
-            'implementation': pArchInfo.implementation,
-            'revision': pArchInfo.revision,
-        }
+        return ArchitectureInfo(
+            architecture=pArchInfo.architecture,
+            implementation=pArchInfo.implementation,
+            revision=pArchInfo.revision,
+        )
 
     @property
     def uuid(self):
@@ -1298,17 +1324,17 @@ class PhysicalGPU(object):
         features = []
         for i in range(pLicensableFeatures.licensableFeatureCount):
             detail = pLicensableFeatures.licenseDetails[i]
-            features += [{
-                'is_enabled': bool(detail.flags & 1),
-                'is_feature_enabled': bool(detail.flags & 2),
-                'feature_code': NV_LICENSE_FEATURE_TYPE.get(detail.featureCode),
-                'product_name': detail.productName.decode('ascii', 'replace').rstrip('\x00'),
-            }]
+            features += [LicenseFeatureDetail(
+                is_enabled=bool(detail.flags & 1),
+                is_feature_enabled=bool(detail.flags & 2),
+                feature_code=NV_LICENSE_FEATURE_TYPE.get(detail.featureCode),
+                product_name=detail.productName.decode('ascii', 'replace').rstrip('\x00'),
+            )]
 
-        return {
-            'is_license_supported': bool(pLicensableFeatures.flags & 1),
-            'features': features,
-        }
+        return LicensableFeatures(
+            is_license_supported=bool(pLicensableFeatures.flags & 1),
+            features=features,
+        )
 
     @property
     def gpu_info(self):
@@ -1320,11 +1346,11 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetGPUInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        return {
-            'is_external_gpu': bool(pGpuInfo.flags & 1),
-            'ray_tracing_cores': pGpuInfo.rayTracingCores,
-            'tensor_cores': pGpuInfo.tensorCores,
-        }
+        return GPUInfo(
+            is_external_gpu=bool(pGpuInfo.flags & 1),
+            ray_tracing_cores=pGpuInfo.rayTracingCores,
+            tensor_cores=pGpuInfo.tensorCores,
+        )
 
     @property
     def is_vr_ready(self):
@@ -1377,17 +1403,17 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetMemoryInfoEx returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        return {
-            'dedicated_video_memory': pMemoryInfo.dedicatedVideoMemory,
-            'available_dedicated_video_memory': pMemoryInfo.availableDedicatedVideoMemory,
-            'system_video_memory': pMemoryInfo.systemVideoMemory,
-            'shared_system_memory': pMemoryInfo.sharedSystemMemory,
-            'current_available_dedicated_video_memory': pMemoryInfo.curAvailableDedicatedVideoMemory,
-            'dedicated_video_memory_evictions_size': pMemoryInfo.dedicatedVideoMemoryEvictionsSize,
-            'dedicated_video_memory_eviction_count': pMemoryInfo.dedicatedVideoMemoryEvictionCount,
-            'dedicated_video_memory_promotions_size': pMemoryInfo.dedicatedVideoMemoryPromotionsSize,
-            'dedicated_video_memory_promotion_count': pMemoryInfo.dedicatedVideoMemoryPromotionCount,
-        }
+        return MemoryInfoEx(
+            dedicated_video_memory=pMemoryInfo.dedicatedVideoMemory,
+            available_dedicated_video_memory=pMemoryInfo.availableDedicatedVideoMemory,
+            system_video_memory=pMemoryInfo.systemVideoMemory,
+            shared_system_memory=pMemoryInfo.sharedSystemMemory,
+            current_available_dedicated_video_memory=pMemoryInfo.curAvailableDedicatedVideoMemory,
+            dedicated_video_memory_evictions_size=pMemoryInfo.dedicatedVideoMemoryEvictionsSize,
+            dedicated_video_memory_eviction_count=pMemoryInfo.dedicatedVideoMemoryEvictionCount,
+            dedicated_video_memory_promotions_size=pMemoryInfo.dedicatedVideoMemoryPromotionsSize,
+            dedicated_video_memory_promotion_count=pMemoryInfo.dedicatedVideoMemoryPromotionCount,
+        )
 
     @property
     def adapter_luid(self):
@@ -1401,6 +1427,60 @@ class PhysicalGPU(object):
         return '%08x-%04x-%04x-%s' % (
             pOSAdapterId.data1, pOSAdapterId.data2, pOSAdapterId.data3,
             bytes(pOSAdapterId.data4[:]).hex()
+        )
+
+    @property
+    def nvlink_caps(self):
+        # linkMask == 0 means no active NVLink connections -- normal for
+        # a single card with no NVLink bridge, even when capsTbl shows
+        # the silicon itself is NVLink-capable
+        pCaps = NVLINK_GET_CAPS()
+        pCaps.version = NVLINK_GET_CAPS_VER
+        nvStatus = NvAPI_GPU_NVLINK_GetCaps(self._hPhysicalGpu, ctypes.byref(pCaps))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_NVLINK_GetCaps returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NVLinkCaps(
+            caps_table=pCaps.capsTbl,
+            lowest_nvlink_version=pCaps.lowestNvlinkVersion,
+            highest_nvlink_version=pCaps.highestNvlinkVersion,
+            lowest_nci_version=pCaps.lowestNciVersion,
+            highest_nci_version=pCaps.highestNciVersion,
+            link_mask=pCaps.linkMask,
+        )
+
+    @property
+    def nvlink_status(self):
+        pStatus = NVLINK_GET_STATUS()
+        pStatus.version = NVLINK_GET_STATUS_VER
+        nvStatus = NvAPI_GPU_NVLINK_GetStatus(self._hPhysicalGpu, ctypes.byref(pStatus))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_NVLINK_GetStatus returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        links = []
+        for i in range(NVAPI_NVLINK_MAX_LINKS):
+            if not (pStatus.linkMask & (1 << i)):
+                continue
+            info = pStatus.linkInfo[i]
+            links += [NVLinkLinkStatus(
+                link_index=i,
+                is_connected=bool(info.flags & 1),
+                link_state=info.linkState,
+                sublink_width=info.subLinkWidth,
+                nvlink_version=info.nvlinkVersion,
+                nci_version=info.nciVersion,
+                nvlink_common_clock_speed_mhz=info.nvlinkCommonClockSpeedMhz,
+                nvlink_link_clock_mhz=info.nvlinkLinkClockMhz,
+                remote_device_uuid=bytes(info.remoteDeviceInfo.deviceUUID).hex(),
+            )]
+
+        return NVLinkStatus(
+            link_mask=pStatus.linkMask,
+            links=links,
         )
 
     @property

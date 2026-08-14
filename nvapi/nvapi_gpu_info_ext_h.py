@@ -265,3 +265,135 @@ NvAPI_GPU_GetRamBusWidth.restype = NVAPI_INTERFACE
 
 NvAPI_GPU_GetAdapterIdFromPhysicalGpu = hDll.GPU_GetAdapterIdFromPhysicalGpu
 NvAPI_GPU_GetAdapterIdFromPhysicalGpu.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# NVLink capability/status functions -- multi-GPU interconnect info
+# (SLI/NVLink bridges, workstation/datacenter parts). All four return
+# NVAPI_NOT_SUPPORTED on hardware without an NVLink bridge, which is
+# expected, not an error.
+# ---------------------------------------------------------------------------
+NVAPI_NVLINK_MAX_LINKS = 32
+NVAPI_NVLINK_MAX_LINKS_V2 = 128
+
+
+class NVAPI_NVLINK_LINK_MASK_V1(ctypes.Structure):
+    _fields_ = [
+        ('lenMasks', NvU32),
+        ('masks', NvU64 * NVAPI_NVLINK_MAX_LINKS_V2),
+    ]
+
+
+class NVLINK_GET_CAPS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('capsTbl', NvU32),
+        ('lowestNvlinkVersion', NvU8),
+        ('highestNvlinkVersion', NvU8),
+        ('lowestNciVersion', NvU8),
+        ('highestNciVersion', NvU8),
+        ('linkMask', NvU32),
+    ]
+
+
+NVLINK_GET_CAPS = NVLINK_GET_CAPS_V1
+NVLINK_GET_CAPS_VER1 = MAKE_NVAPI_VERSION(NVLINK_GET_CAPS_V1, 1)
+NVLINK_GET_CAPS_VER = NVLINK_GET_CAPS_VER1
+
+NvAPI_GPU_NVLINK_GetCaps = hDll.GPU_NVLINK_GetCaps
+NvAPI_GPU_NVLINK_GetCaps.restype = NVAPI_INTERFACE
+
+
+class NVLINK_GET_CAPS_EX_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('capsTbl', NvU32),
+        ('lowestNvlinkVersion', NvU8),
+        ('highestNvlinkVersion', NvU8),
+        ('lowestNciVersion', NvU8),
+        ('highestNciVersion', NvU8),
+        ('links', NVAPI_NVLINK_LINK_MASK_V1),
+        ('reserved', NvU32 * 2),
+    ]
+
+
+NVLINK_GET_CAPS_EX = NVLINK_GET_CAPS_EX_V1
+NVLINK_GET_CAPS_EX_VER1 = MAKE_NVAPI_VERSION(NVLINK_GET_CAPS_EX_V1, 1)
+NVLINK_GET_CAPS_EX_VER = NVLINK_GET_CAPS_EX_VER1
+
+NvAPI_GPU_NVLINK_GetCapsEx = hDll.GPU_NVLINK_GetCapsEx
+NvAPI_GPU_NVLINK_GetCapsEx.restype = NVAPI_INTERFACE
+
+
+class NVLINK_DEVICE_INFO_V1(ctypes.Structure):
+    _fields_ = [
+        ('deviceIdFlags', NvU32),
+        ('domain', NvU16),
+        ('bus', NvU16),
+        ('device', NvU16),
+        ('function', NvU16),
+        ('pciDeviceId', NvU32),
+        ('deviceType', NvU64),
+        ('deviceUUID', NvU8 * NVAPI_UUID_LEN),
+    ]
+
+
+class NVLINK_LINK_STATUS_INFO_V2(ctypes.Structure):
+    _fields_ = [
+        ('capsTbl', NvU32),
+        ('phyType', NvU8),
+        ('subLinkWidth', NvU8),
+        ('linkState', NvU32),
+        ('rxSublinkStatus', NvU8),
+        ('txSublinkStatus', NvU8),
+        ('nvlinkVersion', NvU8),
+        ('nciVersion', NvU8),
+        ('phyVersion', NvU8),
+        ('nvlinkCommonClockSpeedMhz', NvU32),
+        ('nvlinkRefClkSpeedMhz', NvU32),
+        ('nvlinkRefClkType', NvU8),
+        ('nvlinkLinkClockMhz', NvU32),
+        ('flags', NvU32),  # connected:1, reserved:31
+        ('loopProperty', NvU8),
+        ('remoteDeviceLinkNumber', NvU8),
+        ('remoteDeviceInfo', NVLINK_DEVICE_INFO_V1),
+        ('localDeviceLinkNumber', NvU8),
+        ('localDeviceInfo', NVLINK_DEVICE_INFO_V1),
+        ('nvlinkLineRateMbps', NvU32),
+        ('nvlinkMinL1Threshold', NvU32),
+        ('nvlinkMaxL1Threshold', NvU32),
+        ('nvlinkL1ThresholdUnits', NvU32),
+        ('reservedEx', NvU32 * 5),
+    ]
+
+
+class NVLINK_GET_STATUS_V2(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('linkMask', NvU32),
+        ('linkInfo', NVLINK_LINK_STATUS_INFO_V2 * NVAPI_NVLINK_MAX_LINKS),
+    ]
+
+
+NVLINK_GET_STATUS = NVLINK_GET_STATUS_V2
+NVLINK_GET_STATUS_VER2 = MAKE_NVAPI_VERSION(NVLINK_GET_STATUS_V2, 2)
+NVLINK_GET_STATUS_VER = NVLINK_GET_STATUS_VER2
+
+NvAPI_GPU_NVLINK_GetStatus = hDll.GPU_NVLINK_GetStatus
+NvAPI_GPU_NVLINK_GetStatus.restype = NVAPI_INTERFACE
+
+
+class NVLINK_GET_STATUS_EX_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('links', NVAPI_NVLINK_LINK_MASK_V1),
+        ('linkInfo', NVLINK_LINK_STATUS_INFO_V2 * NVAPI_NVLINK_MAX_LINKS_V2),
+    ]
+
+
+NVLINK_GET_STATUS_EX = NVLINK_GET_STATUS_EX_V1
+NVLINK_GET_STATUS_EX_VER1 = MAKE_NVAPI_VERSION(NVLINK_GET_STATUS_EX_V1, 1)
+NVLINK_GET_STATUS_EX_VER = NVLINK_GET_STATUS_EX_VER1
+
+NvAPI_GPU_NVLINK_GetStatusEx = hDll.GPU_NVLINK_GetStatusEx
+NvAPI_GPU_NVLINK_GetStatusEx.restype = NVAPI_INTERFACE
