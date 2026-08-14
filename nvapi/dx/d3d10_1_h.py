@@ -261,7 +261,10 @@ PFN_D3D10_CREATE_DEVICE1 = ctypes.WINFUNCTYPE(
 )
 
 
-rdpd3d = ctypes.windll.RDPD3D
+try:
+    rdpd3d = ctypes.windll.RDPD3D
+except OSError:
+    rdpd3d = None
 
 
 # HRESULT WINAPI D3D10CreateDevice1(
@@ -272,8 +275,11 @@ rdpd3d = ctypes.windll.RDPD3D
 # D3D10_FEATURE_LEVEL1 HardwareLevel,
 # UINT SDKVersion,
 # _Out_opt_ ID3D10Device1 **ppDevice);
-D3D10CreateDevice1 = rdpd3d.D3D10CreateDevice1
-D3D10CreateDevice1.restype = HRESULT
+if rdpd3d is not None:
+    D3D10CreateDevice1 = rdpd3d.D3D10CreateDevice1
+    D3D10CreateDevice1.restype = HRESULT
+else:
+    D3D10CreateDevice1 = None
 
 
 # ///////////////////////////////////////////////////////////////

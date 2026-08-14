@@ -85,18 +85,39 @@ def defined(macro):
 
 
 def load_library(lib):
+    # try a direct load first (handles bare system-search names like
+    # "nvapi64.dll", and Linux .so names) -- ctypes.util.find_library() on
+    # Windows is unreliable for names that aren't already-installed
+    # "well known" libraries, so it's a fallback rather than the primary path
+    try:
+        return ctypes.cdll.LoadLibrary(lib)
+    except OSError:
+        pass
+
     dll_path = ctypes.util.find_library(lib)
     if dll_path is not None:
         try:
             return ctypes.cdll.LoadLibrary(dll_path)
-        except:
+        except OSError:
             pass
+
+
+# nvapi64.dll / nvapi.dll / libnvidia-api.so do NOT export functions by name
+# (confirmed against the real driver DLL: it exports exactly two symbols,
+# nvapi_QueryInterface and nvapi_Direct_GetMethod). Every NvAPI_X_Y call has
+# to be resolved by asking nvapi_QueryInterface for a function pointer using
+# a numeric interface ID -- those IDs aren't in the public SDK headers (this
+# is why the header-parsing generator that built this binding had no way to
+# know about it), so they're pulled from NVIDIA's own published ID table:
+# https://github.com/NVIDIA/nvapi/blob/main/nvapi_interface.h
+from .nvapi_interface_ids import NVAPI_INTERFACE_IDS  # noqa
 
 
 class _hDll(object):
 
     def __init__(self):
         self._hDll = None
+        self._query_interface = None
         self.wrappers = []
 
     @property
@@ -105,15 +126,31 @@ class _hDll(object):
 
     @hDll.setter
     def hDll(self, obj):
+        if obj is not None:
+            try:
+                qi = getattr(obj, 'nvapi_QueryInterface')
+            except AttributeError:
+                # loaded a library, but it's not really NVAPI (missing the
+                # one real export it has) -- reject this candidate
+                obj = None
+                self._query_interface = None
+            else:
+                qi.restype = ctypes.c_void_p
+                qi.argtypes = [ctypes.c_uint32]
+                self._query_interface = qi
+        else:
+            self._query_interface = None
+
         self._hDll = obj
         for wrapper in self.wrappers:
             wrapper.hDll = obj
+            wrapper.query_interface = self._query_interface
 
     def __getattr__(self, item):
         if item in self.__dict__:
             return self.__dict__[item]
 
-        if self._hDll is not None:
+        if self._hDll is not None and item in ('nvapi_QueryInterface', 'nvapi_Direct_GetMethod'):
             return getattr(self._hDll, item)
 
         class Wrapper(object):
@@ -121,24 +158,44 @@ class _hDll(object):
                 self.__name__ = name
                 self.__func = None
                 self.hDll = None
+                self.query_interface = None
                 self.restype = None
 
             def __call__(self, *args, **kwargs):
                 if self.__func is None:
-                    if self.hDll is not None:
-                        try:
-                            self.__func = getattr(self.hDll, self.__name__)
-                            self.__func.restype = self.restype
-                        except:
-                            return None
-                    else:
+                    if self.hDll is None:
                         raise RuntimeError(
                             'Module initilization problem function "{0}" is not available.'.format(self.__name__)
                         )
 
+                    full_name = 'NvAPI_' + self.__name__
+                    interface_id = NVAPI_INTERFACE_IDS.get(full_name)
+
+                    if interface_id is not None and self.query_interface is not None:
+                        address = self.query_interface(interface_id)
+                        if not address:
+                            raise RuntimeError(
+                                'nvapi_QueryInterface returned NULL for {0} (id 0x{1:08x}) -- '
+                                'not supported by this driver/GPU.'.format(full_name, interface_id)
+                            )
+                        self.__func = ctypes.CFUNCTYPE(self.restype)(address)
+                    else:
+                        # not in the ID table (e.g. nvapi_QueryInterface itself,
+                        # or a function missing from NVIDIA's published list) --
+                        # fall back to a plain named export lookup
+                        try:
+                            self.__func = getattr(self.hDll, self.__name__)
+                            self.__func.restype = self.restype
+                        except AttributeError:
+                            raise RuntimeError(
+                                'No interface ID and no named export found for "{0}".'.format(full_name)
+                            )
+
                 return self.__func(*args, **kwargs)
 
         wrapper = Wrapper(item)
+        wrapper.hDll = self._hDll
+        wrapper.query_interface = self._query_interface
         self.wrappers += [wrapper]
         return wrapper
 
@@ -148,15 +205,22 @@ hDll = _hDll()
 
 def InitNV():
     import os
-    
-    dll_path = os.path.dirname(__file__)
-    
-    if _WIN64:
-        dll = 'nvapi64.dll'
-    else:
-        dll = 'nvapi.dll'
 
-    hDll.hDll = load_library(os.path.join(dll_path, dll))
+    dll_path = os.path.dirname(__file__)
+
+    if sys.platform.startswith('linux'):
+        # NVIDIA driver 525+ ships a Linux equivalent exporting the same
+        # nvapi_QueryInterface-based interface as the Windows DLL
+        candidates = ['libnvidia-api.so.1', 'libnvidia-api.so']
+    elif _WIN64:
+        candidates = ['nvapi64.dll', os.path.join(dll_path, 'nvapi64.dll')]
+    else:
+        candidates = ['nvapi.dll', os.path.join(dll_path, 'nvapi.dll')]
+
+    for candidate in candidates:
+        hDll.hDll = load_library(candidate)
+        if hDll.hDll is not None:
+            break
     
     if hDll.hDll is None:
         raise RuntimeError('Unable to locate Nvidia shared library')

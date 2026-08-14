@@ -18745,9 +18745,15 @@ _Union_6._fields_ = [
 ]
 _NV_FOVEATED_RENDERING_UPDATE_GAZE_DATA_PARAMS._Union_6 = _Union_6
 
-_NV_FOVEATED_RENDERING_UPDATE_GAZE_DATA_PARAMS._anonymous_ = (
-    '_Union_6',
-)
+# NOTE: this struct is intentionally NOT marked anonymous (no
+# `_anonymous_ = ('_Union_6',)`) even though the real C struct uses an
+# anonymous union here. ctypes has a reproducible internal limitation
+# ("TypeError: unexpected type") when promoting an anonymous union whose
+# member struct (sStereoData) itself has two identically-typed fields, as
+# this one does (sLeftEye/sRightEye are both
+# NV_FOVEATED_RENDERING_GAZE_DATA_PER_EYE_V1). The struct itself is fully
+# correct and usable -- access the union's members via `._Union_6.sMonoData`
+# / `._Union_6.sStereoData` instead of a promoted top-level name.
 
 _NV_FOVEATED_RENDERING_UPDATE_GAZE_DATA_PARAMS._fields_ = [
     # not < (IN) Struct version

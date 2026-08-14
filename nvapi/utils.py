@@ -112,6 +112,28 @@ else:
 
 
 class ENUM(INT):
+    # ctypes simple types (this wraps c_int) compare by identity, not
+    # value, by default -- "status == NVAPI_OK" style checks throughout
+    # this codebase were silently always-false/always-true regardless of
+    # the actual returned value. Comparing by .value fixes every call site
+    # that checks a returned NvAPI_Status (or any other ENUM-typed field)
+    # against a constant, without needing to touch each individual check.
+    def __eq__(self, other):
+        if isinstance(other, ENUM):
+            return self.value == other.value
+        if isinstance(other, int):
+            return self.value == other
+        return NotImplemented
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return result
+        return not result
+
+    def __hash__(self):
+        return hash(self.value)
+
     @classmethod
     def get(cls, val):
         for value in cls.__dict__.values():
@@ -131,6 +153,8 @@ class EnumItem(int):
     def __eq__(self, other):
         if isinstance(other, int):
             return int.__eq__(self, other)
+        if isinstance(other, ENUM):
+            return int(self) == other.value
 
         return self.__str_val == other
 
