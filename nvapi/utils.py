@@ -134,6 +134,18 @@ class ENUM(INT):
     def __hash__(self):
         return hash(self.value)
 
+    def __index__(self):
+        # needed for "%d" % status style formatting, used throughout this
+        # codebase's own error-raising code (e.g.
+        # "returned %s (%d)" % (szDesc, nvStatus)) -- without __index__,
+        # %d can't convert an ENUM instance at all, which was turning
+        # real driver errors into an unrelated TypeError and hiding the
+        # actual failure reason.
+        return self.value
+
+    def __int__(self):
+        return self.value
+
     @classmethod
     def get(cls, val):
         for value in cls.__dict__.values():

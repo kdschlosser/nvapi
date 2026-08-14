@@ -129,9 +129,9 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_DISP_GetGDIPrimaryDisplayId returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_DISP_GetGDIPrimaryDisplayId returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        return self.display_id.value == displayId.value
+        return self.display_id == displayId.value
 
     @property
     def _hPhysicalGpu(self):
@@ -141,7 +141,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_SYS_GetPhysicalGpuFromDisplayId returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_SYS_GetPhysicalGpuFromDisplayId returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return hPhysicalGpu
 
@@ -169,7 +169,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         for i in range(displayIdCount.value):
             if displayIdArray[i].displayId == self.display_id:
@@ -188,7 +188,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_GetHdrCapabilities returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_GetHdrCapabilities returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return hdrCapabilities
 
@@ -211,7 +211,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return hdrColorData.hdrMode != NV_HDR_MODE_OFF
 
@@ -237,52 +237,57 @@ class Display(object):
             if NvAPI_Status.NVAPI_OK != nvStatus:
                 szDesc = NvAPI_ShortString()
                 NvAPI_GetErrorMessage(nvStatus, szDesc)
-                raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+                raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def connector_type(self):
+        # __display_data is None when this display isn't in the
+        # currently-connected set (it can still exist as a display ID from
+        # GetAllDisplayIds without being connected right now)
         dd = self.__display_data
+        if dd is None:
+            return None
         return NV_MONITOR_CONN_TYPE.get(dd.connectorType)
-    
+
     @property
     def is_dynamic(self):
         dd = self.__display_data
-        return bool(dd.isDynamic)    
-    
+        return dd is not None and bool(dd.isDynamic)
+
     @property
     def is_multi_stream_root_node(self):
         dd = self.__display_data
-        return bool(dd.isMultiStreamRootNode)
-        
+        return dd is not None and bool(dd.isMultiStreamRootNode)
+
     @property
     def is_active(self):
         dd = self.__display_data
-        return bool(dd.isActive)
+        return dd is not None and bool(dd.isActive)
 
     @property
     def is_cluster(self):
         dd = self.__display_data
-        return bool(dd.isCluster)
-    
+        return dd is not None and bool(dd.isCluster)
+
     @property
     def is_visible(self):
         dd = self.__display_data
-        return bool(dd.isOSVisible)
-    
+        return dd is not None and bool(dd.isOSVisible)
+
     @property
     def is_wireless_display(self):
         dd = self.__display_data
-        return bool(dd.isWFD)
-    
+        return dd is not None and bool(dd.isWFD)
+
     @property
     def is_connected(self):
         dd = self.__display_data
-        return bool(dd.isConnected)
+        return dd is not None and bool(dd.isConnected)
 
     @property
     def is_physically_connected(self):
         dd = self.__display_data
-        return bool(dd.isConnected) and bool(dd.isPhysicallyConnected)
+        return dd is not None and bool(dd.isConnected) and bool(dd.isPhysicallyConnected)
 
     @property
     def is_hdr_supported(self):
@@ -329,7 +334,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return NV_DYNAMIC_RANGE.get(hdrColorData.hdrDynamicRange)
 
@@ -349,7 +354,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         hdrColorData.cmd = NV_HDR_CMD_SET
 
@@ -366,7 +371,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def hdr_color_format(self):
@@ -384,7 +389,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return NV_COLOR_FORMAT.get(hdrColorData.hdrColorFormat)
 
@@ -404,7 +409,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         hdrColorData.cmd = NV_HDR_CMD_SET
 
@@ -421,7 +426,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def hdr_primary_color_coordinates(self):
@@ -469,14 +474,14 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def hdr_maximum_content_light_level(self):
         if not self.is_hdr_supported:
             return
 
-        return self._hdr_mastering_display_data.max_content_light_level.value
+        return self._hdr_mastering_display_data.max_content_light_level
 
     @hdr_maximum_content_light_level.setter
     def hdr_maximum_content_light_level(self, value):
@@ -500,7 +505,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def _hdr_mastering_display_data(self):
@@ -518,7 +523,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return hdrColorData.mastering_display_data
 
@@ -551,7 +556,7 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def hdr_minimum_luminance(self):
@@ -582,14 +587,14 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def hdr_maximum_frame_average_luminance(self):
         # Desired maximum Frame-Average Light Level (MaxFALL) of HDR
         # content ([0x0001-0xFFFF] = [1.0 - 65535.0] cd/m^2)
         dd = self.__hdr_data.display_data
-        return dd.desired_content_max_frame_average_luminance.value
+        return dd.desired_content_max_frame_average_luminance
 
     @hdr_maximum_frame_average_luminance.setter
     def hdr_maximum_frame_average_luminance(self, value):
@@ -613,31 +618,31 @@ class Display(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_Disp_HdrColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     @property
     def hdr_supports_2160p60hz(self):
         # If set sink is capable of 4kx2k @ 60hz
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_2160p60hz.value)
+        return bool(dvsm.supports_2160p60hz)
 
     @property
     def hdr_supports_yuv422_12bit(self):
         # If set, sink is capable of YUV422-12 bit
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_YUV422_12bit.value)
+        return bool(dvsm.supports_YUV422_12bit)
 
     @property
     def hdr_supports_global_dimming(self):
         # Indicates if sink supports global dimming
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_global_dimming.value)
+        return bool(dvsm.supports_global_dimming)
 
     @property
     def hdr_colorimetry(self):
         # If set indicates sink supports DCI P3 colorimetry, REc709 otherwise
         dvsm = self.__hdr_data.dv_static_metadata
-        if bool(dvsm.colorimetry.value):
+        if bool(dvsm.colorimetry):
             return 'DCI P3'
         else:
             return 'REc709'
@@ -646,47 +651,47 @@ class Display(object):
     def hdr_supports_backlight_control(self):
         # This is set when sink is using lowlatency interface and can control its backlight.
         dvsm = self.__hdr_data.dv_static_metadata
-        return bool(dvsm.supports_backlight_control.value)
+        return bool(dvsm.supports_backlight_control)
 
     @property
     def hdr_backlight_minimum(self):
         # It is the level for Backlt min luminance value.
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.backlt_min_luma.value
+        return dvsm.backlt_min_luma
 
     @property
     def hdr_interface_supported_by_sink(self):
         # Indicates the interface (standard or low latency) supported by the sink.
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.interface_supported_by_sink.value
+        return dvsm.interface_supported_by_sink
 
     @property
     def hdr_supports_10b_12b_444(self):
         # It is set when interface supported is low latency,
         # it tells whether it supports 10 bit or 12 bit RGB 4:4:4 or YCbCr 4:4:4 or both.
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.supports_10b_12b_444.value
+        return dvsm.supports_10b_12b_444
 
     @property
     def hdr_minimum_sink_luminance(self):
         # Represents min luminance level of Sink
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.target_min_luminance.value
+        return dvsm.target_min_luminance
 
     @property
     def hdr_maximum_sink_luminance(self):
         # Represents max luminance level of sink
         dvsm = self.__hdr_data.dv_static_metadata
-        return dvsm.target_max_luminance.value
+        return dvsm.target_max_luminance
 
     @property
     def hdr_primary_chromaticity_coordinates(self):
         dvsm = self.__hdr_data.dv_static_metadata
 
         red = RedCoordinate(x=dvsm.cc_red_x, y=dvsm.cc_red_y)
-        green = GreenCoordinate(x=dvsm.cc_green_x.value, y=dvsm.cc_green_y.value)
-        blue = BlueCoordinate(x=dvsm.cc_blue_x.value, y=dvsm.cc_blue_y.value)
-        white = WhiteCoordinate(x=dvsm.cc_white_x.value, y=dvsm.cc_white_y.value)
+        green = GreenCoordinate(x=dvsm.cc_green_x, y=dvsm.cc_green_y)
+        blue = BlueCoordinate(x=dvsm.cc_blue_x, y=dvsm.cc_blue_y)
+        white = WhiteCoordinate(x=dvsm.cc_white_x, y=dvsm.cc_white_y)
 
         return ColorCoordinates(
             red=red,
@@ -708,7 +713,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetHDCPSupportStatus returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetHDCPSupportStatus returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pGetHDCPSupportStatus
 
@@ -735,7 +740,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetShaderSubPipeCount returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetShaderSubPipeCount returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pCount.value
 
@@ -747,7 +752,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetGpuCoreCount returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetGpuCoreCount returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pCount.value
 
@@ -764,7 +769,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return NV_SYSTEM_TYPE.get(pSystemType)
 
@@ -789,7 +794,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetPCIIdentifiers returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetPCIIdentifiers returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return (
             pDeviceId.value,
@@ -821,7 +826,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetGPUType returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetGPUType returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return NV_GPU_TYPE.get(pGpuType)
 
@@ -832,7 +837,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetBusType returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetBusType returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return NV_GPU_BUS_TYPE.get(pBusType)
 
@@ -843,7 +848,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetBusId returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetBusId returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pBusId.value
 
@@ -854,7 +859,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetTachReading returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetTachReading returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pBusSlotId.value
 
@@ -865,7 +870,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetIRQ returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetIRQ returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pIRQ.value
 
@@ -876,7 +881,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetVbiosRevision returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetVbiosRevision returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
         return pBiosRevision.value
 
     @property
@@ -887,7 +892,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetVbiosOEMRevision returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetVbiosOEMRevision returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pBiosRevision.value
 
@@ -899,7 +904,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetVbiosVersionString returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetVbiosVersionString returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return szBiosRevision.value
 
@@ -911,7 +916,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetAGPAperture returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetAGPAperture returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pSize.value
 
@@ -922,7 +927,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetCurrentAGPRate returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetCurrentAGPRate returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pRate.value
 
@@ -933,7 +938,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetCurrentPCIEDownstreamWidth returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetCurrentPCIEDownstreamWidth returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pWidth.value
 
@@ -944,7 +949,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetPhysicalFrameBufferSize returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetPhysicalFrameBufferSize returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pSize.value
 
@@ -955,7 +960,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetVirtualFrameBufferSize returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetVirtualFrameBufferSize returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pSize.value
 
@@ -966,7 +971,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetQuadroStatus returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetQuadroStatus returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return 'Quadro' if pStatus.value else 'GeForce'
 
@@ -977,12 +982,12 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetBoardInfo returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetBoardInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         res = ''
 
         for i in range(16):
-            res += chr(pBoardInfo.BoardNum[i].value)
+            res += chr(pBoardInfo.BoardNum[i])
 
         return res
 
@@ -993,7 +998,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetTachReading returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetTachReading returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pValue.value
 
@@ -1018,16 +1023,16 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetPstatesInfoEx returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetPstatesInfoEx returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         pPstatesInfo = NV_GPU_PERF_PSTATES20_INFO()
         NvAPI_GPU_GetPstates20(self._hPhysicalGpu, ctypes.byref(pPstatesInfo))
 
         res = {}
 
-        if _get_bit(pPerfPstatesInfo.flags.value, 0):
+        if _get_bit(pPerfPstatesInfo.flags, 0):
 
-            for i in range(pPerfPstatesInfo.numPstates.value):
+            for i in range(pPerfPstatesInfo.numPstates):
                 pstate = pPerfPstatesInfo.pstates[i]
                 state_info = pPstatesInfo.pstates[i]
 
@@ -1039,7 +1044,7 @@ class PhysicalGPU(object):
                 else:
                     ps['pcie_limit'] = 'GEN1'
 
-                for j in range(pPerfPstatesInfo.numClocks.value):
+                for j in range(pPerfPstatesInfo.numClocks):
                     clock = pstate.clocks[j]
                     state_info_clock = state_info.clocks[j]
                     type_id = NV_GPU_PERF_PSTATE20_CLOCK_TYPE_ID.get(clock.typeId)
@@ -1047,46 +1052,46 @@ class PhysicalGPU(object):
                     data = {
                         'type': NV_GPU_PUBLIC_CLOCK_ID.get(clock.domainId),
                         'info_type': type_id,
-                        'freq_delta_khz': state_info_clock.freqDelta_kHz.value.value,
-                        'freq_delta_maximum_khz': state_info_clock.freqDelta_kHz.valueRange.max.value,
-                        'freq_delta_minimum_khz': state_info_clock.freqDelta_kHz.valueRange.min.value,
-                        'can_overclock': _get_bit(clock.flags.value, 0),
-                        'freq_khz': clock.freq.value
+                        'freq_delta_khz': state_info_clock.freqDelta_kHz.value,
+                        'freq_delta_maximum_khz': state_info_clock.freqDelta_kHz.valueRange.max,
+                        'freq_delta_minimum_khz': state_info_clock.freqDelta_kHz.valueRange.min,
+                        'can_overclock': _get_bit(clock.flags, 0),
+                        'freq_khz': clock.freq
                     }
 
                     if type_id == 'Single':
-                        data['freq_khz'] = state_info_clock.data.single.freq_kHz.value
+                        data['freq_khz'] = state_info_clock.data.single.freq_kHz
                     else:
-                        data['minimum_freq_khz'] = state_info_clock.data.range.minFreq_kHz.value
-                        data['maximum_freq_khz'] = state_info_clock.data.range.maxFreq_kHz.value
-                        data['minimum_voltage'] = state_info_clock.data.range.minVoltage_uV.value
-                        data['maximum_voltage'] = state_info_clock.data.range.maxVoltage_uV.value
+                        data['minimum_freq_khz'] = state_info_clock.data.range.minFreq_kHz
+                        data['maximum_freq_khz'] = state_info_clock.data.range.maxFreq_kHz
+                        data['minimum_voltage'] = state_info_clock.data.range.minVoltage_uV
+                        data['maximum_voltage'] = state_info_clock.data.range.maxVoltage_uV
 
                     ps['clocks'] += [data]
 
-                for j in range(pPerfPstatesInfo.numVoltages.value):
+                for j in range(pPerfPstatesInfo.numVoltages):
                     voltage = pstate.voltages[j]
                     base_voltage = state_info.baseVoltages[j]
 
                     ps['voltages'] += [
                         {
                             'type': NV_GPU_PERF_VOLTAGE_INFO_DOMAIN_ID.get(voltage.domainId),
-                            'mvolt': voltage.mvolt.value,
-                            'volt': base_voltage.volt_uV.value,
-                            'volt_delta': base_voltage.voltDelta_uV.value.value,
-                            'volt_delta_maximum': base_voltage.voltDelta_uV.valueRange.max.value,
-                            'volt_delta_minimum': base_voltage.voltDelta_uV.valueRange.min.value
+                            'mvolt': voltage.mvolt,
+                            'volt': base_voltage.volt_uV,
+                            'volt_delta': base_voltage.voltDelta_uV.value,
+                            'volt_delta_maximum': base_voltage.voltDelta_uV.valueRange.max,
+                            'volt_delta_minimum': base_voltage.voltDelta_uV.valueRange.min
                         }
                     ]
 
             pDynamicPstatesInfoEx = NV_GPU_DYNAMIC_PSTATES_INFO_EX()
             NvAPI_GPU_GetDynamicPstatesInfoEx(self._hPhysicalGpu,  ctypes.byref(pDynamicPstatesInfoEx))
             res['utilization'] = []
-            if _get_bit(pDynamicPstatesInfoEx.flags.value, 0):
+            if _get_bit(pDynamicPstatesInfoEx.flags, 0):
                 for i in range(NVAPI_MAX_GPU_UTILIZATIONS):
                     util = pDynamicPstatesInfoEx.utilization[i]
-                    if util.bIsPresent.value:
-                        res['utilization'] += [util.percentage.value]
+                    if util.bIsPresent:
+                        res['utilization'] += [util.percentage]
                     else:
                         res['utilization'] += [None]
 
@@ -1104,18 +1109,18 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetThermalSettings returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetThermalSettings returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         res = []
 
-        for i in range(pThermalSettings.count.value):
+        for i in range(pThermalSettings.count):
             sensr = pThermalSettings.sensor[i]
             res += [
                 {
                     'controller': NV_THERMAL_CONTROLLER.get(sensr.controller),
-                    'default_minimum_temp': sensr.defaultMinTemp.value,
-                    'default_maximum_temp': sensr.defaultMaxTemp.value,
-                    'current_temp': sensr.currentTemp.value,
+                    'default_minimum_temp': sensr.defaultMinTemp,
+                    'default_maximum_temp': sensr.defaultMaxTemp,
+                    'current_temp': sensr.currentTemp,
                     'target': NV_THERMAL_TARGET.get(sensr.target)
                 }
             ]
@@ -1127,22 +1132,22 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetThermalSettings returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetThermalSettings returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         res = []
 
         for i in range(NVAPI_MAX_GPU_PUBLIC_CLOCKS):
-            dmain = pClkFreqs.domain[i]
+            domain = pClkFreqs.domain[i]
 
-            if dmain.bIsPresent.value:
-                freq = dmain.frequency.value
+            if domain.bIsPresent:
+                freq = domain.frequency
             else:
                 freq = None
 
             res += [
                 {
                     'frequency': freq,
-                    'type': NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE.get(domain.ClockType.value)
+                    'type': NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE.get(domain.ClockType)
                 }
             ]
 
@@ -1162,42 +1167,42 @@ class PhysicalGPU(object):
     @property
     def dedicated_memory(self):
         # Size(in kb) of the physical framebuffer.
-        return self._memory_info.dedicatedVideoMemory.value
+        return self._memory_info.dedicatedVideoMemory
 
     @property
     def available_dedicated_memory(self):
         # Size(in kb) of the available physical framebuffer for allocating
         # video memory surfaces.
-        return self._memory_info.availableDedicatedVideoMemory.value
+        return self._memory_info.availableDedicatedVideoMemory
 
     @property
     def system_memory(self):
         # Size(in kb) of system memory the driver allocates at load time.
-        return self._memory_info.systemVideoMemory.value
+        return self._memory_info.systemVideoMemory
 
     @property
     def shared_system_memory(self):
         # Size(in kb) of shared system memory that driver is allowed to
         # commit for surfaces across all allocations.
-        return self._memory_info.sharedSystemMemory.value
+        return self._memory_info.sharedSystemMemory
 
     @property
     def current_available_dedicated_memory(self):
         # Size(in kb) of the current available physical framebuffer for
         # allocating video memory surfaces.
-        return self._memory_info.curAvailableDedicatedVideoMemory.value
+        return self._memory_info.curAvailableDedicatedVideoMemory
 
     @property
     def dedicated_memory_eviction_size(self):
         # Size(in kb) of the total size of memory released as a result of
         # the evictions.
-        return self._memory_info.dedicatedVideoMemoryEvictionsSize.value
+        return self._memory_info.dedicatedVideoMemoryEvictionsSize
 
     @property
     def dedicated_memory_eviction_count(self):
         # Indicates the number of eviction events that caused an allocation
         # to be removed from dedicated video memory to free GPU
-        return self._memory_info.dedicatedVideoMemoryEvictionCount.value
+        return self._memory_info.dedicatedVideoMemoryEvictionCount
 
     @property
     def _hPhysicalGpu(self):
@@ -1212,7 +1217,7 @@ class PhysicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetMemoryInfo returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetMemoryInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
 
 class LogicalGPU(object):
@@ -1226,7 +1231,7 @@ class LogicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_EnumNvidiaDisplayHandle returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_EnumNvidiaDisplayHandle returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         pLogicalGPU = NvLogicalGpuHandle()
 
@@ -1238,7 +1243,7 @@ class LogicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GetLogicalGPUFromDisplay returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GetLogicalGPUFromDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pLogicalGPU
 
@@ -1247,12 +1252,24 @@ class LogicalGPU(object):
 
     @property
     def physical_gpus(self):
-        for i in range(self._logical_gpu_info.physicalGpuCount.value):
+        for i in range(self._logical_gpu_info.physicalGpuCount):
             yield PhysicalGPU(self, i)
 
     @property
     def _logical_gpu_info(self):
         pLogicalGpuData = NV_LOGICAL_GPU_DATA()
+        pLogicalGpuData.version = NV_LOGICAL_GPU_DATA_VER
+
+        # per the struct's own doc comment: "[out] Returns OS-AdapterId.
+        # User must send memory buffer of size atleast equal to the size
+        # of LUID structure before calling the NVAPI." -- pOSAdapterId is
+        # a bare void* with nothing behind it otherwise, so the driver
+        # faults writing into it (NVAPI_INVALID_POINTER). NvLUID is kept
+        # alive on the returned struct itself so it isn't collected while
+        # pOSAdapterId still points at it.
+        luid_buffer = NvLUID()
+        pLogicalGpuData.pOSAdapterId = ctypes.cast(ctypes.byref(luid_buffer), POINTER(VOID))
+
         nvStatus = NvAPI_GPU_GetLogicalGpuInfo(
             self._pLogicalGPU,
             ctypes.byref(pLogicalGpuData)
@@ -1261,13 +1278,14 @@ class LogicalGPU(object):
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetLogicalGpuInfo returned %s (%d)" % (szDesc, nvStatus))
+            raise RuntimeError("NvAPI_GPU_GetLogicalGpuInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
+        pLogicalGpuData._luid_buffer = luid_buffer
         return pLogicalGpuData
 
     @property
     def os_adpater_id(self):
-        return self._logical_gpu_info.pOSAdapterId.value
+        return ctypes.cast(self._logical_gpu_info.pOSAdapterId, ctypes.c_void_p).value
 
     # NvAPI_Stereo_CreateHandleFromIUnknown(IUnknown *pDevice, StereoHandle *pStereoHandle);
     # NvAPI_Stereo_DestroyHandle(StereoHandle stereoHandle);
@@ -1288,7 +1306,7 @@ class LogicalGPU(object):
 
     def __iter__(self):
         logical_gpu_info = self._logical_gpu_info
-        for i in range(logical_gpu_info.physicalGpuCount.value):
+        for i in range(logical_gpu_info.physicalGpuCount):
             hPhysicalGpu = logical_gpu_info.physicalGpuHandles[i]
 
             displayIdCount = NvU32(16)
@@ -1304,7 +1322,7 @@ class LogicalGPU(object):
             if NvAPI_Status.NVAPI_OK != nvStatus:
                 szDesc = NvAPI_ShortString()
                 NvAPI_GetErrorMessage(nvStatus, szDesc)
-                raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc, nvStatus))
+                raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
             for i in range(displayIdCount.value):
                 yield Display(self, displayIdArray[i].displayId)
