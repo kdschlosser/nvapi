@@ -22021,7 +22021,7 @@ NvAPI_D3D9_CreateSwapChain.restype = NVAPI_INTERFACE
 NvDRSSessionHandle = NV_DECLARE_HANDLE('NvDRSSessionHandle')
 NvDRSProfileHandle = NV_DECLARE_HANDLE('NvDRSProfileHandle')
 
-NVAPI_DRS_GLOBAL_PROFILE = NvDRSProfileHandle(-1)
+NVAPI_DRS_GLOBAL_PROFILE = ctypes.cast(-1, NvDRSProfileHandle)  # sentinel: (NvDRSProfileHandle)-1
 NVAPI_SETTING_MAX_VALUES = 100
 
 

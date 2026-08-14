@@ -341,6 +341,13 @@ glob = globals()
 
 
 def NV_DECLARE_HANDLE(name):
+    # matches the real C typedef: `typedef struct Foo__ *Foo;` -- the
+    # handle itself is a POINTER to the anonymous struct, not the struct
+    # by value. Passing an instance of the bare struct as a function
+    # argument (with no argtypes declared) makes ctypes copy it in by
+    # value instead of passing its address, which is exactly what was
+    # producing NVAPI_INVALID_POINTER from calls like
+    # NvAPI_GPU_GetLogicalGpuInfo(hLogicalGPU, ...).
 
     class Struct(ctypes.Structure):
         _fields_ = [('unused', INT)]
@@ -349,7 +356,7 @@ def NV_DECLARE_HANDLE(name):
     cls = type(name + '__', (Struct,), {})
 
     glob.update({name + '__': cls})
-    return cls
+    return ctypes.POINTER(cls)
     
 
 # not \addtogroup nvapihandles
@@ -407,7 +414,7 @@ NvTargetHandle = NV_DECLARE_HANDLE('NvTargetHandle')
 # DirectX SwapChain objects
 NVDX_SwapChainHandle = NV_DECLARE_HANDLE('NVDX_SwapChainHandle')
 
-NVDX_SWAPCHAIN_NONE = NVDX_SwapChainHandle(0)
+NVDX_SWAPCHAIN_NONE = NVDX_SwapChainHandle()  # NULL pointer sentinel
 NVAPI_DEFAULT_HANDLE = 0
 
 
@@ -943,7 +950,7 @@ NvAPI_EnumPhysicalGPUs.restype = NVAPI_INTERFACE
 # DX Objects#
 #
 NVDX_ObjectHandle = NV_DECLARE_HANDLE('NVDX_ObjectHandle')
-NVDX_OBJECT_NONE = NVDX_ObjectHandle(0)
+NVDX_OBJECT_NONE = NVDX_ObjectHandle()  # NULL pointer sentinel
 
 # ///////////////////////////////////////////////////////////////////////
 # FUNCTION NAME: NvAPI_D3D_GetObjectHandleForResource
