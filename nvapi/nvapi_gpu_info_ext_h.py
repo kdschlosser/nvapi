@@ -397,3 +397,62 @@ NVLINK_GET_STATUS_EX_VER = NVLINK_GET_STATUS_EX_VER1
 
 NvAPI_GPU_NVLINK_GetStatusEx = hDll.GPU_NVLINK_GetStatusEx
 NvAPI_GPU_NVLINK_GetStatusEx.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# Hardware encoder (NVENC) monitoring -- session stats, not the encode
+# pipeline itself.
+# ---------------------------------------------------------------------------
+class NV_ENCODER_STATISTICS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('sessionsCount', NvU32),
+        ('averageFps', NvU32),
+        ('averageLatency', NvU32),
+    ]
+
+
+NV_ENCODER_STATISTICS = NV_ENCODER_STATISTICS_V1
+NV_ENCODER_STATISTICS_VER1 = MAKE_NVAPI_VERSION(NV_ENCODER_STATISTICS_V1, 1)
+NV_ENCODER_STATISTICS_VER = NV_ENCODER_STATISTICS_VER1
+
+NvAPI_GPU_GetEncoderStatistics = hDll.GPU_GetEncoderStatistics
+NvAPI_GPU_GetEncoderStatistics.restype = NVAPI_INTERFACE
+
+
+class NV_ENCODER_PER_SESSION_INFO_V1(ctypes.Structure):
+    _fields_ = [
+        ('sessionId', NvU32),
+        ('processId', NvU32),
+        ('vgpuInstance', NvU32),
+        ('codecType', NvU32),
+        ('hResolution', NvU32),
+        ('vResolution', NvU32),
+        ('averageEncodeFps', NvU32),
+        ('averageEncodeLatency', NvU32),
+    ]
+
+
+class NV_ENCODER_TYPE(ENUM):
+    NV_ENCODER_H264 = EnumItem(0).set_string('H.264')
+    NV_ENCODER_HEVC = EnumItem(1).set_string('HEVC')
+    NV_ENCODER_UNKNOWN = EnumItem(0xFFFFFFFF).set_string('Unknown')
+
+
+NV_ENCODER_SESSION_INFO_MAX_ENTRIES_V1 = 0x200  # 512 entries
+
+
+class NV_ENCODER_SESSIONS_INFO_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('sessionsCount', NvU32),
+        ('pSessionInfo', ctypes.POINTER(NV_ENCODER_PER_SESSION_INFO_V1)),
+    ]
+
+
+NV_ENCODER_SESSIONS_INFO = NV_ENCODER_SESSIONS_INFO_V1
+NV_ENCODER_SESSIONS_INFO_VER1 = MAKE_NVAPI_VERSION(NV_ENCODER_SESSIONS_INFO_V1, 1)
+NV_ENCODER_SESSIONS_INFO_VER = NV_ENCODER_SESSIONS_INFO_VER1
+
+NvAPI_GPU_GetEncoderSessionsInfo = hDll.GPU_GetEncoderSessionsInfo
+NvAPI_GPU_GetEncoderSessionsInfo.restype = NVAPI_INTERFACE

@@ -94,6 +94,11 @@ NVLinkLinkStatus = namedtuple('NVLinkLinkStatus', [
     'nvlink_link_clock_mhz', 'remote_device_uuid',
 ])
 NVLinkStatus = namedtuple('NVLinkStatus', ['link_mask', 'links'])
+EncoderStatistics = namedtuple('EncoderStatistics', ['sessions_count', 'average_fps', 'average_latency'])
+EncoderSessionInfo = namedtuple('EncoderSessionInfo', [
+    'session_id', 'process_id', 'vgpu_instance', 'codec_type',
+    'h_resolution', 'v_resolution', 'average_encode_fps', 'average_encode_latency',
+])
 
 
 class Display(object):
@@ -1482,6 +1487,52 @@ class PhysicalGPU(object):
             link_mask=pStatus.linkMask,
             links=links,
         )
+
+    @property
+    def encoder_statistics(self):
+        pEncoderStatistics = NV_ENCODER_STATISTICS()
+        pEncoderStatistics.version = NV_ENCODER_STATISTICS_VER
+        nvStatus = NvAPI_GPU_GetEncoderStatistics(self._hPhysicalGpu, ctypes.byref(pEncoderStatistics))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetEncoderStatistics returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EncoderStatistics(
+            sessions_count=pEncoderStatistics.sessionsCount,
+            average_fps=pEncoderStatistics.averageFps,
+            average_latency=pEncoderStatistics.averageLatency,
+        )
+
+    @property
+    def encoder_sessions(self):
+        # caller-allocated array, per the header's own doc comment
+        buf = (NV_ENCODER_PER_SESSION_INFO_V1 * NV_ENCODER_SESSION_INFO_MAX_ENTRIES_V1)()
+        pSessionsInfo = NV_ENCODER_SESSIONS_INFO()
+        pSessionsInfo.version = NV_ENCODER_SESSIONS_INFO_VER
+        pSessionsInfo.pSessionInfo = ctypes.cast(buf, ctypes.POINTER(NV_ENCODER_PER_SESSION_INFO_V1))
+
+        nvStatus = NvAPI_GPU_GetEncoderSessionsInfo(self._hPhysicalGpu, ctypes.byref(pSessionsInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetEncoderSessionsInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        sessions = []
+        for i in range(pSessionsInfo.sessionsCount):
+            info = buf[i]
+            sessions += [EncoderSessionInfo(
+                session_id=info.sessionId,
+                process_id=info.processId,
+                vgpu_instance=info.vgpuInstance,
+                codec_type=NV_ENCODER_TYPE.get(info.codecType),
+                h_resolution=info.hResolution,
+                v_resolution=info.vResolution,
+                average_encode_fps=info.averageEncodeFps,
+                average_encode_latency=info.averageEncodeLatency,
+            )]
+
+        return sessions
 
     @property
     def _hPhysicalGpu(self):
