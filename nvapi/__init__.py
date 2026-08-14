@@ -709,6 +709,7 @@ class PhysicalGPU(object):
     @property
     def _hdcp_support_status(self):
         pGetHDCPSupportStatus = NV_GPU_GET_HDCP_SUPPORT_STATUS()
+        pGetHDCPSupportStatus.version = NV_GPU_GET_HDCP_SUPPORT_STATUS_VER
         nvStatus = NvAPI_GPU_GetHDCPSupportStatus(self._hPhysicalGpu,  ctypes.byref(pGetHDCPSupportStatus))
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
@@ -978,6 +979,7 @@ class PhysicalGPU(object):
     @property
     def serial_number(self):
         pBoardInfo = NV_BOARD_INFO()
+        pBoardInfo.version = NV_BOARD_INFO_VER
         nvStatus = NvAPI_GPU_GetBoardInfo(self._hPhysicalGpu, ctypes.byref(pBoardInfo))
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
@@ -1018,6 +1020,7 @@ class PhysicalGPU(object):
     @property
     def performance_monitor(self):
         pPerfPstatesInfo = NV_GPU_PERF_PSTATES_INFO()
+        pPerfPstatesInfo.version = NV_GPU_PERF_PSTATES_INFO_VER
         inputFlags = NvU32()
         nvStatus = NvAPI_GPU_GetPstatesInfoEx(self._hPhysicalGpu,  ctypes.byref(pPerfPstatesInfo),  inputFlags)
         if NvAPI_Status.NVAPI_OK != nvStatus:
@@ -1026,7 +1029,12 @@ class PhysicalGPU(object):
             raise RuntimeError("NvAPI_GPU_GetPstatesInfoEx returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         pPstatesInfo = NV_GPU_PERF_PSTATES20_INFO()
-        NvAPI_GPU_GetPstates20(self._hPhysicalGpu, ctypes.byref(pPstatesInfo))
+        pPstatesInfo.version = NV_GPU_PERF_PSTATES20_INFO_VER
+        nvStatus = NvAPI_GPU_GetPstates20(self._hPhysicalGpu, ctypes.byref(pPstatesInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetPstates20 returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         res = {}
 
@@ -1105,6 +1113,7 @@ class PhysicalGPU(object):
     def thermal_sensors(self):
         sensorIndex = NvU32(NVAPI_THERMAL_TARGET_ALL)
         pThermalSettings = NV_GPU_THERMAL_SETTINGS()
+        pThermalSettings.version = NV_GPU_THERMAL_SETTINGS_VER
         nvStatus = NvAPI_GPU_GetThermalSettings(self._hPhysicalGpu, sensorIndex,  ctypes.byref(pThermalSettings))
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
@@ -1127,29 +1136,37 @@ class PhysicalGPU(object):
 
     @property
     def clock_frequencies(self):
-        pClkFreqs = NV_GPU_CLOCK_FREQUENCIES()
-        nvStatus = NvAPI_GPU_GetAllClockFrequencies(self._hPhysicalGpu,  ctypes.byref(pClkFreqs))
-        if NvAPI_Status.NVAPI_OK != nvStatus:
-            szDesc = NvAPI_ShortString()
-            NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GPU_GetThermalSettings returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+        # ClockType is an INPUT selector on the outer struct (one query
+        # per call picks Current/Base/Boost) -- it is not a per-domain
+        # output field, so getting all three means three separate calls,
+        # not reading pClkFreqs.domain[i].ClockType (which doesn't exist;
+        # only bIsPresent/frequency are on the per-domain struct).
+        res = {}
+        for type_name, clock_type in (
+            ('current', NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ),
+            ('base', NV_GPU_CLOCK_FREQUENCIES_BASE_CLOCK),
+            ('boost', NV_GPU_CLOCK_FREQUENCIES_BOOST_CLOCK),
+        ):
+            pClkFreqs = NV_GPU_CLOCK_FREQUENCIES()
+            # NV_GPU_CLOCK_FREQUENCIES aliases the V2 struct, but the
+            # generic _VER constant encodes V3's size -- must use the
+            # V2-specific version constant to match the struct actually
+            # being allocated
+            pClkFreqs.version = NV_GPU_CLOCK_FREQUENCIES_VER_2
+            pClkFreqs.ClockType = clock_type
 
-        res = []
+            nvStatus = NvAPI_GPU_GetAllClockFrequencies(self._hPhysicalGpu, ctypes.byref(pClkFreqs))
+            if NvAPI_Status.NVAPI_OK != nvStatus:
+                szDesc = NvAPI_ShortString()
+                NvAPI_GetErrorMessage(nvStatus, szDesc)
+                raise RuntimeError("NvAPI_GPU_GetAllClockFrequencies returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        for i in range(NVAPI_MAX_GPU_PUBLIC_CLOCKS):
-            domain = pClkFreqs.domain[i]
+            domains = []
+            for i in range(NVAPI_MAX_GPU_PUBLIC_CLOCKS):
+                domain = pClkFreqs.domain[i]
+                domains += [domain.frequency if domain.bIsPresent else None]
 
-            if domain.bIsPresent:
-                freq = domain.frequency
-            else:
-                freq = None
-
-            res += [
-                {
-                    'frequency': freq,
-                    'type': NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE.get(domain.ClockType)
-                }
-            ]
+            res[type_name] = domains
 
         return res
 
@@ -1212,12 +1229,15 @@ class PhysicalGPU(object):
     def _memory_info(self):
         hPhysicalGpu = self._hPhysicalGpu
         pMemoryInfo = NV_DISPLAY_DRIVER_MEMORY_INFO()
+        pMemoryInfo.version = NV_DISPLAY_DRIVER_MEMORY_INFO_VER
 
         nvStatus = NvAPI_GPU_GetMemoryInfo(hPhysicalGpu, ctypes.byref(pMemoryInfo))
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetMemoryInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pMemoryInfo
 
 
 class LogicalGPU(object):
