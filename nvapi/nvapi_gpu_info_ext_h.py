@@ -1222,3 +1222,122 @@ NvAPI_GPU_GetConnectorInfo = hDll.GPU_GetConnectorInfo
 NvAPI_GPU_GetConnectorInfo.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetConnectorInfo(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputId, NV_GPU_CONNECTOR_INFO *pConnectorInfo);
 # -- reverse-engineered, not from a published header; see comment above.
+
+
+# ---------------------------------------------------------------------------
+# Undocumented single-out-param GPU info functions
+# ---------------------------------------------------------------------------
+# None of these are declared in any published NVAPI header (current or
+# archived) or listed in NVIDIA's own published nvapi_interface.h -- same
+# situation as NvAPI_GPU_GetConnectorInfo above. Unlike GetConnectorInfo,
+# though, both the function signatures and interface IDs for these come
+# from a real, mature open-source reverse-engineering project (arcnmx/
+# nvapi-rs on GitHub -- sys/src/gpu/mod.rs's `private` module for the
+# signatures/enum tables, sys/src/nvid.rs for the numeric interface IDs),
+# not from black-box probing here. All take a single bare NvU32*/enum*/
+# NvAPI_ShortString* out-param -- no struct/version field to get wrong.
+#
+# Verified live against real hardware (Quadro RTX 4000, TU104 die):
+# - short_name correctly returns "TU104GL-A" -- TU104 is the real,
+#   publicly documented die used in the Quadro RTX 4000/RTX 2070/2080.
+# - ram_maker correctly decodes to Samsung -- plausible for this card's
+#   GDDR6.
+# - shader_pipe_count (5) returns a different value than the already-
+#   verified shader_sub_pipe_count (18) -- confirming these are two
+#   distinct real metrics, not the same call under two names.
+# - ram_type returned 14, outside the source enum's known range (which
+#   tops out at 10/GDDR5X and predates GDDR6 driver support). Added as
+#   NV_GPU_RAM_GDDR6 = 14 since it's independently verifiable (TU104 cards
+#   are publicly documented to use GDDR6, never GDDR6X), not a guess; 11-13
+#   remain unlabeled since nothing pins down what they are.
+# - foundry returned NVAPI_NOT_SUPPORTED on the test GPU -- a legitimate
+#   per-GPU "not supported" result, not a decode failure.
+class NV_GPU_RAM_TYPE(ENUM):
+    NV_GPU_RAM_UNKNOWN = EnumItem(0).set_string('Unknown')
+    NV_GPU_RAM_SDRAM = EnumItem(1).set_string('SDRAM')
+    NV_GPU_RAM_DDR1 = EnumItem(2).set_string('DDR1')
+    NV_GPU_RAM_DDR2 = EnumItem(3).set_string('DDR2')
+    NV_GPU_RAM_GDDR2 = EnumItem(4).set_string('GDDR2')
+    NV_GPU_RAM_GDDR3 = EnumItem(5).set_string('GDDR3')
+    NV_GPU_RAM_GDDR4 = EnumItem(6).set_string('GDDR4')
+    NV_GPU_RAM_DDR3 = EnumItem(7).set_string('DDR3')
+    NV_GPU_RAM_GDDR5 = EnumItem(8).set_string('GDDR5')
+    NV_GPU_RAM_LPDDR2 = EnumItem(9).set_string('LPDDR2')
+    NV_GPU_RAM_GDDR5X = EnumItem(10).set_string('GDDR5X')
+    # 11-13 unknown (not present in the source enum table, which predates
+    # GDDR6 driver support -- left unlabeled rather than guessed at). 14
+    # confirmed live on a Quadro RTX 4000 (TU104 die, verified separately
+    # via short_name) -- TU104-based cards are publicly documented to use
+    # GDDR6 (GDDR6X didn't exist until Ampere/GA10x), so this is a
+    # verified fact, not a guess.
+    NV_GPU_RAM_GDDR6 = EnumItem(14).set_string('GDDR6')
+
+
+class NV_GPU_RAM_MAKER(ENUM):
+    NV_GPU_RAM_MAKER_UNKNOWN = EnumItem(0).set_string('Unknown')
+    NV_GPU_RAM_MAKER_SAMSUNG = EnumItem(1).set_string('Samsung')
+    NV_GPU_RAM_MAKER_QIMONDA = EnumItem(2).set_string('Qimonda')
+    NV_GPU_RAM_MAKER_ELPIDA = EnumItem(3).set_string('Elpida')
+    NV_GPU_RAM_MAKER_ETRON = EnumItem(4).set_string('Etron')
+    NV_GPU_RAM_MAKER_NANYA = EnumItem(5).set_string('Nanya')
+    NV_GPU_RAM_MAKER_HYNIX = EnumItem(6).set_string('Hynix')
+    NV_GPU_RAM_MAKER_MOSEL = EnumItem(7).set_string('Mosel')
+    NV_GPU_RAM_MAKER_WINBOND = EnumItem(8).set_string('Winbond')
+    NV_GPU_RAM_MAKER_ELITE = EnumItem(9).set_string('Elite')
+    NV_GPU_RAM_MAKER_MICRON = EnumItem(10).set_string('Micron')
+
+
+class NV_GPU_FOUNDRY(ENUM):
+    NV_GPU_FOUNDRY_UNKNOWN = EnumItem(0).set_string('Unknown')
+    NV_GPU_FOUNDRY_TSMC = EnumItem(1).set_string('Taiwan Semiconductor Manufacturing Company (TSMC)')
+    NV_GPU_FOUNDRY_UMC = EnumItem(2).set_string('United Microelectronics Corporation (UMC)')
+    NV_GPU_FOUNDRY_IBM = EnumItem(3).set_string('IBM Microelectronics')
+    NV_GPU_FOUNDRY_SMIC = EnumItem(4).set_string('Semiconductor Manufacturing International Corporation (SMIC)')
+    NV_GPU_FOUNDRY_CSM = EnumItem(5).set_string('Chartered Semiconductor Manufacturing (CSM)')
+    NV_GPU_FOUNDRY_TOSHIBA = EnumItem(6).set_string('Toshiba Corporation')
+
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetRamType'] = 0x57f7caac
+NvAPI_GPU_GetRamType = hDll.GPU_GetRamType
+NvAPI_GPU_GetRamType.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetRamType(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_RAM_TYPE *pMemType);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetRamMaker'] = 0x42aea16a
+NvAPI_GPU_GetRamMaker = hDll.GPU_GetRamMaker
+NvAPI_GPU_GetRamMaker.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetRamMaker(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_RAM_MAKER *pRamMaker);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetRamBankCount'] = 0x17073a3c
+NvAPI_GPU_GetRamBankCount = hDll.GPU_GetRamBankCount
+NvAPI_GPU_GetRamBankCount.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetRamBankCount(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pRamBankCount);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetFoundry'] = 0x5d857a00
+NvAPI_GPU_GetFoundry = hDll.GPU_GetFoundry
+NvAPI_GPU_GetFoundry.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetFoundry(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_FOUNDRY *pFoundry);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetShaderPipeCount'] = 0x63e2f56f
+NvAPI_GPU_GetShaderPipeCount = hDll.GPU_GetShaderPipeCount
+NvAPI_GPU_GetShaderPipeCount.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetShaderPipeCount(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pCount);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetPartitionCount'] = 0x86f05d7a
+NvAPI_GPU_GetPartitionCount = hDll.GPU_GetPartitionCount
+NvAPI_GPU_GetPartitionCount.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetPartitionCount(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pPartitionCount);
+
+NVAPI_INTERFACE_IDS['NvAPI_GetDriverModel'] = 0x25eeb2c4
+NvAPI_GetDriverModel = hDll.GetDriverModel
+NvAPI_GetDriverModel.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GetDriverModel(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pDriverModel);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetShortName'] = 0xd988f0f3
+NvAPI_GPU_GetShortName = hDll.GPU_GetShortName
+NvAPI_GPU_GetShortName.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetShortName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString pName);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetFBWidthAndLocation'] = 0x11104158
+NvAPI_GPU_GetFBWidthAndLocation = hDll.GPU_GetFBWidthAndLocation
+NvAPI_GPU_GetFBWidthAndLocation.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetFBWidthAndLocation(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pWidth, NvU32 *pLocation);

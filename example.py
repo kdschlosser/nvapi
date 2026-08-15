@@ -107,6 +107,15 @@ for logical_gpu in logical_gpus:
             'client_illum_devices_info',
             'client_illum_devices_control',
             'client_illum_zones_info',
+            'short_name',
+            'ram_type',
+            'ram_maker',
+            'ram_bank_count',
+            'foundry',
+            'shader_pipe_count',
+            'partition_count',
+            'driver_model',
+            'framebuffer_width_and_location',
         ):
             try:
                 attr = getattr(gpu, attr_name)
