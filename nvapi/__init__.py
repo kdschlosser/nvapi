@@ -173,6 +173,39 @@ CustomDisplay = namedtuple('CustomDisplay', [
     'width', 'height', 'depth', 'color_format', 'src_partition', 'x_ratio', 'y_ratio',
     'timing', 'hw_mode_set_only',
 ])
+IllumDeviceInfo = namedtuple('IllumDeviceInfo', ['type', 'ctrl_mode_mask', 'i2c_device_index'])
+IllumDeviceControl = namedtuple('IllumDeviceControl', ['type', 'needs_sync', 'sync_timestamp_ms'])
+IllumZoneInfo = namedtuple('IllumZoneInfo', ['type', 'illum_device_index', 'provider_index', 'zone_location'])
+IllumRGBColor = namedtuple('IllumRGBColor', ['r', 'g', 'b', 'brightness_pct'])
+IllumPiecewiseLinearTiming = namedtuple('IllumPiecewiseLinearTiming', [
+    'cycle_type', 'group_count', 'rise_time_ms', 'fall_time_ms',
+    'a_time_ms', 'b_time_ms', 'group_idle_time_ms', 'phase_offset_ms',
+])
+# colors/brightness_pcts hold a 1-tuple for MANUAL_RGB ctrl_mode or a
+# 2-tuple (color/brightness A, B) for PIECEWISE_LINEAR_RGB, matching
+# NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_COLOR_ENDPOINTS; whichever
+# of colors/brightness_pcts applies depends on zone `type` (RGB vs
+# COLOR_FIXED). timing is only populated for PIECEWISE_LINEAR_RGB.
+IllumZoneControl = namedtuple('IllumZoneControl', ['type', 'ctrl_mode', 'colors', 'brightness_pcts', 'timing'])
+Rect = namedtuple('Rect', ['x', 'y', 'width', 'height'])
+ScanoutConfiguration = namedtuple('ScanoutConfiguration', ['desktop_rect', 'scanout_rect'])
+ScanoutInformation = namedtuple('ScanoutInformation', [
+    'source_desktop_rect', 'source_viewport_rect', 'target_viewport_rect',
+    'target_display_width', 'target_display_height', 'clone_importance', 'source_to_target_rotation',
+])
+EccStatusInfo = namedtuple('EccStatusInfo', ['is_supported', 'configuration_options', 'is_enabled'])
+EccErrorCounts = namedtuple('EccErrorCounts', ['single_bit_errors', 'double_bit_errors'])
+EccErrorInfo = namedtuple('EccErrorInfo', ['current', 'aggregate'])
+EccConfigurationInfo = namedtuple('EccConfigurationInfo', ['is_enabled', 'is_enabled_by_default'])
+ChipsetInfo = namedtuple('ChipsetInfo', [
+    'vendor_id', 'device_id', 'vendor_name', 'chipset_name', 'flags',
+    'sub_sys_vendor_id', 'sub_sys_device_id', 'sub_sys_vendor_name',
+    'hb_vendor_id', 'hb_device_id', 'hb_sub_sys_vendor_id', 'hb_sub_sys_device_id',
+])
+LidDockInfo = namedtuple('LidDockInfo', [
+    'current_lid_state', 'current_dock_state', 'current_lid_policy', 'current_dock_policy',
+    'forced_lid_mechanism_present', 'forced_dock_mechanism_present',
+])
 
 
 def _timing_from_struct(t):
@@ -223,20 +256,244 @@ def _custom_display_to_struct(cd):
     return s
 
 
+def _illum_device_info_from_struct(d):
+    i2c_idx = None
+    if d.type == NV_GPU_CLIENT_ILLUM_DEVICE_TYPE_MCUV10:
+        i2c_idx = d.data.mcuv10.i2cDevIdx
+
+    return IllumDeviceInfo(NV_GPU_CLIENT_ILLUM_DEVICE_TYPE.get(d.type), d.ctrlModeMask, i2c_idx)
+
+
+def _illum_device_control_from_struct(d):
+    return IllumDeviceControl(
+        NV_GPU_CLIENT_ILLUM_DEVICE_TYPE.get(d.type), bool(d.syncData.bSync), d.syncData.timeStampms,
+    )
+
+
+def _illum_device_control_to_struct(s, dc):
+    s.type = int(dc.type)
+    s.syncData.bSync = 1 if dc.needs_sync else 0
+    s.syncData.timeStampms = dc.sync_timestamp_ms if dc.sync_timestamp_ms else 0
+
+
+def _illum_rgb_params_from_struct(p):
+    return IllumRGBColor(p.colorR, p.colorG, p.colorB, p.brightnessPct)
+
+
+def _illum_rgb_params_to_struct(s, c):
+    s.colorR = c.r
+    s.colorG = c.g
+    s.colorB = c.b
+    s.brightnessPct = c.brightness_pct
+
+
+def _illum_piecewise_timing_from_struct(t):
+    return IllumPiecewiseLinearTiming(
+        NV_GPU_CLIENT_ILLUM_PIECEWISE_LINEAR_CYCLE_TYPE.get(t.cycleType), t.grpCount,
+        t.riseTimems, t.fallTimems, t.ATimems, t.BTimems, t.grpIdleTimems, t.phaseOffsetms,
+    )
+
+
+def _illum_piecewise_timing_to_struct(s, t):
+    s.cycleType = int(t.cycle_type)
+    s.grpCount = t.group_count
+    s.riseTimems = t.rise_time_ms
+    s.fallTimems = t.fall_time_ms
+    s.ATimems = t.a_time_ms
+    s.BTimems = t.b_time_ms
+    s.grpIdleTimems = t.group_idle_time_ms
+    s.phaseOffsetms = t.phase_offset_ms
+
+
+def _illum_zone_info_from_struct(z):
+    return IllumZoneInfo(
+        NV_GPU_CLIENT_ILLUM_ZONE_TYPE.get(z.type), z.illumDeviceIdx, z.provIdx,
+        NV_GPU_CLIENT_ILLUM_ZONE_LOCATION.get(z.zoneLocation),
+    )
+
+
+def _illum_zone_control_from_struct(z):
+    colors = None
+    brightness_pcts = None
+    timing = None
+
+    if z.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_RGB:
+        rgb = z.data.rgb.data
+        if z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            colors = (_illum_rgb_params_from_struct(rgb.manualRGB.rgbParams),)
+        elif z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            colors = tuple(_illum_rgb_params_from_struct(p) for p in rgb.piecewiseLinearRGB.rgbParams)
+            timing = _illum_piecewise_timing_from_struct(rgb.piecewiseLinearRGB.piecewiseLinearData)
+    elif z.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_COLOR_FIXED:
+        fixed = z.data.colorFixed.data
+        if z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            brightness_pcts = (fixed.manualColorFixed.colorFixedParams.brightnessPct,)
+        elif z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            brightness_pcts = tuple(p.brightnessPct for p in fixed.piecewiseLinearColorFixed.colorFixedParams)
+            timing = _illum_piecewise_timing_from_struct(fixed.piecewiseLinearColorFixed.piecewiseLinearData)
+
+    return IllumZoneControl(
+        NV_GPU_CLIENT_ILLUM_ZONE_TYPE.get(z.type), NV_GPU_CLIENT_ILLUM_CTRL_MODE.get(z.ctrlMode),
+        colors, brightness_pcts, timing,
+    )
+
+
+def _illum_zone_control_to_struct(s, zc):
+    s.type = int(zc.type)
+    s.ctrlMode = int(zc.ctrl_mode)
+
+    if zc.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_RGB:
+        if zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            _illum_rgb_params_to_struct(s.data.rgb.data.manualRGB.rgbParams, zc.colors[0])
+        elif zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            for i, c in enumerate(zc.colors):
+                _illum_rgb_params_to_struct(s.data.rgb.data.piecewiseLinearRGB.rgbParams[i], c)
+            _illum_piecewise_timing_to_struct(s.data.rgb.data.piecewiseLinearRGB.piecewiseLinearData, zc.timing)
+    elif zc.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_COLOR_FIXED:
+        if zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            s.data.colorFixed.data.manualColorFixed.colorFixedParams.brightnessPct = zc.brightness_pcts[0]
+        elif zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            for i, pct in enumerate(zc.brightness_pcts):
+                s.data.colorFixed.data.piecewiseLinearColorFixed.colorFixedParams[i].brightnessPct = pct
+            _illum_piecewise_timing_to_struct(s.data.colorFixed.data.piecewiseLinearColorFixed.piecewiseLinearData, zc.timing)
+
+
+def _rect_from_sbox(b):
+    return Rect(b.sX, b.sY, b.sWidth, b.sHeight)
+
+
+def _sbox_from_rect(r):
+    return NvSBox(r.x, r.y, r.width, r.height)
+
+
 class Display(object):
     # NvAPI_GPU_GetEDID/NvAPI_GPU_SetEDID are wired on PhysicalGPU (legacy
     # hPhysicalGpu + single-bit output mask signature, not displayId-based --
     # see PhysicalGPU.get_edid/set_edid). Display.edid_data (NvAPI_DISP_GetEdidData)
     # is the modern, displayId-based, extension-block-aware equivalent.
 
-    # NvAPI_GPU_GetScanoutConfiguration(NvU32 displayId, NvSBox* desktopRect, NvSBox* scanoutRect);
-    # NvAPI_GPU_GetScanoutCompositionParameter(__in NvU32 displayId, __in NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter, __out NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE *parameterData, __out float *pContainer);
-    # NvAPI_GPU_GetScanoutConfigurationEx(__in NvU32 displayId, __inout NV_SCANOUT_INFORMATION *pScanoutInformation);
-    # NvAPI_GPU_SetScanoutIntensity(NvU32 displayId, NV_SCANOUT_INTENSITY_DATA* scanoutIntensityData, int *pbSticky);
-    # NvAPI_GPU_GetScanoutIntensityState(__in NvU32 displayId, __inout NV_SCANOUT_INTENSITY_STATE_DATA* scanoutIntensityStateData);
-    # NvAPI_GPU_SetScanoutWarping(NvU32 displayId, NV_SCANOUT_WARPING_DATA* scanoutWarpingData, int* piMaxNumVertices, int* pbSticky);
-    # NvAPI_GPU_GetScanoutWarpingState(__in NvU32 displayId, __inout NV_SCANOUT_WARPING_STATE_DATA* scanoutWarpingStateData);
-    # NvAPI_GPU_SetScanoutCompositionParameter(NvU32 displayId, NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter,NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE parameterValue, float *pContainer);
+    @property
+    def scanout_configuration(self):
+        desktopRect = NvSBox()
+        scanoutRect = NvSBox()
+        nvStatus = NvAPI_GPU_GetScanoutConfiguration(self.display_id, ctypes.byref(desktopRect), ctypes.byref(scanoutRect))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutConfiguration returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return ScanoutConfiguration(_rect_from_sbox(desktopRect), _rect_from_sbox(scanoutRect))
+
+    @property
+    def scanout_configuration_ex(self):
+        p = NV_SCANOUT_INFORMATION()
+        p.version = NV_SCANOUT_INFORMATION_VER
+        nvStatus = NvAPI_GPU_GetScanoutConfigurationEx(self.display_id, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutConfigurationEx returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return ScanoutInformation(
+            _rect_from_sbox(p.sourceDesktopRect), _rect_from_sbox(p.sourceViewportRect),
+            _rect_from_sbox(p.targetViewportRect), p.targetDisplayWidth, p.targetDisplayHeight,
+            p.cloneImportance, NV_ROTATE.get(p.sourceToTargetRotation),
+        )
+
+    @property
+    def scanout_intensity_enabled(self):
+        p = NV_SCANOUT_INTENSITY_STATE_DATA()
+        p.version = NV_SCANOUT_INTENSITY_STATE_VER
+        nvStatus = NvAPI_GPU_GetScanoutIntensityState(self.display_id, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutIntensityState returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(p.bEnabled)
+
+    def set_scanout_intensity(self, width, height, blending_texture, offset_texture=None, offset_tex_channels=0):
+        # blending_texture/offset_texture are flat sequences of floats
+        # (RGB intensity texture, width*height*3 values). Used for
+        # projector edge-blending setups, not the 3D rendering pipeline.
+        data = NV_SCANOUT_INTENSITY_DATA()
+        data.version = NV_SCANOUT_INTENSITY_DATA_VER
+        data.width = width
+        data.height = height
+        blendArray = (FLOAT * len(blending_texture))(*blending_texture)
+        data.blendingTexture = ctypes.cast(blendArray, POINTER(FLOAT))
+        if offset_texture is not None:
+            offsetArray = (FLOAT * len(offset_texture))(*offset_texture)
+            data.offsetTexture = ctypes.cast(offsetArray, POINTER(FLOAT))
+            data.offsetTexChannels = offset_tex_channels
+
+        pbSticky = ctypes.c_int()
+        nvStatus = NvAPI_GPU_SetScanoutIntensity(self.display_id, ctypes.byref(data), ctypes.byref(pbSticky))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetScanoutIntensity returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(pbSticky.value)
+
+    @property
+    def scanout_warping_enabled(self):
+        p = NV_SCANOUT_WARPING_STATE_DATA()
+        p.version = NV_SCANOUT_WARPING_STATE_VER
+        nvStatus = NvAPI_GPU_GetScanoutWarpingState(self.display_id, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutWarpingState returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(p.bEnabled)
+
+    def set_scanout_warping(self, vertices, vertex_format=NV_GPU_WARPING_VERTICE_FORMAT_TRIANGLESTRIP_XYUVRQ, texture_rect=None):
+        # vertices is a flat sequence of floats, 6 per vertex (X,Y,U,V,R,Q).
+        data = NV_SCANOUT_WARPING_DATA()
+        data.version = NV_SCANOUT_WARPING_VER
+        vertexArray = (FLOAT * len(vertices))(*vertices)
+        data.vertices = ctypes.cast(vertexArray, POINTER(FLOAT))
+        data.vertexFormat = int(vertex_format)
+        data.numVertices = len(vertices) // 6
+        if texture_rect is not None:
+            rect = _sbox_from_rect(texture_rect)
+            data.textureRect = ctypes.pointer(rect)
+
+        maxNumVertices = ctypes.c_int()
+        pbSticky = ctypes.c_int()
+        nvStatus = NvAPI_GPU_SetScanoutWarping(self.display_id, ctypes.byref(data), ctypes.byref(maxNumVertices), ctypes.byref(pbSticky))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetScanoutWarping returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return maxNumVertices.value, bool(pbSticky.value)
+
+    def get_scanout_composition_parameter(self, parameter):
+        parameterData = NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE()
+        pContainer = FLOAT()
+        nvStatus = NvAPI_GPU_GetScanoutCompositionParameter(
+            self.display_id, NV_GPU_SCANOUT_COMPOSITION_PARAMETER(int(parameter)),
+            ctypes.byref(parameterData), ctypes.byref(pContainer),
+        )
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutCompositionParameter returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE.get(parameterData), pContainer.value
+
+    def set_scanout_composition_parameter(self, parameter, parameter_value, container=0.0):
+        pContainer = FLOAT(container)
+        nvStatus = NvAPI_GPU_SetScanoutCompositionParameter(
+            self.display_id, NV_GPU_SCANOUT_COMPOSITION_PARAMETER(int(parameter)),
+            NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE(int(parameter_value)), ctypes.byref(pContainer),
+        )
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetScanoutCompositionParameter returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     def infoframe_control(self, pInfoframeData):
         # low-level passthrough -- caller populates version/size/cmd/type/
@@ -399,9 +656,6 @@ class Display(object):
             index += 1
 
 
-
-    # NvAPI_EnumNvidiaDisplayHandle(NvU32 thisEnum, NvDisplayHandle *pNvDispHandle);
-
     @staticmethod
     def enum_display_handles():
         # legacy per-display enumeration handle -- distinct ID space from
@@ -555,7 +809,10 @@ class Display(object):
             bool(pInfo.isDp), bool(pInfo.isInternalDp), bool(pInfo.isColorCtrlSupported),
         )
 
-    def set_display_port(self, link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc):
+    @display_port_info.setter
+    def display_port_info(self, value):
+        # value: (link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc) tuple.
+        link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc = value
         pCfg = NV_DISPLAY_PORT_CONFIG()
         pCfg.version = NV_DISPLAY_PORT_CONFIG_VER
         pCfg.linkRate = int(link_rate)
@@ -1213,23 +1470,25 @@ class Display(object):
             max_frame_average_light_level=pMetadata.max_frame_average_light_level,
         )
 
-    def set_source_hdr_metadata(self, metadata):
-        # metadata: HdrMetadata namedtuple (or anything with the same
-        # attribute names, e.g. a plain object)
+    @source_hdr_metadata.setter
+    def source_hdr_metadata(self, value):
+        # value: an HdrMetadata namedtuple (or anything with the same
+        # attribute names, e.g. a plain object) -- the same shape returned
+        # by the source_hdr_metadata getter.
         pMetadata = NV_HDR_METADATA()
         pMetadata.version = NV_HDR_METADATA_VER
-        pMetadata.displayPrimary_x0 = metadata.display_primary_0.x
-        pMetadata.displayPrimary_y0 = metadata.display_primary_0.y
-        pMetadata.displayPrimary_x1 = metadata.display_primary_1.x
-        pMetadata.displayPrimary_y1 = metadata.display_primary_1.y
-        pMetadata.displayPrimary_x2 = metadata.display_primary_2.x
-        pMetadata.displayPrimary_y2 = metadata.display_primary_2.y
-        pMetadata.displayWhitePoint_x = metadata.white_point.x
-        pMetadata.displayWhitePoint_y = metadata.white_point.y
-        pMetadata.max_display_mastering_luminance = metadata.max_display_mastering_luminance
-        pMetadata.min_display_mastering_luminance = metadata.min_display_mastering_luminance
-        pMetadata.max_content_light_level = metadata.max_content_light_level
-        pMetadata.max_frame_average_light_level = metadata.max_frame_average_light_level
+        pMetadata.displayPrimary_x0 = value.display_primary_0.x
+        pMetadata.displayPrimary_y0 = value.display_primary_0.y
+        pMetadata.displayPrimary_x1 = value.display_primary_1.x
+        pMetadata.displayPrimary_y1 = value.display_primary_1.y
+        pMetadata.displayPrimary_x2 = value.display_primary_2.x
+        pMetadata.displayPrimary_y2 = value.display_primary_2.y
+        pMetadata.displayWhitePoint_x = value.white_point.x
+        pMetadata.displayWhitePoint_y = value.white_point.y
+        pMetadata.max_display_mastering_luminance = value.max_display_mastering_luminance
+        pMetadata.min_display_mastering_luminance = value.min_display_mastering_luminance
+        pMetadata.max_content_light_level = value.max_content_light_level
+        pMetadata.max_frame_average_light_level = value.max_frame_average_light_level
 
         nvStatus = NvAPI_Disp_SetSourceHdrMetadata(self.display_id, ctypes.byref(pMetadata))
         if NvAPI_Status.NVAPI_OK != nvStatus:
@@ -1346,7 +1605,10 @@ class Display(object):
             last_flip_timestamp=pAdaptiveSyncData.lastFlipTimeStamp,
         )
 
-    def set_adaptive_sync_data(self, max_frame_interval_ns=0, disable_adaptive_sync=False, disable_frame_splitting=False):
+    @adaptive_sync_data.setter
+    def adaptive_sync_data(self, value):
+        # value: (max_frame_interval_ns, disable_adaptive_sync, disable_frame_splitting) tuple.
+        max_frame_interval_ns, disable_adaptive_sync, disable_frame_splitting = value
         pAdaptiveSyncData = NV_SET_ADAPTIVE_SYNC_DATA()
         pAdaptiveSyncData.version = NV_SET_ADAPTIVE_SYNC_DATA_VER
         pAdaptiveSyncData.maxFrameIntervalNs = max_frame_interval_ns
@@ -1374,7 +1636,10 @@ class Display(object):
             is_gaming_vrr=bool(pVirtualRefreshRateData.bIsGamingVrr),
         )
 
-    def set_virtual_refresh_rate_data(self, frame_interval_us=0, refresh_rate_x1000=0, is_gaming_vrr=False):
+    @virtual_refresh_rate_data.setter
+    def virtual_refresh_rate_data(self, value):
+        # value: (frame_interval_us, refresh_rate_x1000, is_gaming_vrr) tuple.
+        frame_interval_us, refresh_rate_x1000, is_gaming_vrr = value
         pVirtualRefreshRateData = NV_SET_VIRTUAL_REFRESH_RATE_DATA()
         pVirtualRefreshRateData.version = NV_SET_VIRTUAL_REFRESH_RATE_DATA_VER
         pVirtualRefreshRateData.frameIntervalUs = frame_interval_us
@@ -1406,7 +1671,12 @@ class Display(object):
             name_is_available=bool(pMetadata.flags & 32),
         )
 
-    def set_dedicated_display_metadata(self, position_x=None, position_y=None, name=None):
+    @dedicated_display_metadata.setter
+    def dedicated_display_metadata(self, value):
+        # value: (position_x, position_y, name) tuple. position_x/position_y
+        # must both be set together to update position; either may be None
+        # (along with name) to leave that part unchanged.
+        position_x, position_y, name = value
         pMetadata = NV_MANAGED_DEDICATED_DISPLAY_METADATA()
         pMetadata.version = NV_MANAGED_DEDICATED_DISPLAY_METADATA_VER
         pMetadata.displayId = self.display_id
@@ -1687,7 +1957,16 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_SetEDID returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-    # NvAPI_GPU_GetFullName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szName);
+    @property
+    def full_name(self):
+        szName = NvAPI_ShortString()
+        nvStatus = NvAPI_GPU_GetFullName(self._hPhysicalGpu, szName)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetFullName returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return szName.value.decode('ascii', 'replace')
 
     @property
     def _pci_identifiers(self):
@@ -1914,18 +2193,152 @@ class PhysicalGPU(object):
 
         return pValue.value
 
-    # NvAPI_I2CRead(NvPhysicalGpuHandle hPhysicalGpu, NV_I2C_INFO *pI2cInfo);
-    # NvAPI_I2CWrite(NvPhysicalGpuHandle hPhysicalGpu, NV_I2C_INFO *pI2cInfo);
+    def _i2c_info(self, display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id):
+        info = NV_I2C_INFO()
+        info.version = NV_I2C_INFO_VER
+        info.displayMask = display_mask
+        info.bIsDDCPort = 1 if is_ddc_port else 0
+        info.i2cDevAddress = i2c_dev_address
+        if reg_address is not None:
+            regArray = (NvU8 * len(reg_address))(*bytearray(reg_address))
+            info.pbI2cRegAddress = ctypes.cast(regArray, POINTER(NvU8))
+            info.regAddrSize = len(reg_address)
+            info._reg_address_buffer = regArray
+        else:
+            info.regAddrSize = 0
+        info.i2cSpeed = NVAPI_I2C_SPEED_DEPRECATED
+        info.i2cSpeedKhz = int(speed_khz)
+        if port_id is not None:
+            info.portId = port_id
+            info.bIsPortIdSet = 1
 
-    # NvAPI_GPU_WorkstationFeatureSetup(__in NvPhysicalGpuHandle hPhysicalGpu, __in NvU32 featureEnableMask, __in NvU32 featureDisableMask);
-    # NvAPI_GPU_WorkstationFeatureQuery(__in NvPhysicalGpuHandle hPhysicalGpu, __out_opt NvU32 *pConfiguredFeatureMask, __out_opt NvU32 *pConsistentFeatureMask);
-    # NvAPI_GPU_GetECCStatusInfo(NvPhysicalGpuHandle hPhysicalGpu,NV_GPU_ECC_STATUS_INFO *pECCStatusInfo);
-    # NvAPI_GPU_GetECCErrorInfo(NvPhysicalGpuHandle hPhysicalGpu,NV_GPU_ECC_ERROR_INFO *pECCErrorInfo);
-    # NvAPI_GPU_ResetECCErrorInfo(NvPhysicalGpuHandle hPhysicalGpu, NvU8 bResetCurrent,NvU8 bResetAggregate);
-    # NvAPI_GPU_GetECCConfigurationInfo(NvPhysicalGpuHandle hPhysicalGpu,NV_GPU_ECC_CONFIGURATION_INFO *pECCConfigurationInfo);
-    # NvAPI_GPU_SetECCConfiguration(NvPhysicalGpuHandle hPhysicalGpu, NvU8 bEnable,NvU8 bEnableImmediately);
-    # NvAPI_GPU_QueryWorkstationFeatureSupport(NvPhysicalGpuHandle physicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE gpuWorkstationFeature);
-    # NvAPI_GPU_GetPerfDecreaseInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NvU32 *pPerfDecrInfo);
+        return info
+
+    def i2c_read(self, display_mask, i2c_dev_address, size, reg_address=None,
+                 is_ddc_port=True, speed_khz=NVAPI_I2C_SPEED_DEFAULT, port_id=None):
+        info = self._i2c_info(display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id)
+        dataBuf = (NvU8 * size)()
+        info.pbData = ctypes.cast(dataBuf, POINTER(NvU8))
+        info.cbSize = size
+
+        nvStatus = NvAPI_I2CRead(self._hPhysicalGpu, ctypes.byref(info))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_I2CRead returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bytes(dataBuf)
+
+    def i2c_write(self, display_mask, i2c_dev_address, data, reg_address=None,
+                  is_ddc_port=True, speed_khz=NVAPI_I2C_SPEED_DEFAULT, port_id=None):
+        info = self._i2c_info(display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id)
+        data = bytearray(data)
+        dataArray = (NvU8 * len(data))(*data)
+        info.pbData = ctypes.cast(dataArray, POINTER(NvU8))
+        info.cbSize = len(data)
+
+        nvStatus = NvAPI_I2CWrite(self._hPhysicalGpu, ctypes.byref(info))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_I2CWrite returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    def workstation_feature_setup(self, enable_mask, disable_mask):
+        nvStatus = NvAPI_GPU_WorkstationFeatureSetup(self._hPhysicalGpu, NvU32(enable_mask), NvU32(disable_mask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_WorkstationFeatureSetup returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def workstation_feature_query(self):
+        pConfigured = NvU32()
+        pConsistent = NvU32()
+        nvStatus = NvAPI_GPU_WorkstationFeatureQuery(self._hPhysicalGpu, ctypes.byref(pConfigured), ctypes.byref(pConsistent))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_WorkstationFeatureQuery returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pConfigured.value, pConsistent.value
+
+    def query_workstation_feature_support(self, feature):
+        nvStatus = NvAPI_GPU_QueryWorkstationFeatureSupport(self._hPhysicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE(int(feature)))
+        if nvStatus == NvAPI_Status.NVAPI_NOT_SUPPORTED:
+            return False
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_QueryWorkstationFeatureSupport returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return True
+
+    @property
+    def ecc_status_info(self):
+        p = NV_GPU_ECC_STATUS_INFO()
+        p.version = NV_GPU_ECC_STATUS_INFO_VER
+        nvStatus = NvAPI_GPU_GetECCStatusInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetECCStatusInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EccStatusInfo(bool(p.isSupported), NV_ECC_CONFIGURATION.get(p.configurationOptions), bool(p.isEnabled))
+
+    @property
+    def ecc_error_info(self):
+        p = NV_GPU_ECC_ERROR_INFO()
+        p.version = NV_GPU_ECC_ERROR_INFO_VER
+        nvStatus = NvAPI_GPU_GetECCErrorInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetECCErrorInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EccErrorInfo(
+            EccErrorCounts(p.current.singleBitErrors, p.current.doubleBitErrors),
+            EccErrorCounts(p.aggregate.singleBitErrors, p.aggregate.doubleBitErrors),
+        )
+
+    def reset_ecc_error_info(self, reset_current=True, reset_aggregate=True):
+        nvStatus = NvAPI_GPU_ResetECCErrorInfo(self._hPhysicalGpu, NvU8(1 if reset_current else 0), NvU8(1 if reset_aggregate else 0))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ResetECCErrorInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def ecc_configuration_info(self):
+        p = NV_GPU_ECC_CONFIGURATION_INFO()
+        p.version = NV_GPU_ECC_CONFIGURATION_INFO_VER
+        nvStatus = NvAPI_GPU_GetECCConfigurationInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetECCConfigurationInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EccConfigurationInfo(bool(p.isEnabled), bool(p.isEnabledByDefault))
+
+    @ecc_configuration_info.setter
+    def ecc_configuration_info(self, value):
+        # value: (enable, enable_immediately) tuple.
+        enable, enable_immediately = value
+        nvStatus = NvAPI_GPU_SetECCConfiguration(self._hPhysicalGpu, NvU8(1 if enable else 0), NvU8(1 if enable_immediately else 0))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetECCConfiguration returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def perf_decrease_info(self):
+        pPerfDecrInfo = NvU32()
+        nvStatus = NvAPI_GPU_GetPerfDecreaseInfo(self._hPhysicalGpu, ctypes.byref(pPerfDecrInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetPerfDecreaseInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pPerfDecrInfo.value
 
     @property
     def performance_monitor(self):
@@ -2017,7 +2430,16 @@ class PhysicalGPU(object):
 
         return res
 
-    # NvAPI_GPU_GetCurrentPstate(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_PERF_PSTATE_ID *pCurrentPstate);
+    @property
+    def current_pstate(self):
+        pCurrentPstate = NV_GPU_PERF_PSTATE_ID()
+        nvStatus = NvAPI_GPU_GetCurrentPstate(self._hPhysicalGpu, ctypes.byref(pCurrentPstate))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetCurrentPstate returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_PERF_PSTATE_ID.get(pCurrentPstate)
 
     @property
     def thermal_sensors(self):
@@ -2080,12 +2502,121 @@ class PhysicalGPU(object):
 
         return res
 
-    # NvAPI_GPU_ClientIllumDevicesGetInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS *pIllumDevicesInfo);
-    # NvAPI_GPU_ClientIllumDevicesGetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS *pClientIllumDevicesControl);
-    # NvAPI_GPU_ClientIllumDevicesSetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS *pClientIllumDevicesControl);
-    # NvAPI_GPU_ClientIllumZonesGetInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS *pIllumZonesInfo);
-    # NvAPI_GPU_ClientIllumZonesGetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS *pIllumZonesControl);
-    # NvAPI_GPU_ClientIllumZonesSetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS *pIllumZonesControl);
+    def query_illumination_support(self, attribute):
+        p = NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM()
+        p.version = NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM_VER
+        p.hPhysicalGpu = self._hPhysicalGpu
+        p.Attribute = int(attribute)
+        nvStatus = NvAPI_GPU_QueryIlluminationSupport(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_QueryIlluminationSupport returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(p.bSupported)
+
+    def get_illumination(self, attribute):
+        p = NV_GPU_GET_ILLUMINATION_PARM()
+        p.version = NV_GPU_GET_ILLUMINATION_PARM_VER
+        p.hPhysicalGpu = self._hPhysicalGpu
+        p.Attribute = int(attribute)
+        nvStatus = NvAPI_GPU_GetIllumination(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetIllumination returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return p.Value
+
+    def set_illumination(self, attribute, value):
+        p = NV_GPU_SET_ILLUMINATION_PARM()
+        p.version = NV_GPU_SET_ILLUMINATION_PARM_VER
+        p.hPhysicalGpu = self._hPhysicalGpu
+        p.Attribute = int(attribute)
+        p.Value = value
+        nvStatus = NvAPI_GPU_SetIllumination(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetIllumination returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def client_illum_devices_info(self):
+        p = NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS_VER
+        nvStatus = NvAPI_GPU_ClientIllumDevicesGetInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumDevicesGetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_device_info_from_struct(p.devices[i]) for i in range(p.numIllumDevices)]
+
+    @property
+    def client_illum_devices_control(self):
+        p = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS_VER
+        nvStatus = NvAPI_GPU_ClientIllumDevicesGetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumDevicesGetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_device_control_from_struct(p.devices[i]) for i in range(p.numIllumDevices)]
+
+    @client_illum_devices_control.setter
+    def client_illum_devices_control(self, value):
+        devices = list(value)
+        p = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS_VER
+        p.numIllumDevices = len(devices)
+        for i, dc in enumerate(devices):
+            _illum_device_control_to_struct(p.devices[i], dc)
+
+        nvStatus = NvAPI_GPU_ClientIllumDevicesSetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumDevicesSetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def client_illum_zones_info(self):
+        p = NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS_VER
+        nvStatus = NvAPI_GPU_ClientIllumZonesGetInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumZonesGetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_zone_info_from_struct(p.zones[i]) for i in range(p.numIllumZones)]
+
+    def client_illum_zones_control(self, default=False):
+        p = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS_VER
+        p.bDefault = 1 if default else 0
+        nvStatus = NvAPI_GPU_ClientIllumZonesGetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumZonesGetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_zone_control_from_struct(p.zones[i]) for i in range(p.numIllumZonesControl)]
+
+    def set_client_illum_zones_control(self, zones, default=False):
+        zones = list(zones)
+        p = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS_VER
+        p.bDefault = 1 if default else 0
+        p.numIllumZonesControl = len(zones)
+        for i, zc in enumerate(zones):
+            _illum_zone_control_to_struct(p.zones[i], zc)
+
+        nvStatus = NvAPI_GPU_ClientIllumZonesSetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumZonesSetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     def __init__(self, logical_gpu, physical_gpu_index):
         self.logical_gpu = logical_gpu
@@ -2580,13 +3111,51 @@ class Singleton(type):
 
 @six.add_metaclass(Singleton)
 class GPUs(object):
-    # NvAPI_GetInterfaceVersionString(NvAPI_ShortString szDesc);
-    # NvAPI_SYS_GetChipSetInfo(NV_CHIPSET_INFO *pChipSetInfo);
-    # NvAPI_SYS_GetLidAndDockInfo(NV_LID_DOCK_PARAMS *pLidAndDock);
+    @property
+    def interface_version(self):
+        szDesc = NvAPI_ShortString()
+        nvStatus = NvAPI_GetInterfaceVersionString(szDesc)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            raise RuntimeError("NvAPI_GetInterfaceVersionString returned error code %d" % (nvStatus,))
 
-    # NvAPI_GPU_QueryIlluminationSupport(__inout NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM *pIlluminationSupportInfo);
-    # NvAPI_GPU_GetIllumination(NV_GPU_GET_ILLUMINATION_PARM *pIlluminationInfo);
-    # NvAPI_GPU_SetIllumination(NV_GPU_SET_ILLUMINATION_PARM *pIlluminationInfo);
+        return szDesc.value.decode('ascii', 'replace')
+
+    @property
+    def chipset_info(self):
+        p = NV_CHIPSET_INFO()
+        p.version = NV_CHIPSET_INFO_VER
+        nvStatus = NvAPI_SYS_GetChipSetInfo(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SYS_GetChipSetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return ChipsetInfo(
+            p.vendorId, p.deviceId, p.szVendorName.decode('ascii', 'replace'),
+            p.szChipsetName.decode('ascii', 'replace'), p.flags,
+            p.subSysVendorId, p.subSysDeviceId, p.szSubSysVendorName.decode('ascii', 'replace'),
+            p.HBvendorId, p.HBdeviceId, p.HBsubSysVendorId, p.HBsubSysDeviceId,
+        )
+
+    @property
+    def lid_and_dock_info(self):
+        p = NV_LID_DOCK_PARAMS()
+        p.version = NV_LID_DOCK_PARAMS_VER
+        nvStatus = NvAPI_SYS_GetLidAndDockInfo(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SYS_GetLidAndDockInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return LidDockInfo(
+            p.currentLidState, p.currentDockState, p.currentLidPolicy, p.currentDockPolicy,
+            bool(p.forcedLidMechanismPresent), bool(p.forcedDockMechanismPresent),
+        )
+
+    # NvAPI_GPU_{Query,Get,Set}Illumination are wired on PhysicalGPU
+    # (query_illumination_support/get_illumination/set_illumination) --
+    # hPhysicalGpu is an explicit field on their param structs, so they fit
+    # there alongside the newer ClientIllum* zone-based API.
 
 
     # NvAPI_Stereo_Enable(void);
@@ -2803,14 +3372,16 @@ class GPUs(object):
 
         return result
 
-    @staticmethod
-    def set_display_config(paths, flags=0):
-        # Applies a global display topology. paths is an iterable of
-        # DisplayConfigPath (as returned by GPUs.display_config) or
-        # any object exposing the same attributes. Advanced per-target
+    @display_config.setter
+    def display_config(self, value):
+        # value: (paths, flags) tuple. paths is an iterable of
+        # DisplayConfigPath (as returned by the display_config getter) or
+        # any object exposing the same attributes; flags is a bitmask of
+        # NV_DISPLAYCONFIG_FLAGS (0 to just apply). Advanced per-target
         # settings (rotation/scaling/timing overrides) are not supported
         # through this entry point -- pass details=NULL, matching what
-        # display_config itself reads back.
+        # the getter itself reads back.
+        paths, flags = value
         paths = list(paths)
         pathInfo = (NV_DISPLAYCONFIG_PATH_INFO * len(paths))()
         sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO * len(paths))()
