@@ -169,6 +169,58 @@ DisplayConfigPath = namedtuple('DisplayConfigPath', [
     'source_id', 'targets', 'resolution', 'position', 'is_gdi_primary',
 ])
 EdidPage = namedtuple('EdidPage', ['data', 'edid_id', 'size'])
+CustomDisplay = namedtuple('CustomDisplay', [
+    'width', 'height', 'depth', 'color_format', 'src_partition', 'x_ratio', 'y_ratio',
+    'timing', 'hw_mode_set_only',
+])
+
+
+def _timing_from_struct(t):
+    return TimingInfo(
+        t.HVisible, t.HBorder, t.HFrontPorch, t.HSyncWidth, t.HTotal, t.HSyncPol,
+        t.VVisible, t.VBorder, t.VFrontPorch, t.VSyncWidth, t.VTotal, t.VSyncPol,
+        bool(t.interlaced), t.pclk,
+    )
+
+
+def _timing_to_struct(s, t):
+    s.HVisible = t.h_visible
+    s.HBorder = t.h_border
+    s.HFrontPorch = t.h_front_porch
+    s.HSyncWidth = t.h_sync_width
+    s.HTotal = t.h_total
+    s.HSyncPol = t.h_sync_polarity
+    s.VVisible = t.v_visible
+    s.VBorder = t.v_border
+    s.VFrontPorch = t.v_front_porch
+    s.VSyncWidth = t.v_sync_width
+    s.VTotal = t.v_total
+    s.VSyncPol = t.v_sync_polarity
+    s.interlaced = 1 if t.is_interlaced else 0
+    s.pclk = t.pixel_clock_10khz
+
+
+def _custom_display_from_struct(c):
+    return CustomDisplay(
+        c.width, c.height, c.depth, NV_FORMAT.get(c.colorFormat),
+        (c.srcPartition.x, c.srcPartition.y, c.srcPartition.w, c.srcPartition.h),
+        c.xRatio, c.yRatio, _timing_from_struct(c.timing), bool(c.hwModeSetOnly),
+    )
+
+
+def _custom_display_to_struct(cd):
+    s = NV_CUSTOM_DISPLAY()
+    s.version = NV_CUSTOM_DISPLAY_VER
+    s.width = cd.width
+    s.height = cd.height
+    s.depth = cd.depth
+    s.colorFormat = int(cd.color_format)
+    s.srcPartition.x, s.srcPartition.y, s.srcPartition.w, s.srcPartition.h = cd.src_partition
+    s.xRatio = cd.x_ratio
+    s.yRatio = cd.y_ratio
+    _timing_to_struct(s.timing, cd.timing)
+    s.hwModeSetOnly = 1 if cd.hw_mode_set_only else 0
+    return s
 
 
 class Display(object):
@@ -331,11 +383,20 @@ class Display(object):
             MonitorColorCap(NV_DP_COLOR_FORMAT.get(c.colorFormat), NV_DP_BPC.get(c.backendBitDepths))
             for c in caps[:pColorCapsCount.value]
         ]
-    # NvAPI_DISP_EnumCustomDisplay( __in NvU32 displayId, __in NvU32 index, __inout NV_CUSTOM_DISPLAY *pCustDisp);
-    # NvAPI_DISP_TryCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in_ecount(count) NV_CUSTOM_DISPLAY *pCustDisp);
-    # NvAPI_DISP_DeleteCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in NV_CUSTOM_DISPLAY *pCustDisp);
-    # NvAPI_DISP_SaveCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in NvU32 isThisOutputIdOnly, __in NvU32 isThisMonitorIdOnly);
-    # NvAPI_DISP_RevertCustomDisplayTrial( __in_ecount(count) NvU32* pDisplayIds, __in NvU32 count);
+    def enum_custom_displays(self):
+        index = 0
+        while True:
+            pCustDisp = NV_CUSTOM_DISPLAY()
+            pCustDisp.version = NV_CUSTOM_DISPLAY_VER
+            nvStatus = NvAPI_DISP_EnumCustomDisplay(self.display_id, NvU32(index), ctypes.byref(pCustDisp))
+            if nvStatus == NvAPI_Status.NVAPI_END_ENUMERATION:
+                return
+            if NvAPI_Status.NVAPI_OK != nvStatus:
+                szDesc = NvAPI_ShortString()
+                NvAPI_GetErrorMessage(nvStatus, szDesc)
+                raise RuntimeError("NvAPI_DISP_EnumCustomDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+            yield _custom_display_from_struct(pCustDisp)
+            index += 1
 
 
 
@@ -2783,3 +2844,54 @@ class GPUs(object):
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_DISP_SetDisplayConfig returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @staticmethod
+    def try_custom_display(display_ids, custom_displays):
+        # Applies a custom-timing modeset trial to hardware without saving
+        # it -- follow up with save_custom_display to persist, or
+        # revert_custom_display_trial to undo.
+        display_ids = list(display_ids)
+        custom_displays = list(custom_displays)
+        idArray = (NvU32 * len(display_ids))(*display_ids)
+        custDispArray = (NV_CUSTOM_DISPLAY * len(custom_displays))(*[_custom_display_to_struct(cd) for cd in custom_displays])
+        nvStatus = NvAPI_DISP_TryCustomDisplay(idArray, NvU32(len(display_ids)), custDispArray)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_TryCustomDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @staticmethod
+    def delete_custom_display(display_ids, custom_display):
+        display_ids = list(display_ids)
+        idArray = (NvU32 * len(display_ids))(*display_ids)
+        custDisp = _custom_display_to_struct(custom_display)
+        nvStatus = NvAPI_DISP_DeleteCustomDisplay(idArray, NvU32(len(display_ids)), ctypes.byref(custDisp))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_DeleteCustomDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @staticmethod
+    def save_custom_display(display_ids, is_this_output_id_only=False, is_this_monitor_id_only=False):
+        # Must be called right after try_custom_display -- persists the
+        # trial that's currently active on the hardware.
+        display_ids = list(display_ids)
+        idArray = (NvU32 * len(display_ids))(*display_ids)
+        nvStatus = NvAPI_DISP_SaveCustomDisplay(
+            idArray, NvU32(len(display_ids)),
+            NvU32(1 if is_this_output_id_only else 0), NvU32(1 if is_this_monitor_id_only else 0),
+        )
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_SaveCustomDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @staticmethod
+    def revert_custom_display_trial(display_ids):
+        display_ids = list(display_ids)
+        idArray = (NvU32 * len(display_ids))(*display_ids)
+        nvStatus = NvAPI_DISP_RevertCustomDisplayTrial(idArray, NvU32(len(display_ids)))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_RevertCustomDisplayTrial returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
