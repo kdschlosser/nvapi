@@ -193,6 +193,10 @@ ScanoutInformation = namedtuple('ScanoutInformation', [
     'source_desktop_rect', 'source_viewport_rect', 'target_viewport_rect',
     'target_display_width', 'target_display_height', 'clone_importance', 'source_to_target_rotation',
 ])
+EccStatusInfo = namedtuple('EccStatusInfo', ['is_supported', 'configuration_options', 'is_enabled'])
+EccErrorCounts = namedtuple('EccErrorCounts', ['single_bit_errors', 'double_bit_errors'])
+EccErrorInfo = namedtuple('EccErrorInfo', ['current', 'aggregate'])
+EccConfigurationInfo = namedtuple('EccConfigurationInfo', ['is_enabled', 'is_enabled_by_default'])
 
 
 def _timing_from_struct(t):
@@ -2161,14 +2165,88 @@ class PhysicalGPU(object):
     # NvAPI_I2CRead(NvPhysicalGpuHandle hPhysicalGpu, NV_I2C_INFO *pI2cInfo);
     # NvAPI_I2CWrite(NvPhysicalGpuHandle hPhysicalGpu, NV_I2C_INFO *pI2cInfo);
 
-    # NvAPI_GPU_WorkstationFeatureSetup(__in NvPhysicalGpuHandle hPhysicalGpu, __in NvU32 featureEnableMask, __in NvU32 featureDisableMask);
-    # NvAPI_GPU_WorkstationFeatureQuery(__in NvPhysicalGpuHandle hPhysicalGpu, __out_opt NvU32 *pConfiguredFeatureMask, __out_opt NvU32 *pConsistentFeatureMask);
-    # NvAPI_GPU_GetECCStatusInfo(NvPhysicalGpuHandle hPhysicalGpu,NV_GPU_ECC_STATUS_INFO *pECCStatusInfo);
-    # NvAPI_GPU_GetECCErrorInfo(NvPhysicalGpuHandle hPhysicalGpu,NV_GPU_ECC_ERROR_INFO *pECCErrorInfo);
-    # NvAPI_GPU_ResetECCErrorInfo(NvPhysicalGpuHandle hPhysicalGpu, NvU8 bResetCurrent,NvU8 bResetAggregate);
-    # NvAPI_GPU_GetECCConfigurationInfo(NvPhysicalGpuHandle hPhysicalGpu,NV_GPU_ECC_CONFIGURATION_INFO *pECCConfigurationInfo);
-    # NvAPI_GPU_SetECCConfiguration(NvPhysicalGpuHandle hPhysicalGpu, NvU8 bEnable,NvU8 bEnableImmediately);
-    # NvAPI_GPU_QueryWorkstationFeatureSupport(NvPhysicalGpuHandle physicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE gpuWorkstationFeature);
+    def workstation_feature_setup(self, enable_mask, disable_mask):
+        nvStatus = NvAPI_GPU_WorkstationFeatureSetup(self._hPhysicalGpu, NvU32(enable_mask), NvU32(disable_mask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_WorkstationFeatureSetup returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def workstation_feature_query(self):
+        pConfigured = NvU32()
+        pConsistent = NvU32()
+        nvStatus = NvAPI_GPU_WorkstationFeatureQuery(self._hPhysicalGpu, ctypes.byref(pConfigured), ctypes.byref(pConsistent))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_WorkstationFeatureQuery returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pConfigured.value, pConsistent.value
+
+    def query_workstation_feature_support(self, feature):
+        nvStatus = NvAPI_GPU_QueryWorkstationFeatureSupport(self._hPhysicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE(int(feature)))
+        if nvStatus == NvAPI_Status.NVAPI_NOT_SUPPORTED:
+            return False
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_QueryWorkstationFeatureSupport returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return True
+
+    @property
+    def ecc_status_info(self):
+        p = NV_GPU_ECC_STATUS_INFO()
+        p.version = NV_GPU_ECC_STATUS_INFO_VER
+        nvStatus = NvAPI_GPU_GetECCStatusInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetECCStatusInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EccStatusInfo(bool(p.isSupported), NV_ECC_CONFIGURATION.get(p.configurationOptions), bool(p.isEnabled))
+
+    @property
+    def ecc_error_info(self):
+        p = NV_GPU_ECC_ERROR_INFO()
+        p.version = NV_GPU_ECC_ERROR_INFO_VER
+        nvStatus = NvAPI_GPU_GetECCErrorInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetECCErrorInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EccErrorInfo(
+            EccErrorCounts(p.current.singleBitErrors, p.current.doubleBitErrors),
+            EccErrorCounts(p.aggregate.singleBitErrors, p.aggregate.doubleBitErrors),
+        )
+
+    def reset_ecc_error_info(self, reset_current=True, reset_aggregate=True):
+        nvStatus = NvAPI_GPU_ResetECCErrorInfo(self._hPhysicalGpu, NvU8(1 if reset_current else 0), NvU8(1 if reset_aggregate else 0))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ResetECCErrorInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def ecc_configuration_info(self):
+        p = NV_GPU_ECC_CONFIGURATION_INFO()
+        p.version = NV_GPU_ECC_CONFIGURATION_INFO_VER
+        nvStatus = NvAPI_GPU_GetECCConfigurationInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetECCConfigurationInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EccConfigurationInfo(bool(p.isEnabled), bool(p.isEnabledByDefault))
+
+    def set_ecc_configuration(self, enable, enable_immediately=False):
+        nvStatus = NvAPI_GPU_SetECCConfiguration(self._hPhysicalGpu, NvU8(1 if enable else 0), NvU8(1 if enable_immediately else 0))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetECCConfiguration returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
     # NvAPI_GPU_GetPerfDecreaseInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NvU32 *pPerfDecrInfo);
 
     @property
