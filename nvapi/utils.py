@@ -176,6 +176,16 @@ class EnumItem(int):
     def __str__(self):
         return self.__str_val
 
+    def __repr__(self):
+        # tuple/namedtuple repr (and anything else nesting an EnumItem)
+        # always calls repr() on its elements, never str() -- without this,
+        # an enum value shown bare (print(x)) displays its friendly name via
+        # __str__, but the exact same value nested inside a namedtuple
+        # falls back to plain int.__repr__ and shows just the raw number.
+        # The underlying int is still fully accessible either way (this
+        # class subclasses int); only the display differs.
+        return self.__str_val if self.__str_val else int.__repr__(self)
+
     def set_string(self, value):
         self.__str_val = value
         return self
