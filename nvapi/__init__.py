@@ -2268,12 +2268,11 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetBoardInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        res = ''
-
-        for i in range(16):
-            res += chr(pBoardInfo.BoardNum[i])
-
-        return res
+        # BoardNum is a fixed 16-byte NUL-padded buffer (NvU8 * 16, not a
+        # char array, so it doesn't auto-unwrap) -- the previous chr()-per-
+        # byte loop included the trailing NUL padding as literal NUL
+        # characters, which show up as invisible junk after the real digits.
+        return bytes(pBoardInfo.BoardNum).decode('ascii', 'replace').rstrip('\x00')
 
     @property
     def tach_reading(self):
