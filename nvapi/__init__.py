@@ -130,11 +130,52 @@ DisplayDriverInfo = namedtuple('DisplayDriverInfo', [
     'is_rtx_production_branch_package', 'is_rtx_new_feature_branch_package',
 ])
 SystemGpuHandle = namedtuple('SystemGpuHandle', ['adapter_type'])
+TimingInfo = namedtuple('TimingInfo', [
+    'h_visible', 'h_border', 'h_front_porch', 'h_sync_width', 'h_total', 'h_sync_polarity',
+    'v_visible', 'v_border', 'v_front_porch', 'v_sync_width', 'v_total', 'v_sync_polarity',
+    'is_interlaced', 'pixel_clock_10khz',
+])
+MonitorCapsVSDB = namedtuple('MonitorCapsVSDB', [
+    'source_physical_address', 'supports_dual_dvi_operation',
+    'supports_deep_color_ycbcr444', 'supports_deep_color_30bits',
+    'supports_deep_color_36bits', 'supports_deep_color_48bits', 'supports_ai',
+    'max_tmds_clock', 'supports_graphics_text_content', 'supports_photo_content',
+    'supports_cinema_content', 'supports_game_content', 'has_vic_entries',
+    'has_interlaced_latency_field', 'has_latency_field', 'video_latency',
+    'audio_latency', 'interlaced_video_latency', 'interlaced_audio_latency',
+    'has_3d_entries',
+])
+MonitorCapsVCDB = namedtuple('MonitorCapsVCDB', [
+    'quantization_range_ycc', 'quantization_range_rgb',
+    'scan_info_preferred_video_format', 'scan_info_it_video_formats',
+    'scan_info_ce_video_formats',
+])
+MonitorColorCap = namedtuple('MonitorColorCap', ['color_format', 'backend_bit_depth'])
+ColorData = namedtuple('ColorData', [
+    'color_format', 'colorimetry', 'dynamic_range', 'bpc', 'color_selection_policy', 'depth',
+])
+DisplayPortInfo = namedtuple('DisplayPortInfo', [
+    'dpcd_version', 'max_link_rate', 'max_lane_count', 'current_link_rate', 'current_lane_count',
+    'color_format', 'dynamic_range', 'colorimetry', 'bpc', 'is_dp', 'is_internal_dp',
+    'is_color_control_supported',
+])
+HdmiSupportInfo = namedtuple('HdmiSupportInfo', [
+    'is_gpu_hdmi_capable', 'is_monitor_underscan_capable', 'is_monitor_basic_audio_capable',
+    'is_monitor_ycbcr444_capable', 'is_monitor_ycbcr422_capable', 'is_monitor_xvycc601_capable',
+    'is_monitor_xvycc709_capable', 'is_monitor_hdmi', 'edid_861_extension_revision',
+])
+DisplayConfigTarget = namedtuple('DisplayConfigTarget', ['display_id', 'target_id'])
+DisplayConfigPath = namedtuple('DisplayConfigPath', [
+    'source_id', 'targets', 'resolution', 'position', 'is_gdi_primary',
+])
+EdidPage = namedtuple('EdidPage', ['data', 'edid_id', 'size'])
 
 
 class Display(object):
-    # NvAPI_GPU_GetEDID(NvPhysicalGpuHandle hPhysicalGpu, NvU32 displayOutputId, NV_EDID *pEDID);
-    # NvAPI_GPU_SetEDID(NvPhysicalGpuHandle hPhysicalGpu, NvU32 displayOutputId, NV_EDID *pEDID);
+    # NvAPI_GPU_GetEDID/NvAPI_GPU_SetEDID are wired on PhysicalGPU (legacy
+    # hPhysicalGpu + single-bit output mask signature, not displayId-based --
+    # see PhysicalGPU.get_edid/set_edid). Display.edid_data (NvAPI_DISP_GetEdidData)
+    # is the modern, displayId-based, extension-block-aware equivalent.
 
     # NvAPI_GPU_GetScanoutConfiguration(NvU32 displayId, NvSBox* desktopRect, NvSBox* scanoutRect);
     # NvAPI_GPU_GetScanoutCompositionParameter(__in NvU32 displayId, __in NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter, __out NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE *parameterData, __out float *pContainer);
@@ -145,14 +186,151 @@ class Display(object):
     # NvAPI_GPU_GetScanoutWarpingState(__in NvU32 displayId, __inout NV_SCANOUT_WARPING_STATE_DATA* scanoutWarpingStateData);
     # NvAPI_GPU_SetScanoutCompositionParameter(NvU32 displayId, NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter,NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE parameterValue, float *pContainer);
 
-    # NvAPI_Disp_InfoFrameControl(__in NvU32 displayId, __inout NV_INFOFRAME_DATA *pInfoframeData);
-    # NvAPI_Disp_ColorControl(NvU32 displayId, NV_COLOR_DATA *pColorData);
-    # NvAPI_DISP_GetTiming( __in NvU32 displayId,__in NV_TIMING_INPUT *timingInput, __out NV_TIMING *pTiming);
+    def infoframe_control(self, pInfoframeData):
+        # low-level passthrough -- caller populates version/size/cmd/type/
+        # infoframe on an NV_INFOFRAME_DATA instance (see NV_INFOFRAME_CMD,
+        # NV_INFOFRAME_PROPERTY/_VIDEO/_AUDIO). Too raw/niche a control
+        # surface to justify inventing an unverified high-level API on top.
+        nvStatus = NvAPI_Disp_InfoFrameControl(self.display_id, ctypes.byref(pInfoframeData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_InfoFrameControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-    # NvAPI_DISP_GetMonitorCapabilities(__in NvU32 displayId, __inout NV_MONITOR_CAPABILITIES *pMonitorCapabilities);
+        return pInfoframeData
 
+    @property
+    def color_data(self):
+        pColorData = NV_COLOR_DATA()
+        pColorData.version = NV_COLOR_DATA_VER
+        pColorData.cmd = NV_COLOR_CMD_GET
+        nvStatus = NvAPI_Disp_ColorControl(self.display_id, ctypes.byref(pColorData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_ColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-    # NvAPI_DISP_GetMonitorColorCapabilities(__in NvU32 displayId, __inout_ecount_part_opt(*pColorCapsCount, *pColorCapsCount) NV_MONITOR_COLOR_CAPS *pMonitorColorCapabilities, __inout NvU32 *pColorCapsCount);
+        d = pColorData.data
+        return ColorData(
+            NV_COLOR_FORMAT.get(d.colorFormat),
+            NV_COLOR_COLORIMETRY.get(d.colorimetry),
+            NV_DYNAMIC_RANGE.get(d.dynamicRange),
+            NV_BPC.get(d.bpc),
+            NV_COLOR_SELECTION_POLICY.get(d.colorSelectionPolicy),
+            NV_DESKTOP_COLOR_DEPTH.get(d.depth),
+        )
+
+    @color_data.setter
+    def color_data(self, value):
+        pColorData = NV_COLOR_DATA()
+        pColorData.version = NV_COLOR_DATA_VER
+        pColorData.cmd = NV_COLOR_CMD_SET
+        pColorData.data.colorFormat = int(value.color_format)
+        pColorData.data.colorimetry = int(value.colorimetry)
+        pColorData.data.dynamicRange = int(value.dynamic_range)
+        pColorData.data.bpc = int(value.bpc)
+        pColorData.data.colorSelectionPolicy = int(value.color_selection_policy)
+        pColorData.data.depth = int(value.depth)
+        nvStatus = NvAPI_Disp_ColorControl(self.display_id, ctypes.byref(pColorData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_ColorControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    def get_timing(self, width, height, refresh_rate, timing_type=NV_TIMING_OVERRIDE.NV_TIMING_OVERRIDE_CURRENT):
+        timingInput = NV_TIMING_INPUT()
+        timingInput.version = NV_TIMING_INPUT_VER
+        timingInput.width = width
+        timingInput.height = height
+        timingInput.rr = refresh_rate
+        timingInput.type = timing_type
+
+        pTiming = NV_TIMING()
+        nvStatus = NvAPI_DISP_GetTiming(self.display_id, ctypes.byref(timingInput), ctypes.byref(pTiming))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetTiming returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return TimingInfo(
+            pTiming.HVisible, pTiming.HBorder, pTiming.HFrontPorch, pTiming.HSyncWidth, pTiming.HTotal, pTiming.HSyncPol,
+            pTiming.VVisible, pTiming.VBorder, pTiming.VFrontPorch, pTiming.VSyncWidth, pTiming.VTotal, pTiming.VSyncPol,
+            bool(pTiming.interlaced), pTiming.pclk,
+        )
+
+    def _monitor_capabilities(self, info_type):
+        pMonitorCapabilities = NV_MONITOR_CAPABILITIES()
+        pMonitorCapabilities.version = NV_MONITOR_CAPABILITIES_VER
+        pMonitorCapabilities.infoType = info_type
+        nvStatus = NvAPI_DISP_GetMonitorCapabilities(self.display_id, ctypes.byref(pMonitorCapabilities))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetMonitorCapabilities returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        if not pMonitorCapabilities.bIsValidInfo:
+            return None
+
+        return pMonitorCapabilities
+
+    @property
+    def monitor_capabilities_vsdb(self):
+        caps = self._monitor_capabilities(NV_MONITOR_CAPS_TYPE_HDMI_VSDB)
+        if caps is None:
+            return None
+
+        vsdb = caps.data.vsdb
+        return MonitorCapsVSDB(
+            (vsdb.sourcePhysicalAddressA << 12) | (vsdb.sourcePhysicalAddressB << 8) |
+            (vsdb.sourcePhysicalAddressC << 4) | vsdb.sourcePhysicalAddressD,
+            bool(vsdb.supportDualDviOperation), bool(vsdb.supportDeepColorYCbCr444),
+            bool(vsdb.supportDeepColor30bits), bool(vsdb.supportDeepColor36bits),
+            bool(vsdb.supportDeepColor48bits), bool(vsdb.supportAI), vsdb.maxTmdsClock,
+            bool(vsdb.cnc0SupportGraphicsTextContent), bool(vsdb.cnc1SupportPhotoContent),
+            bool(vsdb.cnc2SupportCinemaContent), bool(vsdb.cnc3SupportGameContent),
+            bool(vsdb.hasVicEntries), bool(vsdb.hasInterlacedLatencyField), bool(vsdb.hasLatencyField),
+            vsdb.videoLatency, vsdb.audioLatency, vsdb.interlacedVideoLatency, vsdb.interlacedAudioLatency,
+            bool(vsdb.has3dEntries),
+        )
+
+    @property
+    def monitor_capabilities_vcdb(self):
+        caps = self._monitor_capabilities(NV_MONITOR_CAPS_TYPE_HDMI_VCDB)
+        if caps is None:
+            return None
+
+        vcdb = caps.data.vcdb
+        return MonitorCapsVCDB(
+            bool(vcdb.quantizationRangeYcc), bool(vcdb.quantizationRangeRgb),
+            vcdb.scanInfoPreferredVideoFormat, vcdb.scanInfoITVideoFormats, vcdb.scanInfoCEVideoFormats,
+        )
+
+    @property
+    def monitor_color_capabilities(self):
+        pColorCapsCount = NvU32(0)
+        nvStatus = NvAPI_DISP_GetMonitorColorCapabilities(self.display_id, None, ctypes.byref(pColorCapsCount))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetMonitorColorCapabilities returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        if pColorCapsCount.value == 0:
+            return []
+
+        caps = (NV_MONITOR_COLOR_CAPS * pColorCapsCount.value)()
+        for c in caps:
+            c.version = NV_MONITOR_COLOR_CAPS_VER
+
+        nvStatus = NvAPI_DISP_GetMonitorColorCapabilities(self.display_id, caps, ctypes.byref(pColorCapsCount))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetMonitorColorCapabilities returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [
+            MonitorColorCap(NV_DP_COLOR_FORMAT.get(c.colorFormat), NV_DP_BPC.get(c.backendBitDepths))
+            for c in caps[:pColorCapsCount.value]
+        ]
     # NvAPI_DISP_EnumCustomDisplay( __in NvU32 displayId, __in NvU32 index, __inout NV_CUSTOM_DISPLAY *pCustDisp);
     # NvAPI_DISP_TryCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in_ecount(count) NV_CUSTOM_DISPLAY *pCustDisp);
     # NvAPI_DISP_DeleteCustomDisplay( __in_ecount(count) NvU32 *pDisplayIds, __in NvU32 count, __in NV_CUSTOM_DISPLAY *pCustDisp);
@@ -296,12 +474,57 @@ class Display(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_SetRefreshRateOverride returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-    # NvAPI_GetDisplayPortInfo(__in_opt NvDisplayHandle hNvDisplay, __in NvU32 outputId, __inout NV_DISPLAY_PORT_INFO *pInfo);
-    # NvAPI_SetDisplayPort(NvDisplayHandle hNvDisplay, NvU32 outputId, NV_DISPLAY_PORT_CONFIG *pCfg);
-    # NvAPI_GetHDMISupportInfo(__in_opt NvDisplayHandle hNvDisplay, __in NvU32 outputId, __inout NV_HDMI_SUPPORT_INFO *pInfo);
+    @property
+    def display_port_info(self):
+        pInfo = NV_DISPLAY_PORT_INFO()
+        pInfo.version = NV_DISPLAY_PORT_INFO_VER
+        # outputId accepts the modern displayId directly -- hNvDisplay is
+        # ignored in that case (default/NULL handle is fine here).
+        nvStatus = NvAPI_GetDisplayPortInfo(NvDisplayHandle(), self.display_id, ctypes.byref(pInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetDisplayPortInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-    # NvAPI_DISP_GetDisplayConfig(__inout NvU32 *pathInfoCount, __out_ecount_full_opt(*pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO *pathInfo);
-    # NvAPI_DISP_SetDisplayConfig(__in NvU32 pathInfoCount, __in_ecount(pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO* pathInfo, __in NvU32 flags);
+        return DisplayPortInfo(
+            pInfo.dpcd_ver, NV_DP_LINK_RATE.get(pInfo.maxLinkRate), NV_DP_LANE_COUNT.get(pInfo.maxLaneCount),
+            NV_DP_LINK_RATE.get(pInfo.curLinkRate), NV_DP_LANE_COUNT.get(pInfo.curLaneCount),
+            NV_DP_COLOR_FORMAT.get(pInfo.colorFormat), NV_DP_DYNAMIC_RANGE.get(pInfo.dynamicRange),
+            NV_DP_COLORIMETRY.get(pInfo.colorimetry), NV_DP_BPC.get(pInfo.bpc),
+            bool(pInfo.isDp), bool(pInfo.isInternalDp), bool(pInfo.isColorCtrlSupported),
+        )
+
+    def set_display_port(self, link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc):
+        pCfg = NV_DISPLAY_PORT_CONFIG()
+        pCfg.version = NV_DISPLAY_PORT_CONFIG_VER
+        pCfg.linkRate = int(link_rate)
+        pCfg.laneCount = int(lane_count)
+        pCfg.colorFormat = int(color_format)
+        pCfg.dynamicRange = int(dynamic_range)
+        pCfg.colorimetry = int(colorimetry)
+        pCfg.bpc = int(bpc)
+        nvStatus = NvAPI_SetDisplayPort(NvDisplayHandle(), self.display_id, ctypes.byref(pCfg))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SetDisplayPort returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def hdmi_support_info(self):
+        pInfo = NV_HDMI_SUPPORT_INFO()
+        pInfo.version = NV_HDMI_SUPPORT_INFO_VER
+        nvStatus = NvAPI_GetHDMISupportInfo(NvDisplayHandle(), self.display_id, ctypes.byref(pInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetHDMISupportInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return HdmiSupportInfo(
+            bool(pInfo.isGpuHDMICapable), bool(pInfo.isMonUnderscanCapable), bool(pInfo.isMonBasicAudioCapable),
+            bool(pInfo.isMonYCbCr444Capable), bool(pInfo.isMonYCbCr422Capable), bool(pInfo.isMonxvYCC601Capable),
+            bool(pInfo.isMonxvYCC709Capable), bool(pInfo.isMonHDMI), pInfo.EDID861ExtRev,
+        )
+
     def __init__(self, gpu, display_id):
         
         self.gpu = gpu
@@ -1373,6 +1596,36 @@ class PhysicalGPU(object):
 
         return True
 
+    def get_edid(self, output_id, edid_id=0, offset=0):
+        # legacy 256-byte-page EDID accessor (single bit set in output_id).
+        # Display.edid_data (NvAPI_DISP_GetEdidData) is the modern,
+        # displayId-based equivalent that assembles the full multi-page
+        # EDID for you -- prefer it unless you specifically need this
+        # GPU+output-bitmask entry point.
+        edid = NV_EDID()
+        edid.version = NV_EDID_VER
+        edid.edidId = edid_id
+        edid.offset = offset
+        nvStatus = NvAPI_GPU_GetEDID(self._hPhysicalGpu, NvU32(output_id), ctypes.byref(edid))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetEDID returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return EdidPage(bytes(edid.EDID_Data), edid.edidId, edid.sizeofEDID)
+
+    def set_edid(self, output_id, edid_bytes):
+        edid = NV_EDID()
+        edid.version = NV_EDID_VER
+        data = bytes(edid_bytes)[:NV_EDID_DATA_SIZE]
+        ctypes.memmove(edid.EDID_Data, data, len(data))
+        edid.sizeofEDID = len(data)
+        nvStatus = NvAPI_GPU_SetEDID(self._hPhysicalGpu, NvU32(output_id), ctypes.byref(edid))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetEDID returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
     # NvAPI_GPU_GetFullName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szName);
 
     @property
@@ -2427,3 +2680,106 @@ class GPUs(object):
             SystemGpuHandle(adapter_type=NV_ADAPTER_TYPE.get(entry.adapterType))
             for entry in pLogicalGPUs.gpuHandleData[:pLogicalGPUs.gpuHandleCount]
         ]
+
+    @property
+    def display_config(self):
+        # 3-pass protocol per NvAPI_DISP_GetDisplayConfig's own doc comment:
+        # get path count, then per-path targetInfoCount, then the actual
+        # per-target array once its size is known.
+        pathInfoCount = NvU32(0)
+        nvStatus = NvAPI_DISP_GetDisplayConfig(ctypes.byref(pathInfoCount), None)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetDisplayConfig returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        if pathInfoCount.value == 0:
+            return []
+
+        pathInfo = (NV_DISPLAYCONFIG_PATH_INFO * pathInfoCount.value)()
+        sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO * pathInfoCount.value)()
+        for i in range(pathInfoCount.value):
+            pathInfo[i].version = NV_DISPLAYCONFIG_PATH_INFO_VER
+            pathInfo[i].sourceModeInfo = ctypes.pointer(sourceModeInfo[i])
+
+        nvStatus = NvAPI_DISP_GetDisplayConfig(ctypes.byref(pathInfoCount), pathInfo)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetDisplayConfig returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        targetArrays = []
+        for i in range(pathInfoCount.value):
+            count = pathInfo[i].targetInfoCount
+            if count:
+                arr = (NV_DISPLAYCONFIG_PATH_TARGET_INFO * count)()
+                targetArrays.append(arr)
+                pathInfo[i].targetInfo = ctypes.cast(arr, POINTER(NV_DISPLAYCONFIG_PATH_TARGET_INFO))
+            else:
+                targetArrays.append(None)
+
+        if any(targetArrays):
+            nvStatus = NvAPI_DISP_GetDisplayConfig(ctypes.byref(pathInfoCount), pathInfo)
+            if NvAPI_Status.NVAPI_OK != nvStatus:
+                szDesc = NvAPI_ShortString()
+                NvAPI_GetErrorMessage(nvStatus, szDesc)
+                raise RuntimeError("NvAPI_DISP_GetDisplayConfig returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        result = []
+        for i in range(pathInfoCount.value):
+            p = pathInfo[i]
+            targets = tuple(
+                DisplayConfigTarget(p.targetInfo[j].displayId, p.targetInfo[j].targetId)
+                for j in range(p.targetInfoCount)
+            )
+            sm = sourceModeInfo[i]
+            result.append(DisplayConfigPath(
+                p.sourceId, targets,
+                (sm.resolution.width, sm.resolution.height, sm.resolution.colorDepth),
+                (sm.position.x, sm.position.y),
+                bool(sm.bGDIPrimary),
+            ))
+
+        return result
+
+    @staticmethod
+    def set_display_config(paths, flags=0):
+        # Applies a global display topology. paths is an iterable of
+        # DisplayConfigPath (as returned by GPUs.display_config) or
+        # any object exposing the same attributes. Advanced per-target
+        # settings (rotation/scaling/timing overrides) are not supported
+        # through this entry point -- pass details=NULL, matching what
+        # display_config itself reads back.
+        paths = list(paths)
+        pathInfo = (NV_DISPLAYCONFIG_PATH_INFO * len(paths))()
+        sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO * len(paths))()
+        targetArrays = []
+
+        for i, path in enumerate(paths):
+            pathInfo[i].version = NV_DISPLAYCONFIG_PATH_INFO_VER
+            pathInfo[i].sourceId = path.source_id
+
+            width, height, colorDepth = path.resolution
+            sourceModeInfo[i].resolution.width = width
+            sourceModeInfo[i].resolution.height = height
+            sourceModeInfo[i].resolution.colorDepth = colorDepth
+            x, y = path.position
+            sourceModeInfo[i].position.x = x
+            sourceModeInfo[i].position.y = y
+            sourceModeInfo[i].bGDIPrimary = 1 if path.is_gdi_primary else 0
+            pathInfo[i].sourceModeInfo = ctypes.pointer(sourceModeInfo[i])
+
+            targets = list(path.targets)
+            arr = (NV_DISPLAYCONFIG_PATH_TARGET_INFO * len(targets))()
+            for j, target in enumerate(targets):
+                arr[j].displayId = target.display_id
+                arr[j].targetId = target.target_id
+            targetArrays.append(arr)
+            pathInfo[i].targetInfoCount = len(targets)
+            pathInfo[i].targetInfo = ctypes.cast(arr, POINTER(NV_DISPLAYCONFIG_PATH_TARGET_INFO))
+
+        nvStatus = NvAPI_DISP_SetDisplayConfig(NvU32(len(paths)), pathInfo, NvU32(flags))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_SetDisplayConfig returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
