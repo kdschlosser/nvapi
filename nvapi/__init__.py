@@ -173,6 +173,20 @@ CustomDisplay = namedtuple('CustomDisplay', [
     'width', 'height', 'depth', 'color_format', 'src_partition', 'x_ratio', 'y_ratio',
     'timing', 'hw_mode_set_only',
 ])
+IllumDeviceInfo = namedtuple('IllumDeviceInfo', ['type', 'ctrl_mode_mask', 'i2c_device_index'])
+IllumDeviceControl = namedtuple('IllumDeviceControl', ['type', 'needs_sync', 'sync_timestamp_ms'])
+IllumZoneInfo = namedtuple('IllumZoneInfo', ['type', 'illum_device_index', 'provider_index', 'zone_location'])
+IllumRGBColor = namedtuple('IllumRGBColor', ['r', 'g', 'b', 'brightness_pct'])
+IllumPiecewiseLinearTiming = namedtuple('IllumPiecewiseLinearTiming', [
+    'cycle_type', 'group_count', 'rise_time_ms', 'fall_time_ms',
+    'a_time_ms', 'b_time_ms', 'group_idle_time_ms', 'phase_offset_ms',
+])
+# colors/brightness_pcts hold a 1-tuple for MANUAL_RGB ctrl_mode or a
+# 2-tuple (color/brightness A, B) for PIECEWISE_LINEAR_RGB, matching
+# NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_COLOR_ENDPOINTS; whichever
+# of colors/brightness_pcts applies depends on zone `type` (RGB vs
+# COLOR_FIXED). timing is only populated for PIECEWISE_LINEAR_RGB.
+IllumZoneControl = namedtuple('IllumZoneControl', ['type', 'ctrl_mode', 'colors', 'brightness_pcts', 'timing'])
 
 
 def _timing_from_struct(t):
@@ -221,6 +235,108 @@ def _custom_display_to_struct(cd):
     _timing_to_struct(s.timing, cd.timing)
     s.hwModeSetOnly = 1 if cd.hw_mode_set_only else 0
     return s
+
+
+def _illum_device_info_from_struct(d):
+    i2c_idx = None
+    if d.type == NV_GPU_CLIENT_ILLUM_DEVICE_TYPE_MCUV10:
+        i2c_idx = d.data.mcuv10.i2cDevIdx
+
+    return IllumDeviceInfo(NV_GPU_CLIENT_ILLUM_DEVICE_TYPE.get(d.type), d.ctrlModeMask, i2c_idx)
+
+
+def _illum_device_control_from_struct(d):
+    return IllumDeviceControl(
+        NV_GPU_CLIENT_ILLUM_DEVICE_TYPE.get(d.type), bool(d.syncData.bSync), d.syncData.timeStampms,
+    )
+
+
+def _illum_device_control_to_struct(s, dc):
+    s.type = int(dc.type)
+    s.syncData.bSync = 1 if dc.needs_sync else 0
+    s.syncData.timeStampms = dc.sync_timestamp_ms if dc.sync_timestamp_ms else 0
+
+
+def _illum_rgb_params_from_struct(p):
+    return IllumRGBColor(p.colorR, p.colorG, p.colorB, p.brightnessPct)
+
+
+def _illum_rgb_params_to_struct(s, c):
+    s.colorR = c.r
+    s.colorG = c.g
+    s.colorB = c.b
+    s.brightnessPct = c.brightness_pct
+
+
+def _illum_piecewise_timing_from_struct(t):
+    return IllumPiecewiseLinearTiming(
+        NV_GPU_CLIENT_ILLUM_PIECEWISE_LINEAR_CYCLE_TYPE.get(t.cycleType), t.grpCount,
+        t.riseTimems, t.fallTimems, t.ATimems, t.BTimems, t.grpIdleTimems, t.phaseOffsetms,
+    )
+
+
+def _illum_piecewise_timing_to_struct(s, t):
+    s.cycleType = int(t.cycle_type)
+    s.grpCount = t.group_count
+    s.riseTimems = t.rise_time_ms
+    s.fallTimems = t.fall_time_ms
+    s.ATimems = t.a_time_ms
+    s.BTimems = t.b_time_ms
+    s.grpIdleTimems = t.group_idle_time_ms
+    s.phaseOffsetms = t.phase_offset_ms
+
+
+def _illum_zone_info_from_struct(z):
+    return IllumZoneInfo(
+        NV_GPU_CLIENT_ILLUM_ZONE_TYPE.get(z.type), z.illumDeviceIdx, z.provIdx,
+        NV_GPU_CLIENT_ILLUM_ZONE_LOCATION.get(z.zoneLocation),
+    )
+
+
+def _illum_zone_control_from_struct(z):
+    colors = None
+    brightness_pcts = None
+    timing = None
+
+    if z.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_RGB:
+        rgb = z.data.rgb.data
+        if z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            colors = (_illum_rgb_params_from_struct(rgb.manualRGB.rgbParams),)
+        elif z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            colors = tuple(_illum_rgb_params_from_struct(p) for p in rgb.piecewiseLinearRGB.rgbParams)
+            timing = _illum_piecewise_timing_from_struct(rgb.piecewiseLinearRGB.piecewiseLinearData)
+    elif z.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_COLOR_FIXED:
+        fixed = z.data.colorFixed.data
+        if z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            brightness_pcts = (fixed.manualColorFixed.colorFixedParams.brightnessPct,)
+        elif z.ctrlMode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            brightness_pcts = tuple(p.brightnessPct for p in fixed.piecewiseLinearColorFixed.colorFixedParams)
+            timing = _illum_piecewise_timing_from_struct(fixed.piecewiseLinearColorFixed.piecewiseLinearData)
+
+    return IllumZoneControl(
+        NV_GPU_CLIENT_ILLUM_ZONE_TYPE.get(z.type), NV_GPU_CLIENT_ILLUM_CTRL_MODE.get(z.ctrlMode),
+        colors, brightness_pcts, timing,
+    )
+
+
+def _illum_zone_control_to_struct(s, zc):
+    s.type = int(zc.type)
+    s.ctrlMode = int(zc.ctrl_mode)
+
+    if zc.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_RGB:
+        if zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            _illum_rgb_params_to_struct(s.data.rgb.data.manualRGB.rgbParams, zc.colors[0])
+        elif zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            for i, c in enumerate(zc.colors):
+                _illum_rgb_params_to_struct(s.data.rgb.data.piecewiseLinearRGB.rgbParams[i], c)
+            _illum_piecewise_timing_to_struct(s.data.rgb.data.piecewiseLinearRGB.piecewiseLinearData, zc.timing)
+    elif zc.type == NV_GPU_CLIENT_ILLUM_ZONE_TYPE_COLOR_FIXED:
+        if zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_MANUAL_RGB:
+            s.data.colorFixed.data.manualColorFixed.colorFixedParams.brightnessPct = zc.brightness_pcts[0]
+        elif zc.ctrl_mode == NV_GPU_CLIENT_ILLUM_CTRL_MODE_PIECEWISE_LINEAR_RGB:
+            for i, pct in enumerate(zc.brightness_pcts):
+                s.data.colorFixed.data.piecewiseLinearColorFixed.colorFixedParams[i].brightnessPct = pct
+            _illum_piecewise_timing_to_struct(s.data.colorFixed.data.piecewiseLinearColorFixed.piecewiseLinearData, zc.timing)
 
 
 class Display(object):
@@ -2080,12 +2196,120 @@ class PhysicalGPU(object):
 
         return res
 
-    # NvAPI_GPU_ClientIllumDevicesGetInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS *pIllumDevicesInfo);
-    # NvAPI_GPU_ClientIllumDevicesGetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS *pClientIllumDevicesControl);
-    # NvAPI_GPU_ClientIllumDevicesSetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS *pClientIllumDevicesControl);
-    # NvAPI_GPU_ClientIllumZonesGetInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS *pIllumZonesInfo);
-    # NvAPI_GPU_ClientIllumZonesGetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS *pIllumZonesControl);
-    # NvAPI_GPU_ClientIllumZonesSetControl(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS *pIllumZonesControl);
+    def query_illumination_support(self, attribute):
+        p = NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM()
+        p.version = NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM_VER
+        p.hPhysicalGpu = self._hPhysicalGpu
+        p.Attribute = int(attribute)
+        nvStatus = NvAPI_GPU_QueryIlluminationSupport(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_QueryIlluminationSupport returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(p.bSupported)
+
+    def get_illumination(self, attribute):
+        p = NV_GPU_GET_ILLUMINATION_PARM()
+        p.version = NV_GPU_GET_ILLUMINATION_PARM_VER
+        p.hPhysicalGpu = self._hPhysicalGpu
+        p.Attribute = int(attribute)
+        nvStatus = NvAPI_GPU_GetIllumination(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetIllumination returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return p.Value
+
+    def set_illumination(self, attribute, value):
+        p = NV_GPU_SET_ILLUMINATION_PARM()
+        p.version = NV_GPU_SET_ILLUMINATION_PARM_VER
+        p.hPhysicalGpu = self._hPhysicalGpu
+        p.Attribute = int(attribute)
+        p.Value = value
+        nvStatus = NvAPI_GPU_SetIllumination(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetIllumination returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def client_illum_devices_info(self):
+        p = NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_DEVICE_INFO_PARAMS_VER
+        nvStatus = NvAPI_GPU_ClientIllumDevicesGetInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumDevicesGetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_device_info_from_struct(p.devices[i]) for i in range(p.numIllumDevices)]
+
+    @property
+    def client_illum_devices_control(self):
+        p = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS_VER
+        nvStatus = NvAPI_GPU_ClientIllumDevicesGetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumDevicesGetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_device_control_from_struct(p.devices[i]) for i in range(p.numIllumDevices)]
+
+    def set_client_illum_devices_control(self, devices):
+        devices = list(devices)
+        p = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS_VER
+        p.numIllumDevices = len(devices)
+        for i, dc in enumerate(devices):
+            _illum_device_control_to_struct(p.devices[i], dc)
+
+        nvStatus = NvAPI_GPU_ClientIllumDevicesSetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumDevicesSetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def client_illum_zones_info(self):
+        p = NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_ZONE_INFO_PARAMS_VER
+        nvStatus = NvAPI_GPU_ClientIllumZonesGetInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumZonesGetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_zone_info_from_struct(p.zones[i]) for i in range(p.numIllumZones)]
+
+    def client_illum_zones_control(self, default=False):
+        p = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS_VER
+        p.bDefault = 1 if default else 0
+        nvStatus = NvAPI_GPU_ClientIllumZonesGetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumZonesGetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [_illum_zone_control_from_struct(p.zones[i]) for i in range(p.numIllumZonesControl)]
+
+    def set_client_illum_zones_control(self, zones, default=False):
+        zones = list(zones)
+        p = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS()
+        p.version = NV_GPU_CLIENT_ILLUM_ZONE_CONTROL_PARAMS_VER
+        p.bDefault = 1 if default else 0
+        p.numIllumZonesControl = len(zones)
+        for i, zc in enumerate(zones):
+            _illum_zone_control_to_struct(p.zones[i], zc)
+
+        nvStatus = NvAPI_GPU_ClientIllumZonesSetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientIllumZonesSetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     def __init__(self, logical_gpu, physical_gpu_index):
         self.logical_gpu = logical_gpu
@@ -2584,9 +2808,10 @@ class GPUs(object):
     # NvAPI_SYS_GetChipSetInfo(NV_CHIPSET_INFO *pChipSetInfo);
     # NvAPI_SYS_GetLidAndDockInfo(NV_LID_DOCK_PARAMS *pLidAndDock);
 
-    # NvAPI_GPU_QueryIlluminationSupport(__inout NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM *pIlluminationSupportInfo);
-    # NvAPI_GPU_GetIllumination(NV_GPU_GET_ILLUMINATION_PARM *pIlluminationInfo);
-    # NvAPI_GPU_SetIllumination(NV_GPU_SET_ILLUMINATION_PARM *pIlluminationInfo);
+    # NvAPI_GPU_{Query,Get,Set}Illumination are wired on PhysicalGPU
+    # (query_illumination_support/get_illumination/set_illumination) --
+    # hPhysicalGpu is an explicit field on their param structs, so they fit
+    # there alongside the newer ClientIllum* zone-based API.
 
 
     # NvAPI_Stereo_Enable(void);
