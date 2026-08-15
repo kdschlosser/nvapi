@@ -99,6 +99,31 @@ EncoderSessionInfo = namedtuple('EncoderSessionInfo', [
     'session_id', 'process_id', 'vgpu_instance', 'codec_type',
     'h_resolution', 'v_resolution', 'average_encode_fps', 'average_encode_latency',
 ])
+HdrMetadata = namedtuple('HdrMetadata', [
+    'display_primary_0', 'display_primary_1', 'display_primary_2', 'white_point',
+    'max_display_mastering_luminance', 'min_display_mastering_luminance',
+    'max_content_light_level', 'max_frame_average_light_level',
+])
+DisplayColorimetry = namedtuple('DisplayColorimetry', [
+    'min_luminance', 'max_full_frame_luminance', 'max_luminance',
+    'hdr_brightness_luminance_scaling_factor',
+    'red_primary', 'green_primary', 'blue_primary', 'white_point',
+])
+AdaptiveSyncData = namedtuple('AdaptiveSyncData', [
+    'max_frame_interval', 'is_adaptive_sync_disabled', 'is_frame_splitting_disabled',
+    'last_flip_refresh_count', 'last_flip_timestamp',
+])
+VirtualRefreshRateData = namedtuple('VirtualRefreshRateData', ['frame_interval_us', 'refresh_rate_x1000', 'is_gaming_vrr'])
+PreferredStereoDisplay = namedtuple('PreferredStereoDisplay', ['display_id'])
+ManagedDedicatedDisplay = namedtuple('ManagedDedicatedDisplay', ['display_id', 'is_acquired', 'is_mosaic'])
+DedicatedDisplayMetadata = namedtuple('DedicatedDisplayMetadata', [
+    'position_x', 'position_y', 'position_is_available', 'name', 'name_is_available',
+])
+DisplayIdInfo = namedtuple('DisplayIdInfo', ['adapter_luid', 'target_id'])
+VRRInfo = namedtuple('VRRInfo', [
+    'is_vrr_enabled', 'is_vrr_possible', 'is_vrr_requested',
+    'is_vrr_indicator_enabled', 'is_display_in_vrr_mode',
+])
 
 
 class Display(object):
@@ -730,6 +755,338 @@ class Display(object):
             green=green,
             blue=blue,
             white=white
+        )
+
+    @property
+    def source_color_space(self):
+        # per-process value; NVAPI_ERROR here typically just means this
+        # process hasn't called set_source_color_space itself yet, not a
+        # hardware fault
+        pColorSpaceType = ctypes.c_int()
+        nvStatus = NvAPI_Disp_GetSourceColorSpace(self.display_id, ctypes.byref(pColorSpaceType), NV_SOURCE_PID_CURRENT)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetSourceColorSpace returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_COLORSPACE_TYPE.get(pColorSpaceType.value)
+
+    @source_color_space.setter
+    def source_color_space(self, value):
+        nvStatus = NvAPI_Disp_SetSourceColorSpace(self.display_id, value)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_SetSourceColorSpace returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def source_hdr_metadata(self):
+        pMetadata = NV_HDR_METADATA()
+        pMetadata.version = NV_HDR_METADATA_VER
+        nvStatus = NvAPI_Disp_GetSourceHdrMetadata(self.display_id, ctypes.byref(pMetadata), NV_SOURCE_PID_CURRENT)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetSourceHdrMetadata returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return HdrMetadata(
+            display_primary_0=RedCoordinate(x=pMetadata.displayPrimary_x0, y=pMetadata.displayPrimary_y0),
+            display_primary_1=GreenCoordinate(x=pMetadata.displayPrimary_x1, y=pMetadata.displayPrimary_y1),
+            display_primary_2=BlueCoordinate(x=pMetadata.displayPrimary_x2, y=pMetadata.displayPrimary_y2),
+            white_point=WhiteCoordinate(x=pMetadata.displayWhitePoint_x, y=pMetadata.displayWhitePoint_y),
+            max_display_mastering_luminance=pMetadata.max_display_mastering_luminance,
+            min_display_mastering_luminance=pMetadata.min_display_mastering_luminance,
+            max_content_light_level=pMetadata.max_content_light_level,
+            max_frame_average_light_level=pMetadata.max_frame_average_light_level,
+        )
+
+    def set_source_hdr_metadata(self, metadata):
+        # metadata: HdrMetadata namedtuple (or anything with the same
+        # attribute names, e.g. a plain object)
+        pMetadata = NV_HDR_METADATA()
+        pMetadata.version = NV_HDR_METADATA_VER
+        pMetadata.displayPrimary_x0 = metadata.display_primary_0.x
+        pMetadata.displayPrimary_y0 = metadata.display_primary_0.y
+        pMetadata.displayPrimary_x1 = metadata.display_primary_1.x
+        pMetadata.displayPrimary_y1 = metadata.display_primary_1.y
+        pMetadata.displayPrimary_x2 = metadata.display_primary_2.x
+        pMetadata.displayPrimary_y2 = metadata.display_primary_2.y
+        pMetadata.displayWhitePoint_x = metadata.white_point.x
+        pMetadata.displayWhitePoint_y = metadata.white_point.y
+        pMetadata.max_display_mastering_luminance = metadata.max_display_mastering_luminance
+        pMetadata.min_display_mastering_luminance = metadata.min_display_mastering_luminance
+        pMetadata.max_content_light_level = metadata.max_content_light_level
+        pMetadata.max_frame_average_light_level = metadata.max_frame_average_light_level
+
+        nvStatus = NvAPI_Disp_SetSourceHdrMetadata(self.display_id, ctypes.byref(pMetadata))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_SetSourceHdrMetadata returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def output_mode(self):
+        pDisplayMode = ctypes.c_int()
+        nvStatus = NvAPI_Disp_GetOutputMode(self.display_id, ctypes.byref(pDisplayMode))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetOutputMode returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_DISPLAY_OUTPUT_MODE.get(pDisplayMode.value)
+
+    @output_mode.setter
+    def output_mode(self, value):
+        pDisplayMode = ctypes.c_int(value)
+        nvStatus = NvAPI_Disp_SetOutputMode(self.display_id, ctypes.byref(pDisplayMode))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_SetOutputMode returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def hdr_tone_mapping(self):
+        pHdrTonemapping = ctypes.c_int()
+        nvStatus = NvAPI_Disp_GetHdrToneMapping(self.display_id, ctypes.byref(pHdrTonemapping))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetHdrToneMapping returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_HDR_TONEMAPPING_METHOD.get(pHdrTonemapping.value)
+
+    @hdr_tone_mapping.setter
+    def hdr_tone_mapping(self, value):
+        nvStatus = NvAPI_Disp_SetHdrToneMapping(self.display_id, value)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_SetHdrToneMapping returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def colorimetry(self):
+        # requires driver release 580+
+        pColorimetry = NV_DISPLAY_COLORIMETRY()
+        pColorimetry.version = NV_DISPLAY_COLORIMETRY_VER
+        nvStatus = NvAPI_Disp_GetColorimetry(self.display_id, ctypes.byref(pColorimetry))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetColorimetry returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return DisplayColorimetry(
+            min_luminance=pColorimetry.min_luminance,
+            max_full_frame_luminance=pColorimetry.max_full_frame_luminance,
+            max_luminance=pColorimetry.max_luminance,
+            hdr_brightness_luminance_scaling_factor=pColorimetry.hdrBrightnessLuminanceScalingFactor,
+            red_primary=RedCoordinate(x=pColorimetry.red_primary_x, y=pColorimetry.red_primary_y),
+            green_primary=GreenCoordinate(x=pColorimetry.green_primary_x, y=pColorimetry.green_primary_y),
+            blue_primary=BlueCoordinate(x=pColorimetry.blue_primary_x, y=pColorimetry.blue_primary_y),
+            white_point=WhiteCoordinate(x=pColorimetry.white_point_x, y=pColorimetry.white_point_y),
+        )
+
+    @property
+    def edid_data(self):
+        # modern replacement for the fixed-256-byte NvAPI_GPU_GetEDID
+        # elsewhere in this package; two-pass allocation handles large/
+        # extended EDIDs correctly
+        pEdid = NV_EDID_DATA()
+        pEdid.version = NV_EDID_DATA_VER
+        pFlag = ctypes.c_int(0)
+        nvStatus = NvAPI_DISP_GetEdidData(self.display_id, ctypes.byref(pEdid), ctypes.byref(pFlag))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetEdidData returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        if not pEdid.sizeOfEDID:
+            return b''
+
+        buf = (NvU8 * pEdid.sizeOfEDID)()
+        pEdid2 = NV_EDID_DATA()
+        pEdid2.version = NV_EDID_DATA_VER
+        pEdid2.pEDID = ctypes.cast(buf, ctypes.POINTER(NvU8))
+        pEdid2.sizeOfEDID = pEdid.sizeOfEDID
+        nvStatus = NvAPI_DISP_GetEdidData(self.display_id, ctypes.byref(pEdid2), ctypes.byref(pFlag))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetEdidData returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bytes(buf)
+
+    @property
+    def adaptive_sync_data(self):
+        pAdaptiveSyncData = NV_GET_ADAPTIVE_SYNC_DATA()
+        pAdaptiveSyncData.version = NV_GET_ADAPTIVE_SYNC_DATA_VER
+        nvStatus = NvAPI_DISP_GetAdaptiveSyncData(self.display_id, ctypes.byref(pAdaptiveSyncData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetAdaptiveSyncData returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return AdaptiveSyncData(
+            max_frame_interval=pAdaptiveSyncData.maxFrameInterval,
+            is_adaptive_sync_disabled=bool(pAdaptiveSyncData.flags & 1),
+            is_frame_splitting_disabled=bool(pAdaptiveSyncData.flags & 2),
+            last_flip_refresh_count=pAdaptiveSyncData.lastFlipRefreshCount,
+            last_flip_timestamp=pAdaptiveSyncData.lastFlipTimeStamp,
+        )
+
+    def set_adaptive_sync_data(self, max_frame_interval_ns=0, disable_adaptive_sync=False, disable_frame_splitting=False):
+        pAdaptiveSyncData = NV_SET_ADAPTIVE_SYNC_DATA()
+        pAdaptiveSyncData.version = NV_SET_ADAPTIVE_SYNC_DATA_VER
+        pAdaptiveSyncData.maxFrameIntervalNs = max_frame_interval_ns
+        pAdaptiveSyncData.flags = (1 if disable_adaptive_sync else 0) | (2 if disable_frame_splitting else 0)
+
+        nvStatus = NvAPI_DISP_SetAdaptiveSyncData(self.display_id, ctypes.byref(pAdaptiveSyncData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_SetAdaptiveSyncData returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def virtual_refresh_rate_data(self):
+        pVirtualRefreshRateData = NV_GET_VIRTUAL_REFRESH_RATE_DATA()
+        pVirtualRefreshRateData.version = NV_GET_VIRTUAL_REFRESH_RATE_DATA_VER
+        nvStatus = NvAPI_DISP_GetVirtualRefreshRateData(self.display_id, ctypes.byref(pVirtualRefreshRateData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetVirtualRefreshRateData returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return VirtualRefreshRateData(
+            frame_interval_us=pVirtualRefreshRateData.frameIntervalUs,
+            refresh_rate_x1000=pVirtualRefreshRateData.rrx1k,
+            is_gaming_vrr=bool(pVirtualRefreshRateData.bIsGamingVrr),
+        )
+
+    def set_virtual_refresh_rate_data(self, frame_interval_us=0, refresh_rate_x1000=0, is_gaming_vrr=False):
+        pVirtualRefreshRateData = NV_SET_VIRTUAL_REFRESH_RATE_DATA()
+        pVirtualRefreshRateData.version = NV_SET_VIRTUAL_REFRESH_RATE_DATA_VER
+        pVirtualRefreshRateData.frameIntervalUs = frame_interval_us
+        pVirtualRefreshRateData.rrx1k = refresh_rate_x1000
+        pVirtualRefreshRateData.bIsGamingVrr = 1 if is_gaming_vrr else 0
+
+        nvStatus = NvAPI_DISP_SetVirtualRefreshRateData(self.display_id, ctypes.byref(pVirtualRefreshRateData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_SetVirtualRefreshRateData returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def dedicated_display_metadata(self):
+        pMetadata = NV_MANAGED_DEDICATED_DISPLAY_METADATA()
+        pMetadata.version = NV_MANAGED_DEDICATED_DISPLAY_METADATA_VER
+        pMetadata.displayId = self.display_id
+        nvStatus = NvAPI_DISP_GetNvManagedDedicatedDisplayMetadata(ctypes.byref(pMetadata))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetNvManagedDedicatedDisplayMetadata returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return DedicatedDisplayMetadata(
+            position_x=pMetadata.positionX,
+            position_y=pMetadata.positionY,
+            position_is_available=bool(pMetadata.flags & 4),
+            name=pMetadata.name.decode('ascii', 'replace').rstrip('\x00'),
+            name_is_available=bool(pMetadata.flags & 32),
+        )
+
+    def set_dedicated_display_metadata(self, position_x=None, position_y=None, name=None):
+        pMetadata = NV_MANAGED_DEDICATED_DISPLAY_METADATA()
+        pMetadata.version = NV_MANAGED_DEDICATED_DISPLAY_METADATA_VER
+        pMetadata.displayId = self.display_id
+
+        flags = 0
+        if position_x is not None and position_y is not None:
+            flags |= 1  # bSetPosition
+            pMetadata.positionX = position_x
+            pMetadata.positionY = position_y
+        if name is not None:
+            flags |= 8  # bSetName
+            pMetadata.name = name.encode('ascii', 'replace')
+        pMetadata.flags = flags
+
+        nvStatus = NvAPI_DISP_SetNvManagedDedicatedDisplayMetadata(ctypes.byref(pMetadata))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_SetNvManagedDedicatedDisplayMetadata returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    def acquire_dedicated_display(self):
+        pDisplaySourceHandle = ctypes.c_uint64()
+        nvStatus = NvAPI_DISP_AcquireDedicatedDisplay(self.display_id, ctypes.byref(pDisplaySourceHandle))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_AcquireDedicatedDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pDisplaySourceHandle.value
+
+    def release_dedicated_display(self):
+        nvStatus = NvAPI_DISP_ReleaseDedicatedDisplay(self.display_id)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_ReleaseDedicatedDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def display_id_info(self):
+        pDisplayIdInfoData = NV_DISPLAY_ID_INFO_DATA()
+        pDisplayIdInfoData.version = NV_DISPLAY_ID_INFO_DATA_VER
+        nvStatus = NvAPI_Disp_GetDisplayIdInfo(self.display_id, ctypes.byref(pDisplayIdInfoData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetDisplayIdInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return DisplayIdInfo(
+            adapter_luid='%08x-%08x' % (pDisplayIdInfoData.adapterId.HighPart & 0xFFFFFFFF, pDisplayIdInfoData.adapterId.LowPart),
+            target_id=pDisplayIdInfoData.targetId,
+        )
+
+    @property
+    def grid_display_ids(self):
+        # every displayId sharing this display's (adapterId, targetId)
+        # pair -- more than one entry only when part of a Mosaic/Surround
+        # display grid
+        pDisplayIdInfoData = NV_DISPLAY_ID_INFO_DATA()
+        pDisplayIdInfoData.version = NV_DISPLAY_ID_INFO_DATA_VER
+        nvStatus = NvAPI_Disp_GetDisplayIdInfo(self.display_id, ctypes.byref(pDisplayIdInfoData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetDisplayIdInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        pTargetInfoData = NV_TARGET_INFO_DATA()
+        pTargetInfoData.version = NV_TARGET_INFO_DATA_VER
+        pTargetInfoData.adapterId = pDisplayIdInfoData.adapterId
+        pTargetInfoData.targetId = pDisplayIdInfoData.targetId
+        nvStatus = NvAPI_Disp_GetDisplayIdsFromTarget(ctypes.byref(pTargetInfoData))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetDisplayIdsFromTarget returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [pTargetInfoData.displayId[i] for i in range(pTargetInfoData.displayIdCount)]
+
+    @property
+    def vrr_info(self):
+        pVrrInfo = NV_GET_VRR_INFO()
+        pVrrInfo.version = NV_GET_VRR_INFO_VER
+        nvStatus = NvAPI_Disp_GetVRRInfo(self.display_id, ctypes.byref(pVrrInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_Disp_GetVRRInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return VRRInfo(
+            is_vrr_enabled=bool(pVrrInfo.flags & 1),
+            is_vrr_possible=bool(pVrrInfo.flags & 2),
+            is_vrr_requested=bool(pVrrInfo.flags & 4),
+            is_vrr_indicator_enabled=bool(pVrrInfo.flags & 8),
+            is_display_in_vrr_mode=bool(pVrrInfo.flags & 16),
         )
 
 
@@ -1728,3 +2085,61 @@ class GPUs(object):
 
         if nvStatus != NvAPI_Status.NVAPI_END_ENUMERATION:
             raise RuntimeError("NvAPI_EnumNvidiaDisplayHandle returned error code %d" % (nvStatus,))
+
+    @property
+    def preferred_stereo_display(self):
+        # system-wide (no displayId parameter) -- the display driving the
+        # 3-pin DIN stereo signal, if any
+        pPreferredStereoDisplay = NV_GET_PREFERRED_STEREO_DISPLAY()
+        pPreferredStereoDisplay.version = NV_GET_PREFERRED_STEREO_DISPLAY_VER
+        nvStatus = NvAPI_DISP_GetPreferredStereoDisplay(ctypes.byref(pPreferredStereoDisplay))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetPreferredStereoDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return PreferredStereoDisplay(display_id=pPreferredStereoDisplay.displayId)
+
+    @preferred_stereo_display.setter
+    def preferred_stereo_display(self, display_id):
+        # display_id=0 resets to the driver default selection
+        pPreferredStereoDisplay = NV_SET_PREFERRED_STEREO_DISPLAY()
+        pPreferredStereoDisplay.version = NV_SET_PREFERRED_STEREO_DISPLAY_VER
+        pPreferredStereoDisplay.displayId = display_id
+        nvStatus = NvAPI_DISP_SetPreferredStereoDisplay(ctypes.byref(pPreferredStereoDisplay))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_SetPreferredStereoDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def nv_managed_dedicated_displays(self):
+        # system-wide (no displayId parameter); two-pass allocation
+        pDedicatedDisplayCount = NvU32(0)
+        nvStatus = NvAPI_DISP_GetNvManagedDedicatedDisplays(ctypes.byref(pDedicatedDisplayCount), None)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetNvManagedDedicatedDisplays returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        if not pDedicatedDisplayCount.value:
+            return []
+
+        buf = (NV_MANAGED_DEDICATED_DISPLAY_INFO * pDedicatedDisplayCount.value)()
+        for entry in buf:
+            entry.version = NV_MANAGED_DEDICATED_DISPLAY_INFO_VER
+
+        nvStatus = NvAPI_DISP_GetNvManagedDedicatedDisplays(ctypes.byref(pDedicatedDisplayCount), buf)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetNvManagedDedicatedDisplays returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [
+            ManagedDedicatedDisplay(
+                display_id=entry.displayId,
+                is_acquired=bool(entry.flags & 1),
+                is_mosaic=bool(entry.flags & 2),
+            )
+            for entry in buf[:pDedicatedDisplayCount.value]
+        ]
