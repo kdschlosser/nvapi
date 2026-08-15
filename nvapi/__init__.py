@@ -58,6 +58,7 @@
 
 from .nvapi_h import *
 from .nvapi_gpu_info_ext_h import *  # noqa
+from .edid import decode_edid, EdidInfo, EdidChromaticity, EdidPoint, EdidDetailedTiming, EdidRangeLimits
 import ctypes
 import six
 from collections import namedtuple
@@ -95,6 +96,11 @@ NVLinkLinkStatus = namedtuple('NVLinkLinkStatus', [
 ])
 NVLinkStatus = namedtuple('NVLinkStatus', ['link_mask', 'links'])
 EncoderStatistics = namedtuple('EncoderStatistics', ['sessions_count', 'average_fps', 'average_latency'])
+# graphics/memory/processor/video match NV_GPU_PUBLIC_CLOCK_ID -- the only
+# 4 of the 32 possible clock-domain slots the driver ever populates. A
+# field is None if that domain isn't present on this GPU.
+ClockDomainFrequencies = namedtuple('ClockDomainFrequencies', ['graphics', 'memory', 'processor', 'video'])
+ClockFrequencies = namedtuple('ClockFrequencies', ['current', 'base', 'boost'])
 EncoderSessionInfo = namedtuple('EncoderSessionInfo', [
     'session_id', 'process_id', 'vgpu_instance', 'codec_type',
     'h_resolution', 'v_resolution', 'average_encode_fps', 'average_encode_latency',
@@ -1588,6 +1594,17 @@ class Display(object):
         return bytes(buf)
 
     @property
+    def edid_info(self):
+        # decoded form of edid_data -- see nvapi.edid.decode_edid for the
+        # full field breakdown (manufacturer/model, native resolution,
+        # supported timings, etc.)
+        data = self.edid_data
+        if len(data) < 128:
+            return None
+
+        return decode_edid(data)
+
+    @property
     def adaptive_sync_data(self):
         pAdaptiveSyncData = NV_GET_ADAPTIVE_SYNC_DATA()
         pAdaptiveSyncData.version = NV_GET_ADAPTIVE_SYNC_DATA_VER
@@ -2473,6 +2490,10 @@ class PhysicalGPU(object):
         # output field, so getting all three means three separate calls,
         # not reading pClkFreqs.domain[i].ClockType (which doesn't exist;
         # only bIsPresent/frequency are on the per-domain struct).
+        #
+        # domain[i] is indexed by NV_GPU_PUBLIC_CLOCK_ID -- graphics=0,
+        # memory=4, processor=7, video=8 are the only 4 of the 32 possible
+        # slots the driver ever populates.
         res = {}
         for type_name, clock_type in (
             ('current', NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ),
@@ -2493,14 +2514,18 @@ class PhysicalGPU(object):
                 NvAPI_GetErrorMessage(nvStatus, szDesc)
                 raise RuntimeError("NvAPI_GPU_GetAllClockFrequencies returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-            domains = []
-            for i in range(NVAPI_MAX_GPU_PUBLIC_CLOCKS):
-                domain = pClkFreqs.domain[i]
-                domains += [domain.frequency if domain.bIsPresent else None]
+            def domain_freq(clock_id):
+                domain = pClkFreqs.domain[clock_id]
+                return domain.frequency if domain.bIsPresent else None
 
-            res[type_name] = domains
+            res[type_name] = ClockDomainFrequencies(
+                graphics=domain_freq(NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_GRAPHICS),
+                memory=domain_freq(NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_MEMORY),
+                processor=domain_freq(NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_PROCESSOR),
+                video=domain_freq(NV_GPU_PUBLIC_CLOCK_ID.NVAPI_GPU_PUBLIC_CLOCK_VIDEO),
+            )
 
-        return res
+        return ClockFrequencies(**res)
 
     def query_illumination_support(self, attribute):
         p = NV_GPU_QUERY_ILLUMINATION_SUPPORT_PARM()
