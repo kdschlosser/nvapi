@@ -3,12 +3,28 @@ import traceback
 
 
 logical_gpus = nvapi.GPUs()
-print(logical_gpus.driver_info)
+for attr_name in (
+    'driver_info',
+    'chipset_info',
+    'display_config',
+    'interface_version',
+    'lid_and_dock_info',
+    'nv_managed_dedicated_displays',
+    'preferred_stereo_display',
+    'system_logical_gpus',
+    'system_physical_gpus',
+):
+    try:
+        attr = getattr(logical_gpus, attr_name)
+    except:
+        continue
+
+    print(attr_name + ':', attr)
 print()
 
 for logical_gpu in logical_gpus:
     print('Logical GPU:')
-    for attr_name in ('os_adpater_id',):
+    for attr_name in ('os_adpater_id', 'physical_gpus'):
         try:
             attr = getattr(logical_gpu, attr_name)
         except:
@@ -80,7 +96,17 @@ for logical_gpu in logical_gpus:
             'nvlink_status',
             'encoder_statistics',
             'encoder_sessions',
-            'is_cuda_compute_capable'
+            'is_cuda_compute_capable',
+            'full_name',
+            'perf_decrease_info',
+            'current_pstate',
+            'ecc_status_info',
+            'ecc_error_info',
+            'ecc_configuration_info',
+            'workstation_feature_query',
+            'client_illum_devices_info',
+            'client_illum_devices_control',
+            'client_illum_zones_info',
         ):
             try:
                 attr = getattr(gpu, attr_name)
@@ -146,7 +172,12 @@ for logical_gpu in logical_gpus:
             'dedicated_display_metadata',
             'display_id_info',
             'grid_display_ids',
-            'vrr_info'
+            'vrr_info',
+            'edid_info',
+            'scanout_configuration',
+            'scanout_configuration_ex',
+            'scanout_intensity_enabled',
+            'scanout_warping_enabled',
         ):
             try:
                 attr = getattr(display, attr_name)
