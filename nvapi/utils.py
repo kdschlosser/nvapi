@@ -152,6 +152,17 @@ class ENUM(INT):
             if value == val:
                 return value
 
+    @classmethod
+    def decode_flags(cls, val):
+        # returns every non-zero member whose bits are fully set in val,
+        # for enums that represent a bitmask (each member one bit/group of
+        # bits) rather than a set of mutually-exclusive values.
+        flags = []
+        for value in cls.__dict__.values():
+            if isinstance(value, EnumItem) and int(value) != 0 and (val & int(value)) == int(value):
+                flags.append(value)
+        return flags
+
 
 class EnumItem(int):
     def __init__(self, value):
