@@ -809,7 +809,10 @@ class Display(object):
             bool(pInfo.isDp), bool(pInfo.isInternalDp), bool(pInfo.isColorCtrlSupported),
         )
 
-    def set_display_port(self, link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc):
+    @display_port_info.setter
+    def display_port_info(self, value):
+        # value: (link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc) tuple.
+        link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc = value
         pCfg = NV_DISPLAY_PORT_CONFIG()
         pCfg.version = NV_DISPLAY_PORT_CONFIG_VER
         pCfg.linkRate = int(link_rate)
@@ -1467,23 +1470,25 @@ class Display(object):
             max_frame_average_light_level=pMetadata.max_frame_average_light_level,
         )
 
-    def set_source_hdr_metadata(self, metadata):
-        # metadata: HdrMetadata namedtuple (or anything with the same
-        # attribute names, e.g. a plain object)
+    @source_hdr_metadata.setter
+    def source_hdr_metadata(self, value):
+        # value: an HdrMetadata namedtuple (or anything with the same
+        # attribute names, e.g. a plain object) -- the same shape returned
+        # by the source_hdr_metadata getter.
         pMetadata = NV_HDR_METADATA()
         pMetadata.version = NV_HDR_METADATA_VER
-        pMetadata.displayPrimary_x0 = metadata.display_primary_0.x
-        pMetadata.displayPrimary_y0 = metadata.display_primary_0.y
-        pMetadata.displayPrimary_x1 = metadata.display_primary_1.x
-        pMetadata.displayPrimary_y1 = metadata.display_primary_1.y
-        pMetadata.displayPrimary_x2 = metadata.display_primary_2.x
-        pMetadata.displayPrimary_y2 = metadata.display_primary_2.y
-        pMetadata.displayWhitePoint_x = metadata.white_point.x
-        pMetadata.displayWhitePoint_y = metadata.white_point.y
-        pMetadata.max_display_mastering_luminance = metadata.max_display_mastering_luminance
-        pMetadata.min_display_mastering_luminance = metadata.min_display_mastering_luminance
-        pMetadata.max_content_light_level = metadata.max_content_light_level
-        pMetadata.max_frame_average_light_level = metadata.max_frame_average_light_level
+        pMetadata.displayPrimary_x0 = value.display_primary_0.x
+        pMetadata.displayPrimary_y0 = value.display_primary_0.y
+        pMetadata.displayPrimary_x1 = value.display_primary_1.x
+        pMetadata.displayPrimary_y1 = value.display_primary_1.y
+        pMetadata.displayPrimary_x2 = value.display_primary_2.x
+        pMetadata.displayPrimary_y2 = value.display_primary_2.y
+        pMetadata.displayWhitePoint_x = value.white_point.x
+        pMetadata.displayWhitePoint_y = value.white_point.y
+        pMetadata.max_display_mastering_luminance = value.max_display_mastering_luminance
+        pMetadata.min_display_mastering_luminance = value.min_display_mastering_luminance
+        pMetadata.max_content_light_level = value.max_content_light_level
+        pMetadata.max_frame_average_light_level = value.max_frame_average_light_level
 
         nvStatus = NvAPI_Disp_SetSourceHdrMetadata(self.display_id, ctypes.byref(pMetadata))
         if NvAPI_Status.NVAPI_OK != nvStatus:
@@ -1600,7 +1605,10 @@ class Display(object):
             last_flip_timestamp=pAdaptiveSyncData.lastFlipTimeStamp,
         )
 
-    def set_adaptive_sync_data(self, max_frame_interval_ns=0, disable_adaptive_sync=False, disable_frame_splitting=False):
+    @adaptive_sync_data.setter
+    def adaptive_sync_data(self, value):
+        # value: (max_frame_interval_ns, disable_adaptive_sync, disable_frame_splitting) tuple.
+        max_frame_interval_ns, disable_adaptive_sync, disable_frame_splitting = value
         pAdaptiveSyncData = NV_SET_ADAPTIVE_SYNC_DATA()
         pAdaptiveSyncData.version = NV_SET_ADAPTIVE_SYNC_DATA_VER
         pAdaptiveSyncData.maxFrameIntervalNs = max_frame_interval_ns
@@ -1628,7 +1636,10 @@ class Display(object):
             is_gaming_vrr=bool(pVirtualRefreshRateData.bIsGamingVrr),
         )
 
-    def set_virtual_refresh_rate_data(self, frame_interval_us=0, refresh_rate_x1000=0, is_gaming_vrr=False):
+    @virtual_refresh_rate_data.setter
+    def virtual_refresh_rate_data(self, value):
+        # value: (frame_interval_us, refresh_rate_x1000, is_gaming_vrr) tuple.
+        frame_interval_us, refresh_rate_x1000, is_gaming_vrr = value
         pVirtualRefreshRateData = NV_SET_VIRTUAL_REFRESH_RATE_DATA()
         pVirtualRefreshRateData.version = NV_SET_VIRTUAL_REFRESH_RATE_DATA_VER
         pVirtualRefreshRateData.frameIntervalUs = frame_interval_us
@@ -1660,7 +1671,12 @@ class Display(object):
             name_is_available=bool(pMetadata.flags & 32),
         )
 
-    def set_dedicated_display_metadata(self, position_x=None, position_y=None, name=None):
+    @dedicated_display_metadata.setter
+    def dedicated_display_metadata(self, value):
+        # value: (position_x, position_y, name) tuple. position_x/position_y
+        # must both be set together to update position; either may be None
+        # (along with name) to leave that part unchanged.
+        position_x, position_y, name = value
         pMetadata = NV_MANAGED_DEDICATED_DISPLAY_METADATA()
         pMetadata.version = NV_MANAGED_DEDICATED_DISPLAY_METADATA_VER
         pMetadata.displayId = self.display_id
@@ -2303,12 +2319,16 @@ class PhysicalGPU(object):
 
         return EccConfigurationInfo(bool(p.isEnabled), bool(p.isEnabledByDefault))
 
-    def set_ecc_configuration(self, enable, enable_immediately=False):
+    @ecc_configuration_info.setter
+    def ecc_configuration_info(self, value):
+        # value: (enable, enable_immediately) tuple.
+        enable, enable_immediately = value
         nvStatus = NvAPI_GPU_SetECCConfiguration(self._hPhysicalGpu, NvU8(1 if enable else 0), NvU8(1 if enable_immediately else 0))
         if NvAPI_Status.NVAPI_OK != nvStatus:
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_SetECCConfiguration returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
     @property
     def perf_decrease_info(self):
         pPerfDecrInfo = NvU32()
@@ -2544,8 +2564,9 @@ class PhysicalGPU(object):
 
         return [_illum_device_control_from_struct(p.devices[i]) for i in range(p.numIllumDevices)]
 
-    def set_client_illum_devices_control(self, devices):
-        devices = list(devices)
+    @client_illum_devices_control.setter
+    def client_illum_devices_control(self, value):
+        devices = list(value)
         p = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS()
         p.version = NV_GPU_CLIENT_ILLUM_DEVICE_CONTROL_PARAMS_VER
         p.numIllumDevices = len(devices)
@@ -3351,14 +3372,16 @@ class GPUs(object):
 
         return result
 
-    @staticmethod
-    def set_display_config(paths, flags=0):
-        # Applies a global display topology. paths is an iterable of
-        # DisplayConfigPath (as returned by GPUs.display_config) or
-        # any object exposing the same attributes. Advanced per-target
+    @display_config.setter
+    def display_config(self, value):
+        # value: (paths, flags) tuple. paths is an iterable of
+        # DisplayConfigPath (as returned by the display_config getter) or
+        # any object exposing the same attributes; flags is a bitmask of
+        # NV_DISPLAYCONFIG_FLAGS (0 to just apply). Advanced per-target
         # settings (rotation/scaling/timing overrides) are not supported
         # through this entry point -- pass details=NULL, matching what
-        # display_config itself reads back.
+        # the getter itself reads back.
+        paths, flags = value
         paths = list(paths)
         pathInfo = (NV_DISPLAYCONFIG_PATH_INFO * len(paths))()
         sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO * len(paths))()
