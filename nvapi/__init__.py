@@ -187,6 +187,12 @@ IllumPiecewiseLinearTiming = namedtuple('IllumPiecewiseLinearTiming', [
 # of colors/brightness_pcts applies depends on zone `type` (RGB vs
 # COLOR_FIXED). timing is only populated for PIECEWISE_LINEAR_RGB.
 IllumZoneControl = namedtuple('IllumZoneControl', ['type', 'ctrl_mode', 'colors', 'brightness_pcts', 'timing'])
+Rect = namedtuple('Rect', ['x', 'y', 'width', 'height'])
+ScanoutConfiguration = namedtuple('ScanoutConfiguration', ['desktop_rect', 'scanout_rect'])
+ScanoutInformation = namedtuple('ScanoutInformation', [
+    'source_desktop_rect', 'source_viewport_rect', 'target_viewport_rect',
+    'target_display_width', 'target_display_height', 'clone_importance', 'source_to_target_rotation',
+])
 
 
 def _timing_from_struct(t):
@@ -339,20 +345,142 @@ def _illum_zone_control_to_struct(s, zc):
             _illum_piecewise_timing_to_struct(s.data.colorFixed.data.piecewiseLinearColorFixed.piecewiseLinearData, zc.timing)
 
 
+def _rect_from_sbox(b):
+    return Rect(b.sX, b.sY, b.sWidth, b.sHeight)
+
+
+def _sbox_from_rect(r):
+    return NvSBox(r.x, r.y, r.width, r.height)
+
+
 class Display(object):
     # NvAPI_GPU_GetEDID/NvAPI_GPU_SetEDID are wired on PhysicalGPU (legacy
     # hPhysicalGpu + single-bit output mask signature, not displayId-based --
     # see PhysicalGPU.get_edid/set_edid). Display.edid_data (NvAPI_DISP_GetEdidData)
     # is the modern, displayId-based, extension-block-aware equivalent.
 
-    # NvAPI_GPU_GetScanoutConfiguration(NvU32 displayId, NvSBox* desktopRect, NvSBox* scanoutRect);
-    # NvAPI_GPU_GetScanoutCompositionParameter(__in NvU32 displayId, __in NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter, __out NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE *parameterData, __out float *pContainer);
-    # NvAPI_GPU_GetScanoutConfigurationEx(__in NvU32 displayId, __inout NV_SCANOUT_INFORMATION *pScanoutInformation);
-    # NvAPI_GPU_SetScanoutIntensity(NvU32 displayId, NV_SCANOUT_INTENSITY_DATA* scanoutIntensityData, int *pbSticky);
-    # NvAPI_GPU_GetScanoutIntensityState(__in NvU32 displayId, __inout NV_SCANOUT_INTENSITY_STATE_DATA* scanoutIntensityStateData);
-    # NvAPI_GPU_SetScanoutWarping(NvU32 displayId, NV_SCANOUT_WARPING_DATA* scanoutWarpingData, int* piMaxNumVertices, int* pbSticky);
-    # NvAPI_GPU_GetScanoutWarpingState(__in NvU32 displayId, __inout NV_SCANOUT_WARPING_STATE_DATA* scanoutWarpingStateData);
-    # NvAPI_GPU_SetScanoutCompositionParameter(NvU32 displayId, NV_GPU_SCANOUT_COMPOSITION_PARAMETER parameter,NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE parameterValue, float *pContainer);
+    @property
+    def scanout_configuration(self):
+        desktopRect = NvSBox()
+        scanoutRect = NvSBox()
+        nvStatus = NvAPI_GPU_GetScanoutConfiguration(self.display_id, ctypes.byref(desktopRect), ctypes.byref(scanoutRect))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutConfiguration returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return ScanoutConfiguration(_rect_from_sbox(desktopRect), _rect_from_sbox(scanoutRect))
+
+    @property
+    def scanout_configuration_ex(self):
+        p = NV_SCANOUT_INFORMATION()
+        p.version = NV_SCANOUT_INFORMATION_VER
+        nvStatus = NvAPI_GPU_GetScanoutConfigurationEx(self.display_id, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutConfigurationEx returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return ScanoutInformation(
+            _rect_from_sbox(p.sourceDesktopRect), _rect_from_sbox(p.sourceViewportRect),
+            _rect_from_sbox(p.targetViewportRect), p.targetDisplayWidth, p.targetDisplayHeight,
+            p.cloneImportance, NV_ROTATE.get(p.sourceToTargetRotation),
+        )
+
+    @property
+    def scanout_intensity_enabled(self):
+        p = NV_SCANOUT_INTENSITY_STATE_DATA()
+        p.version = NV_SCANOUT_INTENSITY_STATE_VER
+        nvStatus = NvAPI_GPU_GetScanoutIntensityState(self.display_id, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutIntensityState returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(p.bEnabled)
+
+    def set_scanout_intensity(self, width, height, blending_texture, offset_texture=None, offset_tex_channels=0):
+        # blending_texture/offset_texture are flat sequences of floats
+        # (RGB intensity texture, width*height*3 values). Used for
+        # projector edge-blending setups, not the 3D rendering pipeline.
+        data = NV_SCANOUT_INTENSITY_DATA()
+        data.version = NV_SCANOUT_INTENSITY_DATA_VER
+        data.width = width
+        data.height = height
+        blendArray = (FLOAT * len(blending_texture))(*blending_texture)
+        data.blendingTexture = ctypes.cast(blendArray, POINTER(FLOAT))
+        if offset_texture is not None:
+            offsetArray = (FLOAT * len(offset_texture))(*offset_texture)
+            data.offsetTexture = ctypes.cast(offsetArray, POINTER(FLOAT))
+            data.offsetTexChannels = offset_tex_channels
+
+        pbSticky = ctypes.c_int()
+        nvStatus = NvAPI_GPU_SetScanoutIntensity(self.display_id, ctypes.byref(data), ctypes.byref(pbSticky))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetScanoutIntensity returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(pbSticky.value)
+
+    @property
+    def scanout_warping_enabled(self):
+        p = NV_SCANOUT_WARPING_STATE_DATA()
+        p.version = NV_SCANOUT_WARPING_STATE_VER
+        nvStatus = NvAPI_GPU_GetScanoutWarpingState(self.display_id, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutWarpingState returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bool(p.bEnabled)
+
+    def set_scanout_warping(self, vertices, vertex_format=NV_GPU_WARPING_VERTICE_FORMAT_TRIANGLESTRIP_XYUVRQ, texture_rect=None):
+        # vertices is a flat sequence of floats, 6 per vertex (X,Y,U,V,R,Q).
+        data = NV_SCANOUT_WARPING_DATA()
+        data.version = NV_SCANOUT_WARPING_VER
+        vertexArray = (FLOAT * len(vertices))(*vertices)
+        data.vertices = ctypes.cast(vertexArray, POINTER(FLOAT))
+        data.vertexFormat = int(vertex_format)
+        data.numVertices = len(vertices) // 6
+        if texture_rect is not None:
+            rect = _sbox_from_rect(texture_rect)
+            data.textureRect = ctypes.pointer(rect)
+
+        maxNumVertices = ctypes.c_int()
+        pbSticky = ctypes.c_int()
+        nvStatus = NvAPI_GPU_SetScanoutWarping(self.display_id, ctypes.byref(data), ctypes.byref(maxNumVertices), ctypes.byref(pbSticky))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetScanoutWarping returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return maxNumVertices.value, bool(pbSticky.value)
+
+    def get_scanout_composition_parameter(self, parameter):
+        parameterData = NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE()
+        pContainer = FLOAT()
+        nvStatus = NvAPI_GPU_GetScanoutCompositionParameter(
+            self.display_id, NV_GPU_SCANOUT_COMPOSITION_PARAMETER(int(parameter)),
+            ctypes.byref(parameterData), ctypes.byref(pContainer),
+        )
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetScanoutCompositionParameter returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE.get(parameterData), pContainer.value
+
+    def set_scanout_composition_parameter(self, parameter, parameter_value, container=0.0):
+        pContainer = FLOAT(container)
+        nvStatus = NvAPI_GPU_SetScanoutCompositionParameter(
+            self.display_id, NV_GPU_SCANOUT_COMPOSITION_PARAMETER(int(parameter)),
+            NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE(int(parameter_value)), ctypes.byref(pContainer),
+        )
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetScanoutCompositionParameter returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     def infoframe_control(self, pInfoframeData):
         # low-level passthrough -- caller populates version/size/cmd/type/
