@@ -204,6 +204,7 @@ EccErrorCounts = namedtuple('EccErrorCounts', ['single_bit_errors', 'double_bit_
 EccErrorInfo = namedtuple('EccErrorInfo', ['current', 'aggregate'])
 EccConfigurationInfo = namedtuple('EccConfigurationInfo', ['is_enabled', 'is_enabled_by_default'])
 ConnectorInfo = namedtuple('ConnectorInfo', ['connector_type', 'connector_index'])
+FramebufferWidthAndLocation = namedtuple('FramebufferWidthAndLocation', ['width', 'location'])
 ChipsetInfo = namedtuple('ChipsetInfo', [
     'vendor_id', 'device_id', 'vendor_name', 'chipset_name', 'flags',
     'sub_sys_vendor_id', 'sub_sys_device_id', 'sub_sys_vendor_name',
@@ -1950,6 +1951,115 @@ class PhysicalGPU(object):
             raise RuntimeError("NvAPI_GPU_GetFullName returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return szName.value.decode('ascii', 'replace')
+
+    @property
+    def short_name(self):
+        # e.g. "TU104GL-A" -- the GPU die codename, distinct from
+        # full_name's marketing name (e.g. "Quadro RTX 4000"). Undocumented
+        # -- see the comment on this group of functions in
+        # nvapi_gpu_info_ext_h.py for sourcing/verification.
+        szName = NvAPI_ShortString()
+        nvStatus = NvAPI_GPU_GetShortName(self._hPhysicalGpu, szName)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetShortName returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return szName.value.decode('ascii', 'replace')
+
+    @property
+    def ram_type(self):
+        pMemType = NvU32()
+        nvStatus = NvAPI_GPU_GetRamType(self._hPhysicalGpu, ctypes.byref(pMemType))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetRamType returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_RAM_TYPE.get(pMemType.value)
+
+    @property
+    def ram_maker(self):
+        pRamMaker = NvU32()
+        nvStatus = NvAPI_GPU_GetRamMaker(self._hPhysicalGpu, ctypes.byref(pRamMaker))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetRamMaker returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_RAM_MAKER.get(pRamMaker.value)
+
+    @property
+    def ram_bank_count(self):
+        pRamBankCount = NvU32()
+        nvStatus = NvAPI_GPU_GetRamBankCount(self._hPhysicalGpu, ctypes.byref(pRamBankCount))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetRamBankCount returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pRamBankCount.value
+
+    @property
+    def foundry(self):
+        pFoundry = NvU32()
+        nvStatus = NvAPI_GPU_GetFoundry(self._hPhysicalGpu, ctypes.byref(pFoundry))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetFoundry returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_FOUNDRY.get(pFoundry.value)
+
+    @property
+    def shader_pipe_count(self):
+        # distinct real metric from shader_sub_pipe_count -- verified live
+        # to return a different value (5 vs 18 on the test GPU), not an
+        # alias of it.
+        pCount = NvU32()
+        nvStatus = NvAPI_GPU_GetShaderPipeCount(self._hPhysicalGpu, ctypes.byref(pCount))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetShaderPipeCount returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pCount.value
+
+    @property
+    def partition_count(self):
+        pPartitionCount = NvU32()
+        nvStatus = NvAPI_GPU_GetPartitionCount(self._hPhysicalGpu, ctypes.byref(pPartitionCount))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetPartitionCount returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pPartitionCount.value
+
+    @property
+    def driver_model(self):
+        # raw value, meaning undocumented -- exposed as-is rather than
+        # guessed at.
+        pDriverModel = NvU32()
+        nvStatus = NvAPI_GetDriverModel(self._hPhysicalGpu, ctypes.byref(pDriverModel))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetDriverModel returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pDriverModel.value
+
+    @property
+    def framebuffer_width_and_location(self):
+        pWidth = NvU32()
+        pLocation = NvU32()
+        nvStatus = NvAPI_GPU_GetFBWidthAndLocation(self._hPhysicalGpu, ctypes.byref(pWidth), ctypes.byref(pLocation))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetFBWidthAndLocation returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return FramebufferWidthAndLocation(pWidth.value, pLocation.value)
 
     @property
     def _pci_identifiers(self):
