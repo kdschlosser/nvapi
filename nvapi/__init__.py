@@ -162,17 +162,140 @@ class Display(object):
 
 
     # NvAPI_EnumNvidiaDisplayHandle(NvU32 thisEnum, NvDisplayHandle *pNvDispHandle);
-    # NvAPI_EnumNvidiaUnAttachedDisplayHandle(NvU32 thisEnum, NvUnAttachedDisplayHandle *pNvUnAttachedDispHandle);
-    # NvAPI_CreateDisplayFromUnAttachedDisplay(NvUnAttachedDisplayHandle hNvUnAttachedDisp, NvDisplayHandle *pNvDisplay);
-    # NvAPI_GetAssociatedNvidiaDisplayHandle(const char *szDisplayName, NvDisplayHandle *pNvDispHandle);
-    # NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle(const char *szDisplayName, NvUnAttachedDisplayHandle *pNvUnAttachedDispHandle);
-    # NvAPI_GetAssociatedNvidiaDisplayName(NvDisplayHandle NvDispHandle, NvAPI_ShortString szDisplayName);
-    # NvAPI_GetUnAttachedAssociatedDisplayName(NvUnAttachedDisplayHandle hNvUnAttachedDisp, NvAPI_ShortString szDisplayName);
-    # NvAPI_EnableHWCursor(NvDisplayHandle hNvDisplay);
-    # NvAPI_DisableHWCursor(NvDisplayHandle hNvDisplay);
-    # NvAPI_GetVBlankCounter(NvDisplayHandle hNvDisplay, NvU32 *pCounter);
-    # NvAPI_SetRefreshRateOverride(NvDisplayHandle hNvDisplay, NvU32 outputsMask, float refreshRate, NvU32 bSetDeferred);
-    # NvAPI_GetAssociatedDisplayOutputId(NvDisplayHandle hNvDisplay, NvU32 *pOutputId);
+
+    @staticmethod
+    def enum_display_handles():
+        # legacy per-display enumeration handle -- distinct ID space from
+        # the modern persistent displayId used elsewhere in this class.
+        count = 0
+        while True:
+            hNvDisplay = NvDisplayHandle()
+            nvStatus = NvAPI_EnumNvidiaDisplayHandle(NvU32(count), ctypes.byref(hNvDisplay))
+            if nvStatus == NvAPI_Status.NVAPI_END_ENUMERATION:
+                return
+            if NvAPI_Status.NVAPI_OK != nvStatus:
+                szDesc = NvAPI_ShortString()
+                NvAPI_GetErrorMessage(nvStatus, szDesc)
+                raise RuntimeError("NvAPI_EnumNvidiaDisplayHandle returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+            yield hNvDisplay
+            count += 1
+
+    @staticmethod
+    def enum_unattached_display_handles():
+        count = 0
+        while True:
+            hNvUnAttachedDisp = NvUnAttachedDisplayHandle()
+            nvStatus = NvAPI_EnumNvidiaUnAttachedDisplayHandle(NvU32(count), ctypes.byref(hNvUnAttachedDisp))
+            if nvStatus == NvAPI_Status.NVAPI_END_ENUMERATION:
+                return
+            if NvAPI_Status.NVAPI_OK != nvStatus:
+                szDesc = NvAPI_ShortString()
+                NvAPI_GetErrorMessage(nvStatus, szDesc)
+                raise RuntimeError("NvAPI_EnumNvidiaUnAttachedDisplayHandle returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+            yield hNvUnAttachedDisp
+            count += 1
+
+    @staticmethod
+    def create_display_from_unattached_display(hNvUnAttachedDisp):
+        hNvDisplay = NvDisplayHandle()
+        nvStatus = NvAPI_CreateDisplayFromUnAttachedDisplay(hNvUnAttachedDisp, ctypes.byref(hNvDisplay))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_CreateDisplayFromUnAttachedDisplay returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return hNvDisplay
+
+    @staticmethod
+    def get_associated_display_handle(display_name):
+        hNvDisplay = NvDisplayHandle()
+        nvStatus = NvAPI_GetAssociatedNvidiaDisplayHandle(display_name.encode('ascii'), ctypes.byref(hNvDisplay))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetAssociatedNvidiaDisplayHandle returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return hNvDisplay
+
+    @staticmethod
+    def get_associated_unattached_display_handle(display_name):
+        hNvUnAttachedDisp = NvUnAttachedDisplayHandle()
+        nvStatus = NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle(display_name.encode('ascii'), ctypes.byref(hNvUnAttachedDisp))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return hNvUnAttachedDisp
+
+    @staticmethod
+    def get_associated_display_name(hNvDisplay):
+        szDisplayName = NvAPI_ShortString()
+        nvStatus = NvAPI_GetAssociatedNvidiaDisplayName(hNvDisplay, szDisplayName)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetAssociatedNvidiaDisplayName returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return szDisplayName.value.decode('ascii', 'replace')
+
+    @staticmethod
+    def get_unattached_display_name(hNvUnAttachedDisp):
+        szDisplayName = NvAPI_ShortString()
+        nvStatus = NvAPI_GetUnAttachedAssociatedDisplayName(hNvUnAttachedDisp, szDisplayName)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetUnAttachedAssociatedDisplayName returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return szDisplayName.value.decode('ascii', 'replace')
+
+    @staticmethod
+    def get_associated_display_output_id(hNvDisplay):
+        pOutputId = NvU32()
+        nvStatus = NvAPI_GetAssociatedDisplayOutputId(hNvDisplay, ctypes.byref(pOutputId))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetAssociatedDisplayOutputId returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pOutputId.value
+
+    @staticmethod
+    def enable_hw_cursor(hNvDisplay):
+        nvStatus = NvAPI_EnableHWCursor(hNvDisplay)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_EnableHWCursor returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @staticmethod
+    def disable_hw_cursor(hNvDisplay):
+        nvStatus = NvAPI_DisableHWCursor(hNvDisplay)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_DisableHWCursor returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @staticmethod
+    def get_vblank_counter(hNvDisplay):
+        pCounter = NvU32()
+        nvStatus = NvAPI_GetVBlankCounter(hNvDisplay, ctypes.byref(pCounter))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetVBlankCounter returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pCounter.value
+
+    @staticmethod
+    def set_refresh_rate_override(hNvDisplay, outputs_mask, refresh_rate, deferred=False):
+        nvStatus = NvAPI_SetRefreshRateOverride(hNvDisplay, NvU32(outputs_mask), ctypes.c_float(refresh_rate), NvU32(1 if deferred else 0))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SetRefreshRateOverride returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
     # NvAPI_GetDisplayPortInfo(__in_opt NvDisplayHandle hNvDisplay, __in NvU32 outputId, __inout NV_DISPLAY_PORT_INFO *pInfo);
     # NvAPI_SetDisplayPort(NvDisplayHandle hNvDisplay, NvU32 outputId, NV_DISPLAY_PORT_CONFIG *pCfg);
     # NvAPI_GetHDMISupportInfo(__in_opt NvDisplayHandle hNvDisplay, __in NvU32 outputId, __inout NV_HDMI_SUPPORT_INFO *pInfo);
@@ -1152,11 +1275,60 @@ class PhysicalGPU(object):
 
         return pCount.value
 
-    # NvAPI_GPU_GetAllOutputs(NvPhysicalGpuHandle hPhysicalGpu,NvU32 *pOutputsMask);
-    # NvAPI_GPU_GetConnectedOutputs(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
-    # NvAPI_GPU_GetConnectedSLIOutputs(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
-    # NvAPI_GPU_GetConnectedOutputsWithLidState(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
-    # NvAPI_GPU_GetConnectedSLIOutputsWithLidState(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
+    @property
+    def all_outputs(self):
+        pOutputsMask = NvU32()
+        nvStatus = NvAPI_GPU_GetAllOutputs(self._hPhysicalGpu, ctypes.byref(pOutputsMask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetAllOutputs returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pOutputsMask.value
+
+    @property
+    def connected_outputs(self):
+        pOutputsMask = NvU32()
+        nvStatus = NvAPI_GPU_GetConnectedOutputs(self._hPhysicalGpu, ctypes.byref(pOutputsMask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetConnectedOutputs returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pOutputsMask.value
+
+    @property
+    def connected_sli_outputs(self):
+        pOutputsMask = NvU32()
+        nvStatus = NvAPI_GPU_GetConnectedSLIOutputs(self._hPhysicalGpu, ctypes.byref(pOutputsMask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetConnectedSLIOutputs returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pOutputsMask.value
+
+    @property
+    def connected_outputs_with_lid_state(self):
+        pOutputsMask = NvU32()
+        nvStatus = NvAPI_GPU_GetConnectedOutputsWithLidState(self._hPhysicalGpu, ctypes.byref(pOutputsMask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetConnectedOutputsWithLidState returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pOutputsMask.value
+
+    @property
+    def connected_sli_outputs_with_lid_state(self):
+        pOutputsMask = NvU32()
+        nvStatus = NvAPI_GPU_GetConnectedSLIOutputsWithLidState(self._hPhysicalGpu, ctypes.byref(pOutputsMask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetConnectedSLIOutputsWithLidState returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pOutputsMask.value
 
     @property
     def system_type(self):
@@ -1169,9 +1341,38 @@ class PhysicalGPU(object):
 
         return NV_SYSTEM_TYPE.get(pSystemType)
 
-    # NvAPI_GPU_GetActiveOutputs(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pOutputsMask);
-    # NvAPI_GPU_GetOutputType(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputId, NV_GPU_OUTPUT_TYPE *pOutputType);
-    # NvAPI_GPU_ValidateOutputCombination(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputsMask);
+    @property
+    def active_outputs(self):
+        pOutputsMask = NvU32()
+        nvStatus = NvAPI_GPU_GetActiveOutputs(self._hPhysicalGpu, ctypes.byref(pOutputsMask))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetActiveOutputs returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pOutputsMask.value
+
+    def output_type(self, output_id):
+        pOutputType = NV_GPU_OUTPUT_TYPE()
+        nvStatus = NvAPI_GPU_GetOutputType(self._hPhysicalGpu, NvU32(output_id), ctypes.byref(pOutputType))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetOutputType returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_OUTPUT_TYPE.get(pOutputType)
+
+    def validate_output_combination(self, outputs_mask):
+        nvStatus = NvAPI_GPU_ValidateOutputCombination(self._hPhysicalGpu, NvU32(outputs_mask))
+        if nvStatus == NvAPI_Status.NVAPI_INVALID_COMBINATION:
+            return False
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ValidateOutputCombination returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return True
+
     # NvAPI_GPU_GetFullName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szName);
 
     @property

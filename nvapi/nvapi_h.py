@@ -1815,7 +1815,7 @@ NV_EDID_V2._fields_ = [
     # not < Structure version
     ('version', NvU32),
     ('EDID_Data', NvU8 * NV_EDID_DATA_SIZE),
-    ('(ctypes.sizeofEDID', NvU32),
+    ('sizeofEDID', NvU32),
 ]
 
 # not Used in NvAPI_GPU_GetEDID()
@@ -1823,7 +1823,7 @@ NV_EDID_V3._fields_ = [
     # not < Structure version
     ('version', NvU32),
     ('EDID_Data', NvU8 * NV_EDID_DATA_SIZE),
-    ('(ctypes.sizeofEDID', NvU32),
+    ('sizeofEDID', NvU32),
     # not < ID which always returned in a monotonically increasing counter.
     ('edidId', NvU32),
     # not < Which 256-byte page of the EDID we want to read. Start at 0.
