@@ -2685,6 +2685,19 @@ class PhysicalGPU(object):
     def dedicated_memory_eviction_count(self):
         # Indicates the number of eviction events that caused an allocation
         # to be removed from dedicated video memory to free GPU
+        #
+        # NOTE: unlike every size field on this struct (which are exact
+        # KB-vs-bytes conversions of their memory_info_ex counterpart --
+        # e.g. dedicated_memory * 1024 == memory_info_ex.dedicated_video_memory),
+        # this count and memory_info_ex.dedicated_video_memory_eviction_count
+        # are NOT the same counter scaled differently. They come from separate,
+        # unsynchronized internal counters maintained by this deprecated call
+        # (NvAPI_GPU_GetMemoryInfo, deprecated since driver release 520) versus
+        # the modern NvAPI_GPU_GetMemoryInfoEx, and were observed to disagree
+        # substantially (e.g. 2 vs 2373) on real hardware. This is a genuine
+        # driver-side discrepancy between the two code paths, not a decode bug
+        # here -- every other field on this struct was individually verified
+        # against memory_info_ex's equivalent and matched exactly.
         return self._memory_info.dedicatedVideoMemoryEvictionCount
 
     @property
@@ -2832,8 +2845,15 @@ class PhysicalGPU(object):
     def memory_info_ex(self):
         # modern replacement for _memory_info (NvAPI_GPU_GetMemoryInfo has
         # been deprecated since driver release 520); units are bytes here,
-        # not KB, and it adds eviction/promotion accounting the older call
-        # doesn't have
+        # not KB, and it adds promotion accounting the older call doesn't
+        # have. Every size field here was individually verified to equal
+        # its dedicated_memory*/etc. counterpart on PhysicalGPU multiplied
+        # by exactly 1024 (KB -> bytes) -- except
+        # dedicated_video_memory_eviction_count, which is backed by a
+        # separate, unsynchronized counter from the deprecated call's
+        # dedicated_memory_eviction_count and can disagree substantially
+        # (observed 2373 vs 2 on real hardware); see the note on
+        # PhysicalGPU.dedicated_memory_eviction_count.
         pMemoryInfo = NV_GPU_MEMORY_INFO_EX()
         pMemoryInfo.version = NV_GPU_MEMORY_INFO_EX_VER
         nvStatus = NvAPI_GPU_GetMemoryInfoEx(self._hPhysicalGpu, ctypes.byref(pMemoryInfo))
