@@ -2268,14 +2268,19 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetBoardInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        # BoardNum is a fixed 16-byte buffer (NvU8 * 16, not a char array,
-        # so it doesn't auto-unwrap) that's padded with non-printable bytes
-        # (observed: NUL) past the real digits -- the previous chr()-per-
-        # byte loop included that padding as literal characters, which show
-        # up as invisible junk after the real serial number. Filter to only
-        # printable ASCII (0x20-0x7e) rather than assuming the padding byte
-        # is always NUL.
-        return ''.join(chr(b) for b in bytes(pBoardInfo.BoardNum) if 0x20 <= b <= 0x7e)
+        # BoardNum is a fixed 16-byte NUL-terminated buffer (NvU8 * 16, not
+        # a char array, so it doesn't auto-unwrap) -- the previous chr()-
+        # per-byte loop included the buffer's tail past the terminator as
+        # literal characters, which show up as invisible junk after the
+        # real serial number.
+        chars = []
+        for b in bytes(pBoardInfo.BoardNum):
+            if b == 0x00:
+                break
+            if 0x20 <= b <= 0x7e:
+                chars.append(chr(b))
+
+        return ''.join(chars)
 
     @property
     def tach_reading(self):
