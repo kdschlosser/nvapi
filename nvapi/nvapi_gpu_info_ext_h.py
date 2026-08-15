@@ -44,6 +44,100 @@ NvAPI_GPU_GetArchInfo = hDll.GPU_GetArchInfo
 NvAPI_GPU_GetArchInfo.restype = NVAPI_INTERFACE
 
 
+# architecture is globally unique (safe as a flat enum); the same raw
+# implementation value means a different chip depending on which
+# architecture it's paired with, so implementation is a nested per-
+# architecture lookup instead (see NV_GPU_ARCH_IMPLEMENTATION_ID_MAP
+# below). Values transcribed from NVIDIA's current nvapi.h
+# (NV_GPU_ARCHITECTURE_ID / NV_GPU_ARCH_IMPLEMENTATION_ID /
+# NV_GPU_CHIP_REVISION).
+class _NV_GPU_ARCHITECTURE_ID(ENUM):
+    NV_GPU_ARCHITECTURE_T2X = EnumItem(0xE0000020).set_string('T2X')
+    NV_GPU_ARCHITECTURE_T3X = EnumItem(0xE0000030).set_string('T3X')
+    # T4X and T12X share the same raw value in NVIDIA's own header
+    NV_GPU_ARCHITECTURE_T4X_T12X = EnumItem(0xE0000040).set_string('T4X/T12X')
+    NV_GPU_ARCHITECTURE_NV40 = EnumItem(0x00000040).set_string('NV40')
+    NV_GPU_ARCHITECTURE_NV50 = EnumItem(0x00000050).set_string('NV50')
+    NV_GPU_ARCHITECTURE_G78 = EnumItem(0x00000060).set_string('G78')
+    NV_GPU_ARCHITECTURE_G80 = EnumItem(0x00000080).set_string('G80')
+    NV_GPU_ARCHITECTURE_G90 = EnumItem(0x00000090).set_string('G90')
+    NV_GPU_ARCHITECTURE_GT200 = EnumItem(0x000000A0).set_string('GT200')
+    NV_GPU_ARCHITECTURE_GF100 = EnumItem(0x000000C0).set_string('GF100')
+    NV_GPU_ARCHITECTURE_GF110 = EnumItem(0x000000D0).set_string('GF110')
+    NV_GPU_ARCHITECTURE_GK100 = EnumItem(0x000000E0).set_string('GK100')
+    NV_GPU_ARCHITECTURE_GK110 = EnumItem(0x000000F0).set_string('GK110')
+    NV_GPU_ARCHITECTURE_GK200 = EnumItem(0x00000100).set_string('GK200')
+    NV_GPU_ARCHITECTURE_GM000 = EnumItem(0x00000110).set_string('GM000')
+    NV_GPU_ARCHITECTURE_GM200 = EnumItem(0x00000120).set_string('GM200')
+    NV_GPU_ARCHITECTURE_GP100 = EnumItem(0x00000130).set_string('GP100')
+    NV_GPU_ARCHITECTURE_GV100 = EnumItem(0x00000140).set_string('GV100')
+    NV_GPU_ARCHITECTURE_GV110 = EnumItem(0x00000150).set_string('GV110')
+    NV_GPU_ARCHITECTURE_TU100 = EnumItem(0x00000160).set_string('TU100')
+    NV_GPU_ARCHITECTURE_GA100 = EnumItem(0x00000170).set_string('GA100')
+    NV_GPU_ARCHITECTURE_AD100 = EnumItem(0x00000190).set_string('AD100')
+    NV_GPU_ARCHITECTURE_GB200 = EnumItem(0x000001B0).set_string('GB200')
+
+
+NV_GPU_ARCHITECTURE_ID = _NV_GPU_ARCHITECTURE_ID
+
+# keyed by NV_GPU_ARCHITECTURE_ID raw value -> {implementation raw value:
+# chip name}. Groupings below follow the blank-line block structure of
+# NVIDIA's own header, which is not explicit about which architecture each
+# implementation constant belongs to but consistently separates families
+# this way.
+NV_GPU_ARCH_IMPLEMENTATION_ID_MAP = {
+    0xE0000020: {0x0: 'T20'},
+    0xE0000030: {0x0: 'T30', 0x5: 'T35'},
+    0xE0000040: {0x0: 'T40/T124'},
+    0x00000040: {
+        0x0: 'NV40', 0x1: 'NV41', 0x2: 'NV42', 0x3: 'NV43', 0x4: 'NV44',
+        0xA: 'NV44A', 0x6: 'NV46', 0x7: 'NV47', 0x9: 'NV49', 0xB: 'NV4B',
+        0xC: 'NV4C', 0xE: 'NV4E',
+    },
+    0x00000050: {0x0: 'NV50', 0x3: 'NV63', 0x7: 'NV67'},
+    0x00000060: {0x4: 'G84', 0x6: 'G86'},
+    0x00000080: {0x2: 'G92', 0x4: 'G94', 0x6: 'G96', 0x8: 'G98'},
+    0x000000A0: {
+        0x0: 'GT200', 0x2: 'GT212', 0x4: 'GT214', 0x3: 'GT215', 0x5: 'GT216',
+        0x8: 'GT218', 0xA: 'MCP77', 0xB: 'GT21C', 0xC: 'MCP79', 0xD: 'GT21A',
+        0xF: 'MCP89',
+    },
+    0x000000C0: {0x0: 'GF100', 0x4: 'GF104', 0x3: 'GF106', 0x1: 'GF108'},
+    0x000000D0: {0x0: 'GF110', 0x6: 'GF116', 0x7: 'GF117', 0x8: 'GF118', 0x9: 'GF119'},
+    0x000000E0: {0x4: 'GK104', 0x6: 'GK106', 0x7: 'GK107', 0xA: 'GK20A', 0x0: 'GK110'},
+    0x00000100: {0x8: 'GK208'},
+    0x00000120: {0x4: 'GM204', 0x6: 'GM206'},
+    0x00000130: {
+        0x0: 'GP100', 0x1: 'GP000', 0x2: 'GP102', 0x4: 'GP104', 0x6: 'GP106',
+        0x7: 'GP107', 0x8: 'GP108',
+    },
+    0x00000140: {0x0: 'GV100', 0xB: 'GV10B'},
+    0x00000160: {
+        0x0: 'TU100', 0x1: 'TU000', 0x2: 'TU102', 0x4: 'TU104', 0x6: 'TU106',
+        0x7: 'TU117', 0x8: 'TU116',
+    },
+    0x00000170: {0x0: 'GA100', 0x2: 'GA102', 0x4: 'GA104'},
+    0x00000190: {0x2: 'AD102', 0x3: 'AD103', 0x4: 'AD104'},
+    0x000001B0: {0x2: 'GB202'},
+}
+
+
+def get_arch_implementation_name(architecture, implementation):
+    return NV_GPU_ARCH_IMPLEMENTATION_ID_MAP.get(int(architecture), {}).get(int(implementation))
+
+
+class _NV_GPU_CHIP_REVISION(ENUM):
+    NV_GPU_CHIP_REV_EMULATION_QT = EnumItem(0x00000000).set_string('Emulation (QT)')
+    NV_GPU_CHIP_REV_EMULATION_FPGA = EnumItem(0x00000001).set_string('Emulation (FPGA)')
+    NV_GPU_CHIP_REV_A01 = EnumItem(0x00000011).set_string('A01')
+    NV_GPU_CHIP_REV_A02 = EnumItem(0x00000012).set_string('A02')
+    NV_GPU_CHIP_REV_A03 = EnumItem(0x00000013).set_string('A03')
+    NV_GPU_CHIP_REV_UNKNOWN = EnumItem(0xFFFFFFFF).set_string('Unknown')
+
+
+NV_GPU_CHIP_REVISION = _NV_GPU_CHIP_REVISION
+
+
 # ---------------------------------------------------------------------------
 # NV_GPU_UUID
 # ---------------------------------------------------------------------------
@@ -276,6 +370,46 @@ NvAPI_GPU_GetAdapterIdFromPhysicalGpu.restype = NVAPI_INTERFACE
 # ---------------------------------------------------------------------------
 NVAPI_NVLINK_MAX_LINKS = 32
 NVAPI_NVLINK_MAX_LINKS_V2 = 128
+
+
+# capsTbl bitmask from NvAPI_GPU_NVLINK_GetCaps(); VALID and
+# UNCONTAINED_ERROR_RECOVERY are documented as per-link caps only, not
+# global caps, but are decoded the same way either way.
+class _NVAPI_NVLINK_CAPS(ENUM):
+    NVAPI_NVLINK_CAPS_SUPPORTED = EnumItem(0x00000001).set_string('Supported')
+    NVAPI_NVLINK_CAPS_P2P_SUPPORTED = EnumItem(0x00000002).set_string('P2P Supported')
+    NVAPI_NVLINK_CAPS_SYSMEM_ACCESS = EnumItem(0x00000004).set_string('Sysmem Access')
+    NVAPI_NVLINK_CAPS_P2P_ATOMICS = EnumItem(0x00000008).set_string('P2P Atomics')
+    NVAPI_NVLINK_CAPS_SYSMEM_ATOMICS = EnumItem(0x00000010).set_string('Sysmem Atomics')
+    NVAPI_NVLINK_CAPS_PEX_TUNNELING = EnumItem(0x00000020).set_string('PEX Tunneling')
+    NVAPI_NVLINK_CAPS_SLI_BRIDGE = EnumItem(0x00000040).set_string('SLI Bridge')
+    NVAPI_NVLINK_CAPS_SLI_BRIDGE_SENSABLE = EnumItem(0x00000080).set_string('SLI Bridge Sensable')
+    NVAPI_NVLINK_CAPS_POWER_STATE_L0 = EnumItem(0x00000100).set_string('Power State L0')
+    NVAPI_NVLINK_CAPS_POWER_STATE_L1 = EnumItem(0x00000200).set_string('Power State L1')
+    NVAPI_NVLINK_CAPS_POWER_STATE_L2 = EnumItem(0x00000400).set_string('Power State L2')
+    NVAPI_NVLINK_CAPS_POWER_STATE_L3 = EnumItem(0x00000800).set_string('Power State L3')
+    NVAPI_NVLINK_CAPS_VALID = EnumItem(0x00001000).set_string('Valid')
+    NVAPI_NVLINK_CAPS_UNCONTAINED_ERROR_RECOVERY = EnumItem(0x00002000).set_string('Uncontained Error Recovery')
+
+
+NVAPI_NVLINK_CAPS = _NVAPI_NVLINK_CAPS
+
+
+# same value table for both NVLINK_CAPS_NVLINK_VERSION_* and
+# NVLINK_CAPS_NCI_VERSION_* -- NVIDIA's header defines two macro sets with
+# identical values for these, one enum covers both.
+class _NVAPI_NVLINK_VERSION(ENUM):
+    NVAPI_NVLINK_VERSION_INVALID = EnumItem(0x00000000).set_string('Invalid')
+    NVAPI_NVLINK_VERSION_1_0 = EnumItem(0x00000001).set_string('1.0')
+    NVAPI_NVLINK_VERSION_2_0 = EnumItem(0x00000002).set_string('2.0')
+    NVAPI_NVLINK_VERSION_2_2 = EnumItem(0x00000004).set_string('2.2')
+    NVAPI_NVLINK_VERSION_3_0 = EnumItem(0x00000005).set_string('3.0')
+    NVAPI_NVLINK_VERSION_3_1 = EnumItem(0x00000006).set_string('3.1')
+    NVAPI_NVLINK_VERSION_4_0 = EnumItem(0x00000007).set_string('4.0')
+    NVAPI_NVLINK_VERSION_5_0 = EnumItem(0x00000008).set_string('5.0')
+
+
+NVAPI_NVLINK_VERSION = _NVAPI_NVLINK_VERSION
 
 
 class NVAPI_NVLINK_LINK_MASK_V1(ctypes.Structure):

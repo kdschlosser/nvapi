@@ -96,6 +96,14 @@ NVLinkLinkStatus = namedtuple('NVLinkLinkStatus', [
 ])
 NVLinkStatus = namedtuple('NVLinkStatus', ['link_mask', 'links'])
 EncoderStatistics = namedtuple('EncoderStatistics', ['sessions_count', 'average_fps', 'average_latency'])
+# configured/consistent are lists of NVAPI_GPU_WORKSTATION_FEATURE_MASK
+# flags, per NvAPI_GPU_WorkstationFeatureQuery's own doc comment:
+# configured = features requested for use by client drivers, consistent =
+# which of those have all resources allocated for completeness.
+WorkstationFeatureQuery = namedtuple('WorkstationFeatureQuery', ['configured', 'consistent'])
+ThermalSensorInfo = namedtuple('ThermalSensorInfo', [
+    'controller', 'default_minimum_temp', 'default_maximum_temp', 'current_temp', 'target',
+])
 # graphics/memory/processor/video match NV_GPU_PUBLIC_CLOCK_ID -- the only
 # 4 of the 32 possible clock-domain slots the driver ever populates. A
 # field is None if that domain isn't present on this GPU.
@@ -208,8 +216,27 @@ FramebufferWidthAndLocation = namedtuple('FramebufferWidthAndLocation', ['width'
 ChipsetInfo = namedtuple('ChipsetInfo', [
     'vendor_id', 'device_id', 'vendor_name', 'chipset_name', 'flags',
     'sub_sys_vendor_id', 'sub_sys_device_id', 'sub_sys_vendor_name',
-    'hb_vendor_id', 'hb_device_id', 'hb_sub_sys_vendor_id', 'hb_sub_sys_device_id',
+    'hb_vendor_id', 'hb_device_id', 'hb_vendor_name',
+    'hb_sub_sys_vendor_id', 'hb_sub_sys_device_id', 'hb_sub_sys_vendor_name',
 ])
+
+# PCI-SIG vendor ID -> name, for chipset_info's hb_vendor_id /
+# hb_sub_sys_vendor_id fields -- unlike vendor_id/sub_sys_vendor_id, NV_CHIPSET_INFO
+# has no driver-provided name string for these (no szHBVendorName field
+# exists in the struct). Intentionally small: only IDs that are certain,
+# not the full PCI-SIG database (thousands of vendors, out of scope).
+# AMD and Super Micro Computer, Inc. verified directly against real
+# hardware output; Intel and NVIDIA are well-established IDs.
+_PCI_VENDOR_NAMES = {
+    0x8086: 'Intel',
+    0x1022: 'AMD',
+    0x10DE: 'NVIDIA',
+    0x15D9: 'Super Micro Computer, Inc.',
+}
+
+
+def _pci_vendor_name(vendor_id):
+    return _PCI_VENDOR_NAMES.get(vendor_id)
 LidDockInfo = namedtuple('LidDockInfo', [
     'current_lid_state', 'current_dock_state', 'current_lid_policy', 'current_dock_policy',
     'forced_lid_mechanism_present', 'forced_dock_mechanism_present',
@@ -2360,7 +2387,10 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_WorkstationFeatureQuery returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        return pConfigured.value, pConsistent.value
+        return WorkstationFeatureQuery(
+            configured=NVAPI_GPU_WORKSTATION_FEATURE_MASK.decode_flags(pConfigured.value),
+            consistent=NVAPI_GPU_WORKSTATION_FEATURE_MASK.decode_flags(pConsistent.value),
+        )
 
     def query_workstation_feature_support(self, feature):
         nvStatus = NvAPI_GPU_QueryWorkstationFeatureSupport(self._hPhysicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE(int(feature)))
@@ -2556,15 +2586,15 @@ class PhysicalGPU(object):
 
         for i in range(pThermalSettings.count):
             sensr = pThermalSettings.sensor[i]
-            res += [
-                {
-                    'controller': NV_THERMAL_CONTROLLER.get(sensr.controller),
-                    'default_minimum_temp': sensr.defaultMinTemp,
-                    'default_maximum_temp': sensr.defaultMaxTemp,
-                    'current_temp': sensr.currentTemp,
-                    'target': NV_THERMAL_TARGET.get(sensr.target)
-                }
-            ]
+            res.append(ThermalSensorInfo(
+                controller=NV_THERMAL_CONTROLLER.get(sensr.controller),
+                default_minimum_temp=sensr.defaultMinTemp,
+                default_maximum_temp=sensr.defaultMaxTemp,
+                current_temp=sensr.currentTemp,
+                target=NV_THERMAL_TARGET.get(sensr.target),
+            ))
+
+        return res
 
     @property
     def clock_frequencies(self):
@@ -2815,10 +2845,17 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_GetArchInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
+        architecture = NV_GPU_ARCHITECTURE_ID.get(pArchInfo.architecture)
+        impl_name = get_arch_implementation_name(pArchInfo.architecture, pArchInfo.implementation)
+        implementation = (
+            EnumItem(pArchInfo.implementation).set_string(impl_name)
+            if impl_name is not None else pArchInfo.implementation
+        )
+
         return ArchitectureInfo(
-            architecture=pArchInfo.architecture,
-            implementation=pArchInfo.implementation,
-            revision=pArchInfo.revision,
+            architecture=architecture if architecture is not None else pArchInfo.architecture,
+            implementation=implementation,
+            revision=NV_GPU_CHIP_REVISION.get(pArchInfo.revision),
         )
 
     @property
@@ -2985,12 +3022,12 @@ class PhysicalGPU(object):
             raise RuntimeError("NvAPI_GPU_NVLINK_GetCaps returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return NVLinkCaps(
-            caps_table=pCaps.capsTbl,
-            lowest_nvlink_version=pCaps.lowestNvlinkVersion,
-            highest_nvlink_version=pCaps.highestNvlinkVersion,
-            lowest_nci_version=pCaps.lowestNciVersion,
-            highest_nci_version=pCaps.highestNciVersion,
-            link_mask=pCaps.linkMask,
+            caps_table=NVAPI_NVLINK_CAPS.decode_flags(pCaps.capsTbl),
+            lowest_nvlink_version=NVAPI_NVLINK_VERSION.get(pCaps.lowestNvlinkVersion),
+            highest_nvlink_version=NVAPI_NVLINK_VERSION.get(pCaps.highestNvlinkVersion),
+            lowest_nci_version=NVAPI_NVLINK_VERSION.get(pCaps.lowestNciVersion),
+            highest_nci_version=NVAPI_NVLINK_VERSION.get(pCaps.highestNciVersion),
+            link_mask=[i for i in range(NVAPI_NVLINK_MAX_LINKS) if pCaps.linkMask & (1 << i)],
         )
 
     @property
@@ -3013,15 +3050,15 @@ class PhysicalGPU(object):
                 is_connected=bool(info.flags & 1),
                 link_state=info.linkState,
                 sublink_width=info.subLinkWidth,
-                nvlink_version=info.nvlinkVersion,
-                nci_version=info.nciVersion,
+                nvlink_version=NVAPI_NVLINK_VERSION.get(info.nvlinkVersion),
+                nci_version=NVAPI_NVLINK_VERSION.get(info.nciVersion),
                 nvlink_common_clock_speed_mhz=info.nvlinkCommonClockSpeedMhz,
                 nvlink_link_clock_mhz=info.nvlinkLinkClockMhz,
                 remote_device_uuid=bytes(info.remoteDeviceInfo.deviceUUID).hex(),
             )]
 
         return NVLinkStatus(
-            link_mask=pStatus.linkMask,
+            link_mask=[i for i in range(NVAPI_NVLINK_MAX_LINKS) if pStatus.linkMask & (1 << i)],
             links=links,
         )
 
@@ -3423,7 +3460,8 @@ class GPUs(object):
             p.vendorId, p.deviceId, p.szVendorName.decode('ascii', 'replace'),
             p.szChipsetName.decode('ascii', 'replace'), p.flags,
             p.subSysVendorId, p.subSysDeviceId, p.szSubSysVendorName.decode('ascii', 'replace'),
-            p.HBvendorId, p.HBdeviceId, p.HBsubSysVendorId, p.HBsubSysDeviceId,
+            p.HBvendorId, p.HBdeviceId, _pci_vendor_name(p.HBvendorId),
+            p.HBsubSysVendorId, p.HBsubSysDeviceId, _pci_vendor_name(p.HBsubSysVendorId),
         )
 
     @property

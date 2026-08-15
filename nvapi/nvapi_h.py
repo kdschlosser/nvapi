@@ -1761,12 +1761,13 @@ NV_DP_DYNAMIC_RANGE = _NV_DP_DYNAMIC_RANGE
 # not \ingroup dispcontrol
 # not Used in NV_DISPLAY_PORT_INFO.
 class _NV_DP_BPC(ENUM):
+    # bits per color/component
     NV_DP_BPC_DEFAULT = EnumItem(0).set_string('Default')
-    NV_DP_BPC_6 = EnumItem(1).set_string('6')
-    NV_DP_BPC_8 = EnumItem(2).set_string('8')
-    NV_DP_BPC_10 = EnumItem(3).set_string('10')
-    NV_DP_BPC_12 = EnumItem(4).set_string('12')
-    NV_DP_BPC_16 = EnumItem(5).set_string('16')
+    NV_DP_BPC_6 = EnumItem(1).set_string('6 bpc')
+    NV_DP_BPC_8 = EnumItem(2).set_string('8 bpc')
+    NV_DP_BPC_10 = EnumItem(3).set_string('10 bpc')
+    NV_DP_BPC_12 = EnumItem(4).set_string('12 bpc')
+    NV_DP_BPC_16 = EnumItem(5).set_string('16 bpc')
 
 
 NV_DP_BPC = _NV_DP_BPC
@@ -8868,12 +8869,13 @@ NV_DYNAMIC_RANGE = _NV_DYNAMIC_RANGE
 
 
 class _NV_BPC(ENUM):
+    # bits per color/component
     NV_BPC_DEFAULT = EnumItem(0).set_string('Default')
-    NV_BPC_6 = EnumItem(1).set_string('6')
-    NV_BPC_8 = EnumItem(2).set_string('8')
-    NV_BPC_10 = EnumItem(3).set_string('10')
-    NV_BPC_12 = EnumItem(4).set_string('12')
-    NV_BPC_16 = EnumItem(5).set_string('16')
+    NV_BPC_6 = EnumItem(1).set_string('6 bpc')
+    NV_BPC_8 = EnumItem(2).set_string('8 bpc')
+    NV_BPC_10 = EnumItem(3).set_string('10 bpc')
+    NV_BPC_12 = EnumItem(4).set_string('12 bpc')
+    NV_BPC_16 = EnumItem(5).set_string('16 bpc')
 
 
 NV_BPC = _NV_BPC
