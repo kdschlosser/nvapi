@@ -186,9 +186,3 @@ for logical_gpu in logical_gpus:
 
             print('     ', attr_name + ':', attr)
         print()
-
-        # to enable HDR (if supported) uncomment line below
-        # display.enable_hdr(True)
-
-        # to disable HDR (if supported) uncomment line below
-        # display.enable_hdr(False)
