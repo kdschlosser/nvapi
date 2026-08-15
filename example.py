@@ -24,7 +24,7 @@ print()
 
 for logical_gpu in logical_gpus:
     print('Logical GPU:')
-    for attr_name in ('os_adpater_id', 'physical_gpus'):
+    for attr_name in ('os_adpater_id',):
         try:
             attr = getattr(logical_gpu, attr_name)
         except:
