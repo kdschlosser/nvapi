@@ -833,3 +833,336 @@ NV_GET_VRR_INFO_VER = NV_GET_VRR_INFO_VER1
 
 NvAPI_Disp_GetVRRInfo = hDll.Disp_GetVRRInfo
 NvAPI_Disp_GetVRRInfo.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# System-level enumeration
+# ---------------------------------------------------------------------------
+class NV_DISPLAY_DRIVER_INFO_V2(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('driverVersion', NvU32),
+        ('szBuildBranch', NvAPI_ShortString),
+        ('flags', NvU32),  # bIsDCHDriver:1, bIsNVIDIAStudioPackage:1,
+                           # bIsNVIDIAGameReadyPackage:1,
+                           # bIsNVIDIARTXProductionBranchPackage:1,
+                           # bIsNVIDIARTXNewFeatureBranchPackage:1, reserved:27
+        ('szBuildBaseBranch', NvAPI_ShortString),
+        ('reservedEx', NvU32),
+    ]
+
+
+NV_DISPLAY_DRIVER_INFO = NV_DISPLAY_DRIVER_INFO_V2
+NV_DISPLAY_DRIVER_INFO_VER2 = MAKE_NVAPI_VERSION(NV_DISPLAY_DRIVER_INFO_V2, 2)
+NV_DISPLAY_DRIVER_INFO_VER = NV_DISPLAY_DRIVER_INFO_VER2
+
+NvAPI_SYS_GetDisplayDriverInfo = hDll.SYS_GetDisplayDriverInfo
+NvAPI_SYS_GetDisplayDriverInfo.restype = NVAPI_INTERFACE
+
+
+class NV_ADAPTER_TYPE(ENUM):
+    NV_ADAPTER_TYPE_UNKNOWN = EnumItem(0x0).set_string('Unknown')
+    NV_ADAPTER_TYPE_WDDM = EnumItem(1 << 0).set_string('WDDM')
+    NV_ADAPTER_TYPE_MCDM = EnumItem(1 << 1).set_string('MCDM')
+    NV_ADAPTER_TYPE_TCC = EnumItem(1 << 2).set_string('TCC')
+
+
+class NV_PHYSICAL_GPU_HANDLE_DATA(ctypes.Structure):
+    _fields_ = [
+        ('hPhysicalGpu', ctypes.c_void_p),
+        ('adapterType', NvU32),
+        ('reserved2', NvU32 * 4),
+    ]
+
+
+class NV_PHYSICAL_GPUS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('gpuHandleData', NV_PHYSICAL_GPU_HANDLE_DATA * NVAPI_MAX_PHYSICAL_GPUS),
+        ('gpuHandleCount', NvU32),
+        ('reserved', NvU32 * 4),
+    ]
+
+
+NV_PHYSICAL_GPUS = NV_PHYSICAL_GPUS_V1
+NV_PHYSICAL_GPUS_VER1 = MAKE_NVAPI_VERSION(NV_PHYSICAL_GPUS_V1, 1)
+NV_PHYSICAL_GPUS_VER = NV_PHYSICAL_GPUS_VER1
+
+NvAPI_SYS_GetPhysicalGPUs = hDll.SYS_GetPhysicalGPUs
+NvAPI_SYS_GetPhysicalGPUs.restype = NVAPI_INTERFACE
+
+
+class NV_LOGICAL_GPU_HANDLE_DATA(ctypes.Structure):
+    _fields_ = [
+        ('hLogicalGpu', ctypes.c_void_p),
+        ('adapterType', NvU32),
+        ('reserved', NvU32 * 4),
+    ]
+
+
+class NV_LOGICAL_GPUS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('gpuHandleData', NV_LOGICAL_GPU_HANDLE_DATA * NVAPI_MAX_LOGICAL_GPUS),
+        ('gpuHandleCount', NvU32),
+        ('reserved', NvU32 * 4),
+    ]
+
+
+NV_LOGICAL_GPUS = NV_LOGICAL_GPUS_V1
+NV_LOGICAL_GPUS_VER1 = MAKE_NVAPI_VERSION(NV_LOGICAL_GPUS_V1, 1)
+NV_LOGICAL_GPUS_VER = NV_LOGICAL_GPUS_VER1
+
+NvAPI_SYS_GetLogicalGPUs = hDll.SYS_GetLogicalGPUs
+NvAPI_SYS_GetLogicalGPUs.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# NGX (DLSS) driver feature support -- a support-status query only, not
+# the rendering path itself
+# ---------------------------------------------------------------------------
+NVAPI_MAX_NGX_FEATURES_PER_QUERY = 16
+
+
+class NV_NGX_DRIVER_FEATURE_ID(ENUM):
+    NV_NGX_DRIVER_FEATURE_ID_SET_FLIP_CONFIG_V2 = EnumItem(0x00343dcf).set_string('SetFlipConfig V2')
+    NV_NGX_DRIVER_FEATURE_ID_FRAME_PRESENT_NOTIFY_HYBRID = EnumItem(0x836af07b).set_string('FramePresentNotifyHybrid')
+
+
+class NV_NGX_DRIVER_FEATURE_SUPPORT_INFO(ctypes.Structure):
+    _fields_ = [
+        ('featureId', NvU32),
+        ('flags', NvU32),  # bSupported:1, reserved1:31
+        ('reserved2', NvU32 * 2),
+    ]
+
+
+class NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('featureCount', NvU32),
+        ('featureSupportInfo', NV_NGX_DRIVER_FEATURE_SUPPORT_INFO * NVAPI_MAX_NGX_FEATURES_PER_QUERY),
+        ('reserved', NvU32 * 6),
+    ]
+
+
+NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS = NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_V1
+NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_VER1 = MAKE_NVAPI_VERSION(NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_V1, 1)
+NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_VER = NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_VER1
+
+NvAPI_NGX_GetDriverFeatureSupport = hDll.NGX_GetDriverFeatureSupport
+NvAPI_NGX_GetDriverFeatureSupport.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# Deprecated since driver release 319 (NVIDIA's own header still carries it,
+# and its interface ID is still in the current published ID table, so it's
+# included per the agreed scope) -- superseded by physical GPU enumeration
+# plus compute-capability checks elsewhere.
+# ---------------------------------------------------------------------------
+NVAPI_MAX_GPU_PER_TOPOLOGY = 8
+
+
+class NV_COMPUTE_GPU(ctypes.Structure):
+    _fields_ = [
+        ('hPhysicalGpu', ctypes.c_void_p),
+        ('flags', NvU32),
+    ]
+
+
+# V1 uses a fixed-size embedded array (NVAPI_MAX_GPU_PER_TOPOLOGY entries);
+# V2 switched to a caller-allocated pointer, but this driver rejects V2's
+# version tag for this specific (deprecated-since-319) call -- confirmed
+# live: V1 succeeds, V2 returns NVAPI_INCOMPATIBLE_STRUCT_VERSION. Default
+# to V1, the revision this driver actually accepts.
+class NV_COMPUTE_GPU_TOPOLOGY_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('gpuCount', NvU32),
+        ('computeGpus', NV_COMPUTE_GPU * NVAPI_MAX_GPU_PER_TOPOLOGY),
+    ]
+
+
+class NV_COMPUTE_GPU_TOPOLOGY_V2(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('gpuCount', NvU32),
+        ('computeGpus', ctypes.POINTER(NV_COMPUTE_GPU)),
+    ]
+
+
+NV_COMPUTE_GPU_TOPOLOGY = NV_COMPUTE_GPU_TOPOLOGY_V1
+NV_COMPUTE_GPU_TOPOLOGY_VER1 = MAKE_NVAPI_VERSION(NV_COMPUTE_GPU_TOPOLOGY_V1, 1)
+NV_COMPUTE_GPU_TOPOLOGY_VER2 = MAKE_NVAPI_VERSION(NV_COMPUTE_GPU_TOPOLOGY_V2, 2)
+NV_COMPUTE_GPU_TOPOLOGY_VER = NV_COMPUTE_GPU_TOPOLOGY_VER1
+
+NvAPI_GPU_CudaEnumComputeCapableGpus = hDll.GPU_CudaEnumComputeCapableGpus
+NvAPI_GPU_CudaEnumComputeCapableGpus.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# Event callbacks -- genuinely different in kind from everything else ported
+# here: async, driver-invoked, and require the caller to keep the ctypes
+# callback object alive for as long as it's registered (letting it be
+# garbage collected after registration is a real use-after-free risk, since
+# the driver holds a raw function pointer into it). Structurally ported and
+# confirmed to dispatch/register without error, but NOT verified to
+# actually fire a callback in this session -- doing that needs a live event
+# (e.g. an actual output-mode change) to trigger during the test.
+# ---------------------------------------------------------------------------
+class NV_QSYNC_EVENT_DATA(ctypes.Structure):
+    _fields_ = [
+        ('qsyncEvent', NvU32),
+        ('reserved', NvU32 * 7),
+    ]
+
+
+NVAPI_CALLBACK_QSYNCEVENT = ctypes.CFUNCTYPE(None, NV_QSYNC_EVENT_DATA, ctypes.c_void_p)
+
+
+class NV_DISPLAY_OUTPUT_MODE_CHANGE_EVENT_DATA(ctypes.Structure):
+    _fields_ = [
+        ('displayId', NvU32),
+        ('outputMode', NvU32),
+    ]
+
+
+NVAPI_CALLBACK_DISPLAY_OUTPUT_MODE_CHANGE_EVENT = ctypes.CFUNCTYPE(
+    None, ctypes.POINTER(NV_DISPLAY_OUTPUT_MODE_CHANGE_EVENT_DATA), ctypes.c_void_p
+)
+
+
+class NV_DISPLAY_COLORIMETRY_CHANGE_EVENT_DATA(ctypes.Structure):
+    _fields_ = [
+        ('displayId', NvU32),
+        ('min_luminance', ctypes.c_float),
+        ('max_full_frame_luminance', ctypes.c_float),
+        ('max_luminance', ctypes.c_float),
+        ('hdrBrightnessLuminanceScalingFactor', ctypes.c_float),
+        ('red_primary_x', ctypes.c_float),
+        ('red_primary_y', ctypes.c_float),
+        ('green_primary_x', ctypes.c_float),
+        ('green_primary_y', ctypes.c_float),
+        ('blue_primary_x', ctypes.c_float),
+        ('blue_primary_y', ctypes.c_float),
+        ('white_point_x', ctypes.c_float),
+        ('white_point_y', ctypes.c_float),
+    ]
+
+
+NVAPI_CALLBACK_DISPLAY_COLORIMETRY_CHANGE_EVENT = ctypes.CFUNCTYPE(
+    None, ctypes.POINTER(NV_DISPLAY_COLORIMETRY_CHANGE_EVENT_DATA), ctypes.c_void_p
+)
+
+
+class NV_EVENT_TYPE(ENUM):
+    NV_EVENT_TYPE_NONE = EnumItem(0).set_string('None')
+    NV_EVENT_TYPE_QSYNC = EnumItem(6).set_string('QSync')
+    NV_EVENT_TYPE_DISPLAY_OUTPUT_MODE_CHANGE = EnumItem(103).set_string('Display Output Mode Change')
+    NV_EVENT_TYPE_DISPLAY_COLORIMETRY_CHANGE = EnumItem(104).set_string('Display Colorimetry Change')
+
+
+class _NvCallBackFuncUnion(ctypes.Union):
+    _fields_ = [
+        ('nvQSYNCEventCallback', NVAPI_CALLBACK_QSYNCEVENT),
+        ('nvDisplayOutputModeChangeEventCallback', NVAPI_CALLBACK_DISPLAY_OUTPUT_MODE_CHANGE_EVENT),
+        ('nvDisplayColorimetryChangeEventCallback', NVAPI_CALLBACK_DISPLAY_COLORIMETRY_CHANGE_EVENT),
+    ]
+
+
+class NV_EVENT_REGISTER_CALLBACK(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('eventId', NvU32),
+        ('callbackParam', ctypes.c_void_p),
+        ('nvCallBackFunc', _NvCallBackFuncUnion),
+    ]
+
+
+NV_EVENT_REGISTER_CALLBACK_VERSION = MAKE_NVAPI_VERSION(NV_EVENT_REGISTER_CALLBACK, 1)
+
+NvAPI_Event_RegisterCallback = hDll.Event_RegisterCallback
+NvAPI_Event_RegisterCallback.restype = NVAPI_INTERFACE
+
+NvAPI_Event_UnregisterCallback = hDll.Event_UnregisterCallback
+NvAPI_Event_UnregisterCallback.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# Periodic utilization-sample callback (distinct newer API from the
+# performance_monitor polling already wrapped elsewhere)
+# ---------------------------------------------------------------------------
+class NV_CLIENT_CALLBACK_SETTINGS_SUPER_V1(ctypes.Structure):
+    _fields_ = [
+        ('pCallbackParam', ctypes.c_void_p),
+        ('rsvd', NvU8 * 64),
+    ]
+
+
+NV_GPU_CLIENT_CALLBACK_SETTINGS_SUPER_V1 = NV_CLIENT_CALLBACK_SETTINGS_SUPER_V1
+
+
+class NV_GPU_CLIENT_PERIODIC_CALLBACK_SETTINGS_SUPER_V1(ctypes.Structure):
+    _fields_ = [
+        ('super', NV_GPU_CLIENT_CALLBACK_SETTINGS_SUPER_V1),
+        ('callbackPeriodms', NvU32),
+        ('rsvd', NvU8 * 64),
+    ]
+
+
+class NV_GPU_CLIENT_CALLBACK_DATA_SUPER_V1(ctypes.Structure):
+    _fields_ = [
+        ('pCallbackParam', ctypes.c_void_p),
+        ('rsvd', NvU8 * 64),
+    ]
+
+
+class NV_GPU_CLIENT_UTIL_DOMAIN_ID(ENUM):
+    NV_GPU_CLIENT_UTIL_DOMAIN_GRAPHICS = EnumItem(0).set_string('Graphics')
+    NV_GPU_CLIENT_UTIL_DOMAIN_FRAME_BUFFER = EnumItem(1).set_string('Frame Buffer')
+    NV_GPU_CLIENT_UTIL_DOMAIN_VIDEO = EnumItem(2).set_string('Video')
+    NV_GPU_CLIENT_UTIL_DOMAIN_RSVD = EnumItem(3).set_string('Reserved')
+
+
+NV_GPU_CLIENT_UTIL_DOMAINS_MAX_V1 = 4
+
+
+class NV_GPU_CLIENT_UTILIZATION_DATA_V1(ctypes.Structure):
+    _fields_ = [
+        ('utilId', NvU32),
+        ('utilizationPercent', NvU32),
+        ('rsvd', NvU8 * 61),
+    ]
+
+
+class NV_GPU_CLIENT_CALLBACK_UTILIZATION_DATA_V1(ctypes.Structure):
+    _fields_ = [
+        ('numUtils', NvU32),
+        ('timestamp', NvU64),
+        ('rsvd', NvU8 * 64),
+        ('utils', NV_GPU_CLIENT_UTILIZATION_DATA_V1 * NV_GPU_CLIENT_UTIL_DOMAINS_MAX_V1),
+    ]
+
+
+NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_V1 = ctypes.CFUNCTYPE(
+    None, ctypes.c_void_p, ctypes.POINTER(NV_GPU_CLIENT_CALLBACK_UTILIZATION_DATA_V1)
+)
+
+
+class NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('super', NV_GPU_CLIENT_PERIODIC_CALLBACK_SETTINGS_SUPER_V1),
+        ('callback', NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_V1),
+        ('rsvd', NvU8 * 64),
+    ]
+
+
+NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS = NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_V1
+NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_VER1 = MAKE_NVAPI_VERSION(
+    NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_V1, 1
+)
+NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_VER = NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_VER1
+
+NvAPI_GPU_ClientRegisterForUtilizationSampleUpdates = hDll.GPU_ClientRegisterForUtilizationSampleUpdates
+NvAPI_GPU_ClientRegisterForUtilizationSampleUpdates.restype = NVAPI_INTERFACE

@@ -124,6 +124,12 @@ VRRInfo = namedtuple('VRRInfo', [
     'is_vrr_enabled', 'is_vrr_possible', 'is_vrr_requested',
     'is_vrr_indicator_enabled', 'is_display_in_vrr_mode',
 ])
+DisplayDriverInfo = namedtuple('DisplayDriverInfo', [
+    'driver_version', 'build_branch', 'build_base_branch', 'is_dch_driver',
+    'is_studio_package', 'is_game_ready_package',
+    'is_rtx_production_branch_package', 'is_rtx_new_feature_branch_package',
+])
+SystemGpuHandle = namedtuple('SystemGpuHandle', ['adapter_type'])
 
 
 class Display(object):
@@ -1892,6 +1898,31 @@ class PhysicalGPU(object):
         return sessions
 
     @property
+    def is_cuda_compute_capable(self):
+        # NvAPI_GPU_CudaEnumComputeCapableGpus itself is deprecated (since
+        # driver release 319) but its interface ID is still in NVIDIA's
+        # current published ID table, and it's the only NVAPI-level check
+        # for this; superseded in NVIDIA's own recommendation by CUDA's
+        # own runtime API, not by anything else in NVAPI itself.
+        #
+        # NOTE: verified live that this driver's implementation of this
+        # deprecated call reports gpuCount correctly but does NOT populate
+        # the per-entry hPhysicalGpu handles (they come back NULL) -- so
+        # this can only answer "is at least one GPU in the system compute
+        # capable", not "is *this* GPU specifically" on multi-GPU systems.
+        buf = (NV_COMPUTE_GPU * NVAPI_MAX_GPU_PER_TOPOLOGY)()
+        pComputeTopo = NV_COMPUTE_GPU_TOPOLOGY()
+        pComputeTopo.version = NV_COMPUTE_GPU_TOPOLOGY_VER
+        pComputeTopo.computeGpus = buf
+        nvStatus = NvAPI_GPU_CudaEnumComputeCapableGpus(ctypes.byref(pComputeTopo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_CudaEnumComputeCapableGpus returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pComputeTopo.gpuCount > 0
+
+    @property
     def _hPhysicalGpu(self):
         return self.logical_gpu._logical_gpu_info.physicalGpuHandles[self.physical_gpu_index]
 
@@ -2142,4 +2173,56 @@ class GPUs(object):
                 is_mosaic=bool(entry.flags & 2),
             )
             for entry in buf[:pDedicatedDisplayCount.value]
+        ]
+
+    @property
+    def driver_info(self):
+        pDriverInfo = NV_DISPLAY_DRIVER_INFO()
+        pDriverInfo.version = NV_DISPLAY_DRIVER_INFO_VER
+        nvStatus = NvAPI_SYS_GetDisplayDriverInfo(ctypes.byref(pDriverInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SYS_GetDisplayDriverInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return DisplayDriverInfo(
+            driver_version=pDriverInfo.driverVersion,
+            build_branch=pDriverInfo.szBuildBranch.decode('ascii', 'replace').rstrip('\x00'),
+            build_base_branch=pDriverInfo.szBuildBaseBranch.decode('ascii', 'replace').rstrip('\x00'),
+            is_dch_driver=bool(pDriverInfo.flags & 1),
+            is_studio_package=bool(pDriverInfo.flags & 2),
+            is_game_ready_package=bool(pDriverInfo.flags & 4),
+            is_rtx_production_branch_package=bool(pDriverInfo.flags & 8),
+            is_rtx_new_feature_branch_package=bool(pDriverInfo.flags & 16),
+        )
+
+    @property
+    def system_physical_gpus(self):
+        # newer, adapter-type-aware alternative to NvAPI_EnumPhysicalGPUs
+        pPhysicalGPUs = NV_PHYSICAL_GPUS()
+        pPhysicalGPUs.version = NV_PHYSICAL_GPUS_VER
+        nvStatus = NvAPI_SYS_GetPhysicalGPUs(ctypes.byref(pPhysicalGPUs))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SYS_GetPhysicalGPUs returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [
+            SystemGpuHandle(adapter_type=NV_ADAPTER_TYPE.get(entry.adapterType))
+            for entry in pPhysicalGPUs.gpuHandleData[:pPhysicalGPUs.gpuHandleCount]
+        ]
+
+    @property
+    def system_logical_gpus(self):
+        pLogicalGPUs = NV_LOGICAL_GPUS()
+        pLogicalGPUs.version = NV_LOGICAL_GPUS_VER
+        nvStatus = NvAPI_SYS_GetLogicalGPUs(ctypes.byref(pLogicalGPUs))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SYS_GetLogicalGPUs returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [
+            SystemGpuHandle(adapter_type=NV_ADAPTER_TYPE.get(entry.adapterType))
+            for entry in pLogicalGPUs.gpuHandleData[:pLogicalGPUs.gpuHandleCount]
         ]
