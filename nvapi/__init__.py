@@ -197,6 +197,15 @@ EccStatusInfo = namedtuple('EccStatusInfo', ['is_supported', 'configuration_opti
 EccErrorCounts = namedtuple('EccErrorCounts', ['single_bit_errors', 'double_bit_errors'])
 EccErrorInfo = namedtuple('EccErrorInfo', ['current', 'aggregate'])
 EccConfigurationInfo = namedtuple('EccConfigurationInfo', ['is_enabled', 'is_enabled_by_default'])
+ChipsetInfo = namedtuple('ChipsetInfo', [
+    'vendor_id', 'device_id', 'vendor_name', 'chipset_name', 'flags',
+    'sub_sys_vendor_id', 'sub_sys_device_id', 'sub_sys_vendor_name',
+    'hb_vendor_id', 'hb_device_id', 'hb_sub_sys_vendor_id', 'hb_sub_sys_device_id',
+])
+LidDockInfo = namedtuple('LidDockInfo', [
+    'current_lid_state', 'current_dock_state', 'current_lid_policy', 'current_dock_policy',
+    'forced_lid_mechanism_present', 'forced_dock_mechanism_present',
+])
 
 
 def _timing_from_struct(t):
@@ -646,9 +655,6 @@ class Display(object):
             yield _custom_display_from_struct(pCustDisp)
             index += 1
 
-
-
-    # NvAPI_EnumNvidiaDisplayHandle(NvU32 thisEnum, NvDisplayHandle *pNvDispHandle);
 
     @staticmethod
     def enum_display_handles():
@@ -1935,7 +1941,16 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_SetEDID returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-    # NvAPI_GPU_GetFullName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szName);
+    @property
+    def full_name(self):
+        szName = NvAPI_ShortString()
+        nvStatus = NvAPI_GPU_GetFullName(self._hPhysicalGpu, szName)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetFullName returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return szName.value.decode('ascii', 'replace')
 
     @property
     def _pci_identifiers(self):
@@ -2162,8 +2177,55 @@ class PhysicalGPU(object):
 
         return pValue.value
 
-    # NvAPI_I2CRead(NvPhysicalGpuHandle hPhysicalGpu, NV_I2C_INFO *pI2cInfo);
-    # NvAPI_I2CWrite(NvPhysicalGpuHandle hPhysicalGpu, NV_I2C_INFO *pI2cInfo);
+    def _i2c_info(self, display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id):
+        info = NV_I2C_INFO()
+        info.version = NV_I2C_INFO_VER
+        info.displayMask = display_mask
+        info.bIsDDCPort = 1 if is_ddc_port else 0
+        info.i2cDevAddress = i2c_dev_address
+        if reg_address is not None:
+            regArray = (NvU8 * len(reg_address))(*bytearray(reg_address))
+            info.pbI2cRegAddress = ctypes.cast(regArray, POINTER(NvU8))
+            info.regAddrSize = len(reg_address)
+            info._reg_address_buffer = regArray
+        else:
+            info.regAddrSize = 0
+        info.i2cSpeed = NVAPI_I2C_SPEED_DEPRECATED
+        info.i2cSpeedKhz = int(speed_khz)
+        if port_id is not None:
+            info.portId = port_id
+            info.bIsPortIdSet = 1
+
+        return info
+
+    def i2c_read(self, display_mask, i2c_dev_address, size, reg_address=None,
+                 is_ddc_port=True, speed_khz=NVAPI_I2C_SPEED_DEFAULT, port_id=None):
+        info = self._i2c_info(display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id)
+        dataBuf = (NvU8 * size)()
+        info.pbData = ctypes.cast(dataBuf, POINTER(NvU8))
+        info.cbSize = size
+
+        nvStatus = NvAPI_I2CRead(self._hPhysicalGpu, ctypes.byref(info))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_I2CRead returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return bytes(dataBuf)
+
+    def i2c_write(self, display_mask, i2c_dev_address, data, reg_address=None,
+                  is_ddc_port=True, speed_khz=NVAPI_I2C_SPEED_DEFAULT, port_id=None):
+        info = self._i2c_info(display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id)
+        data = bytearray(data)
+        dataArray = (NvU8 * len(data))(*data)
+        info.pbData = ctypes.cast(dataArray, POINTER(NvU8))
+        info.cbSize = len(data)
+
+        nvStatus = NvAPI_I2CWrite(self._hPhysicalGpu, ctypes.byref(info))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_I2CWrite returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     def workstation_feature_setup(self, enable_mask, disable_mask):
         nvStatus = NvAPI_GPU_WorkstationFeatureSetup(self._hPhysicalGpu, NvU32(enable_mask), NvU32(disable_mask))
@@ -2247,7 +2309,16 @@ class PhysicalGPU(object):
             szDesc = NvAPI_ShortString()
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_SetECCConfiguration returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
-    # NvAPI_GPU_GetPerfDecreaseInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NvU32 *pPerfDecrInfo);
+    @property
+    def perf_decrease_info(self):
+        pPerfDecrInfo = NvU32()
+        nvStatus = NvAPI_GPU_GetPerfDecreaseInfo(self._hPhysicalGpu, ctypes.byref(pPerfDecrInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetPerfDecreaseInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pPerfDecrInfo.value
 
     @property
     def performance_monitor(self):
@@ -2339,7 +2410,16 @@ class PhysicalGPU(object):
 
         return res
 
-    # NvAPI_GPU_GetCurrentPstate(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_PERF_PSTATE_ID *pCurrentPstate);
+    @property
+    def current_pstate(self):
+        pCurrentPstate = NV_GPU_PERF_PSTATE_ID()
+        nvStatus = NvAPI_GPU_GetCurrentPstate(self._hPhysicalGpu, ctypes.byref(pCurrentPstate))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetCurrentPstate returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return NV_GPU_PERF_PSTATE_ID.get(pCurrentPstate)
 
     @property
     def thermal_sensors(self):
@@ -3010,9 +3090,46 @@ class Singleton(type):
 
 @six.add_metaclass(Singleton)
 class GPUs(object):
-    # NvAPI_GetInterfaceVersionString(NvAPI_ShortString szDesc);
-    # NvAPI_SYS_GetChipSetInfo(NV_CHIPSET_INFO *pChipSetInfo);
-    # NvAPI_SYS_GetLidAndDockInfo(NV_LID_DOCK_PARAMS *pLidAndDock);
+    @property
+    def interface_version(self):
+        szDesc = NvAPI_ShortString()
+        nvStatus = NvAPI_GetInterfaceVersionString(szDesc)
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            raise RuntimeError("NvAPI_GetInterfaceVersionString returned error code %d" % (nvStatus,))
+
+        return szDesc.value.decode('ascii', 'replace')
+
+    @property
+    def chipset_info(self):
+        p = NV_CHIPSET_INFO()
+        p.version = NV_CHIPSET_INFO_VER
+        nvStatus = NvAPI_SYS_GetChipSetInfo(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SYS_GetChipSetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return ChipsetInfo(
+            p.vendorId, p.deviceId, p.szVendorName.decode('ascii', 'replace'),
+            p.szChipsetName.decode('ascii', 'replace'), p.flags,
+            p.subSysVendorId, p.subSysDeviceId, p.szSubSysVendorName.decode('ascii', 'replace'),
+            p.HBvendorId, p.HBdeviceId, p.HBsubSysVendorId, p.HBsubSysDeviceId,
+        )
+
+    @property
+    def lid_and_dock_info(self):
+        p = NV_LID_DOCK_PARAMS()
+        p.version = NV_LID_DOCK_PARAMS_VER
+        nvStatus = NvAPI_SYS_GetLidAndDockInfo(ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SYS_GetLidAndDockInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return LidDockInfo(
+            p.currentLidState, p.currentDockState, p.currentLidPolicy, p.currentDockPolicy,
+            bool(p.forcedLidMechanismPresent), bool(p.forcedDockMechanismPresent),
+        )
 
     # NvAPI_GPU_{Query,Get,Set}Illumination are wired on PhysicalGPU
     # (query_illumination_support/get_illumination/set_illumination) --
