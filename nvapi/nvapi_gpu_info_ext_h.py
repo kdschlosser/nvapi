@@ -16,7 +16,8 @@ struct/function declarations were stale, not the ID table).
 import ctypes
 
 from .nvapi_lite_common_h import *  # noqa
-from .nvapi_h import hDll, NVAPI_INTERFACE, NvPhysicalGpuHandle  # noqa
+from .nvapi_h import hDll, NVAPI_INTERFACE, NvPhysicalGpuHandle, NV_GPU_CONNECTOR_TYPE  # noqa
+from .nvapi_interface_ids import NVAPI_INTERFACE_IDS  # noqa
 
 
 NVAPI_UUID_LEN = 16
@@ -1166,3 +1167,58 @@ NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_VER = NV_GPU_CLIENT_UTILIZA
 
 NvAPI_GPU_ClientRegisterForUtilizationSampleUpdates = hDll.GPU_ClientRegisterForUtilizationSampleUpdates
 NvAPI_GPU_ClientRegisterForUtilizationSampleUpdates.restype = NVAPI_INTERFACE
+
+
+# ---------------------------------------------------------------------------
+# NV_GPU_CONNECTOR_INFO -- NvAPI_GPU_GetConnectorInfo
+# ---------------------------------------------------------------------------
+# Unlike everything else in this file, this function and its interface ID
+# are not published anywhere checked: not in NVIDIA's current or archived
+# nvapi.h, not in nvapi_interface.h (the source for nvapi_interface_ids.py),
+# and not in any community NVAPI port (nvapi-rs, NvAPIWrapper, the Pascal/
+# FPC port). Several of those do reference the function by name in doc
+# comments copied from NVIDIA's own header -- NV_GPU_DISPLAYIDS.connectorType
+# says "get the GPU connector type from
+# NvAPI_GPU_GetConnectorInfo/NvAPI_GPU_GetConnectorInfoEx" -- but none
+# declare it or its struct.
+#
+# The interface ID (0x4ECA2C10) is published in several community
+# NVAPI-interface-ID lists (e.g. NvAPIWrapper's FunctionId enum), used by
+# tools that call it via the same nvapi_QueryInterface dispatch this
+# package already uses for every other function. The struct layout below
+# was reverse-engineered by probing a live GPU: sweeping candidate
+# `version` field values (every 4-byte size from 4-256, revisions 1-6)
+# against NvAPI_GPU_GetConnectorInfo(hPhysicalGpu, outputId, buffer) until
+# the driver returned NVAPI_OK instead of NVAPI_INCOMPATIBLE_STRUCT_VERSION
+# (a safe, non-destructive failure mode observed on every wrong guess), then
+# decoding the returned bytes.
+#
+# Verified against real hardware (a Quadro RTX 4000): decodes correctly as
+# 3x DisplayPort External + 1x USB Type-C (the card's actual VirtualLink
+# port -- something no other function in this package can detect).
+# connectorIndex also correctly groups multiple legacy output-mask bits
+# that share one physical jack: this GPU's all_outputs bitmask has 7 set
+# bits, but only 4 distinct connectorIndex values, matching its actual 4
+# physical connectors.
+#
+# Fields past connectorIndex were observed to always read back as zero
+# across every output on the test GPU; kept as reserved padding rather
+# than guessed at.
+class NV_GPU_CONNECTOR_INFO(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('reserved0', NvU32),
+        ('reserved1', NvU32),
+        ('connectorType', NV_GPU_CONNECTOR_TYPE),
+        ('connectorIndex', NvU32),
+        ('reserved', NvU32 * 6),
+    ]
+
+
+NV_GPU_CONNECTOR_INFO_VER = MAKE_NVAPI_VERSION(NV_GPU_CONNECTOR_INFO, 1)
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetConnectorInfo'] = 0x4ECA2C10
+NvAPI_GPU_GetConnectorInfo = hDll.GPU_GetConnectorInfo
+NvAPI_GPU_GetConnectorInfo.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetConnectorInfo(NvPhysicalGpuHandle hPhysicalGpu, NvU32 outputId, NV_GPU_CONNECTOR_INFO *pConnectorInfo);
+# -- reverse-engineered, not from a published header; see comment above.

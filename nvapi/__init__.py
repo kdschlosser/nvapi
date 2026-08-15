@@ -203,6 +203,7 @@ EccStatusInfo = namedtuple('EccStatusInfo', ['is_supported', 'configuration_opti
 EccErrorCounts = namedtuple('EccErrorCounts', ['single_bit_errors', 'double_bit_errors'])
 EccErrorInfo = namedtuple('EccErrorInfo', ['current', 'aggregate'])
 EccConfigurationInfo = namedtuple('EccConfigurationInfo', ['is_enabled', 'is_enabled_by_default'])
+ConnectorInfo = namedtuple('ConnectorInfo', ['connector_type', 'connector_index'])
 ChipsetInfo = namedtuple('ChipsetInfo', [
     'vendor_id', 'device_id', 'vendor_name', 'chipset_name', 'flags',
     'sub_sys_vendor_id', 'sub_sys_device_id', 'sub_sys_vendor_name',
@@ -795,59 +796,10 @@ class Display(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_SetRefreshRateOverride returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-    @property
-    def display_port_info(self):
-        pInfo = NV_DISPLAY_PORT_INFO()
-        pInfo.version = NV_DISPLAY_PORT_INFO_VER
-        # outputId accepts the modern displayId directly -- hNvDisplay is
-        # ignored in that case (default/NULL handle is fine here).
-        nvStatus = NvAPI_GetDisplayPortInfo(NvDisplayHandle(), self.display_id, ctypes.byref(pInfo))
-        if NvAPI_Status.NVAPI_OK != nvStatus:
-            szDesc = NvAPI_ShortString()
-            NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GetDisplayPortInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
-
-        return DisplayPortInfo(
-            pInfo.dpcd_ver, NV_DP_LINK_RATE.get(pInfo.maxLinkRate), NV_DP_LANE_COUNT.get(pInfo.maxLaneCount),
-            NV_DP_LINK_RATE.get(pInfo.curLinkRate), NV_DP_LANE_COUNT.get(pInfo.curLaneCount),
-            NV_DP_COLOR_FORMAT.get(pInfo.colorFormat), NV_DP_DYNAMIC_RANGE.get(pInfo.dynamicRange),
-            NV_DP_COLORIMETRY.get(pInfo.colorimetry), NV_DP_BPC.get(pInfo.bpc),
-            bool(pInfo.isDp), bool(pInfo.isInternalDp), bool(pInfo.isColorCtrlSupported),
-        )
-
-    @display_port_info.setter
-    def display_port_info(self, value):
-        # value: (link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc) tuple.
-        link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc = value
-        pCfg = NV_DISPLAY_PORT_CONFIG()
-        pCfg.version = NV_DISPLAY_PORT_CONFIG_VER
-        pCfg.linkRate = int(link_rate)
-        pCfg.laneCount = int(lane_count)
-        pCfg.colorFormat = int(color_format)
-        pCfg.dynamicRange = int(dynamic_range)
-        pCfg.colorimetry = int(colorimetry)
-        pCfg.bpc = int(bpc)
-        nvStatus = NvAPI_SetDisplayPort(NvDisplayHandle(), self.display_id, ctypes.byref(pCfg))
-        if NvAPI_Status.NVAPI_OK != nvStatus:
-            szDesc = NvAPI_ShortString()
-            NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_SetDisplayPort returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
-
-    @property
-    def hdmi_support_info(self):
-        pInfo = NV_HDMI_SUPPORT_INFO()
-        pInfo.version = NV_HDMI_SUPPORT_INFO_VER
-        nvStatus = NvAPI_GetHDMISupportInfo(NvDisplayHandle(), self.display_id, ctypes.byref(pInfo))
-        if NvAPI_Status.NVAPI_OK != nvStatus:
-            szDesc = NvAPI_ShortString()
-            NvAPI_GetErrorMessage(nvStatus, szDesc)
-            raise RuntimeError("NvAPI_GetHDMISupportInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
-
-        return HdmiSupportInfo(
-            bool(pInfo.isGpuHDMICapable), bool(pInfo.isMonUnderscanCapable), bool(pInfo.isMonBasicAudioCapable),
-            bool(pInfo.isMonYCbCr444Capable), bool(pInfo.isMonYCbCr422Capable), bool(pInfo.isMonxvYCC601Capable),
-            bool(pInfo.isMonxvYCC709Capable), bool(pInfo.isMonHDMI), pInfo.EDID861ExtRev,
-        )
+    # display_port_info/hdmi_support_info moved to Port -- they're physical-
+    # link properties (DPCD version, HDMI capability of the connector
+    # itself), not per-display content, and their own doc comments confirm
+    # they key off the output/connector, not the display's signal state.
 
     def __init__(self, gpu, display_id):
         
@@ -1932,6 +1884,20 @@ class PhysicalGPU(object):
             raise RuntimeError("NvAPI_GPU_GetOutputType returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return NV_GPU_OUTPUT_TYPE.get(pOutputType)
+
+    def connector_info(self, output_id):
+        # NvAPI_GPU_GetConnectorInfo -- reverse-engineered, undocumented.
+        # See the comment on NV_GPU_CONNECTOR_INFO in nvapi_gpu_info_ext_h.py
+        # for how the struct layout was determined and what's been verified.
+        info = NV_GPU_CONNECTOR_INFO()
+        info.version = NV_GPU_CONNECTOR_INFO_VER
+        nvStatus = NvAPI_GPU_GetConnectorInfo(self._hPhysicalGpu, NvU32(output_id), ctypes.byref(info))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetConnectorInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return ConnectorInfo(NV_GPU_CONNECTOR_TYPE.get(info.connectorType), info.connectorIndex)
 
     def validate_output_combination(self, outputs_mask):
         nvStatus = NvAPI_GPU_ValidateOutputCombination(self._hPhysicalGpu, NvU32(outputs_mask))
@@ -3031,6 +2997,174 @@ class PhysicalGPU(object):
 
         return pMemoryInfo
 
+    def _all_display_ids(self):
+        # every displayId NVAPI has ever seen on this physical GPU --
+        # currently connected or historical -- used by Port.__iter__ to
+        # find EDID matches for a given output.
+        displayIdCount = NvU32(16)
+        displayIdArray = (NV_GPU_DISPLAYIDS * 16)()
+        displayIdArray[0].version = NV_GPU_DISPLAYIDS_VER
+
+        nvStatus = NvAPI_GPU_GetAllDisplayIds(self._hPhysicalGpu, displayIdArray, ctypes.byref(displayIdCount))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetAllDisplayIds returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        for i in range(displayIdCount.value):
+            yield displayIdArray[i].displayId
+
+
+def _iter_set_bits(mask, width=32):
+    for i in range(width):
+        bit = 1 << i
+        if mask & bit:
+            yield bit
+
+
+class Port(object):
+    # A physical connector on a PhysicalGPU, identified by NvAPI_GPU_
+    # GetConnectorInfo's connectorIndex -- reverse-engineered (see
+    # nvapi_gpu_info_ext_h.NV_GPU_CONNECTOR_INFO for how/why) since neither
+    # it nor GetConnectorInfoEx -- the APIs NVIDIA's own header comments
+    # point to for real connector identity -- are declared in any published
+    # NVAPI header, past or current, or implemented by any community port
+    # checked (nvapi-rs, NvAPIWrapper, the Pascal/FPC port).
+    #
+    # output_ids holds every legacy output-bitmask bit sharing this
+    # connectorIndex -- on real hardware a single physical jack can claim
+    # more than one bit (observed: 2 per DisplayPort connector on a Quadro
+    # RTX 4000), so a Port is a connectorIndex plus the set of bits that
+    # collapse to it, not a single bit.
+    def __init__(self, physical_gpu, connector_index, output_ids):
+        self.physical_gpu = physical_gpu
+        self.connector_index = connector_index
+        self.output_ids = tuple(output_ids)
+
+    def _active_output_id(self):
+        # prefer whichever bit is actually carrying a connection; fall
+        # back to the first bit for a port with nothing plugged in
+        for output_id in self.output_ids:
+            if self.physical_gpu.connected_outputs & output_id:
+                return output_id
+
+        return self.output_ids[0]
+
+    def _married_display_id(self):
+        # NvAPI_GetDisplayPortInfo/SetDisplayPort/GetHDMISupportInfo's own
+        # doc comment says outputId accepts either the legacy bitmask or a
+        # displayId -- but live testing showed that's only true for a
+        # displayId; passing the raw legacy bit here fails with
+        # NVAPI_EXPECTED_DISPLAY_HANDLE. So these need the married
+        # display's displayId, not self._active_output_id().
+        for display in self:
+            return display.display_id
+
+        raise RuntimeError("Port has no married display to query link info for (nothing connected)")
+
+    @property
+    def connector_type(self):
+        return self.physical_gpu.connector_info(self._active_output_id()).connector_type
+
+    @property
+    def output_type(self):
+        return self.physical_gpu.output_type(self._active_output_id())
+
+    @property
+    def is_connected(self):
+        return any(self.physical_gpu.connected_outputs & output_id for output_id in self.output_ids)
+
+    @property
+    def is_active(self):
+        return any(self.physical_gpu.active_outputs & output_id for output_id in self.output_ids)
+
+    @property
+    def display_port_info(self):
+        pInfo = NV_DISPLAY_PORT_INFO()
+        pInfo.version = NV_DISPLAY_PORT_INFO_VER
+        nvStatus = NvAPI_GetDisplayPortInfo(NvDisplayHandle(), self._married_display_id(), ctypes.byref(pInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetDisplayPortInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return DisplayPortInfo(
+            pInfo.dpcd_ver, NV_DP_LINK_RATE.get(pInfo.maxLinkRate), NV_DP_LANE_COUNT.get(pInfo.maxLaneCount),
+            NV_DP_LINK_RATE.get(pInfo.curLinkRate), NV_DP_LANE_COUNT.get(pInfo.curLaneCount),
+            NV_DP_COLOR_FORMAT.get(pInfo.colorFormat), NV_DP_DYNAMIC_RANGE.get(pInfo.dynamicRange),
+            NV_DP_COLORIMETRY.get(pInfo.colorimetry), NV_DP_BPC.get(pInfo.bpc),
+            bool(pInfo.isDp), bool(pInfo.isInternalDp), bool(pInfo.isColorCtrlSupported),
+        )
+
+    @display_port_info.setter
+    def display_port_info(self, value):
+        # value: (link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc) tuple.
+        link_rate, lane_count, color_format, dynamic_range, colorimetry, bpc = value
+        pCfg = NV_DISPLAY_PORT_CONFIG()
+        pCfg.version = NV_DISPLAY_PORT_CONFIG_VER
+        pCfg.linkRate = int(link_rate)
+        pCfg.laneCount = int(lane_count)
+        pCfg.colorFormat = int(color_format)
+        pCfg.dynamicRange = int(dynamic_range)
+        pCfg.colorimetry = int(colorimetry)
+        pCfg.bpc = int(bpc)
+        nvStatus = NvAPI_SetDisplayPort(NvDisplayHandle(), self._married_display_id(), ctypes.byref(pCfg))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_SetDisplayPort returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    @property
+    def hdmi_support_info(self):
+        pInfo = NV_HDMI_SUPPORT_INFO()
+        pInfo.version = NV_HDMI_SUPPORT_INFO_VER
+        nvStatus = NvAPI_GetHDMISupportInfo(NvDisplayHandle(), self._married_display_id(), ctypes.byref(pInfo))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GetHDMISupportInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return HdmiSupportInfo(
+            bool(pInfo.isGpuHDMICapable), bool(pInfo.isMonUnderscanCapable), bool(pInfo.isMonBasicAudioCapable),
+            bool(pInfo.isMonYCbCr444Capable), bool(pInfo.isMonYCbCr422Capable), bool(pInfo.isMonxvYCC601Capable),
+            bool(pInfo.isMonxvYCC709Capable), bool(pInfo.isMonHDMI), pInfo.EDID861ExtRev,
+        )
+
+    def __iter__(self):
+        # Correlates displays to this port by reading the EDID off the
+        # port's active (or first) legacy output bit (NvAPI_GPU_GetEDID)
+        # and matching it byte-for-byte against each display's modern EDID
+        # (Display.edid_data) -- a driver-verified match, not an assumption
+        # about displayId/output-bit encoding. If nothing is plugged into
+        # this port (or its EDID isn't readable), this yields nothing --
+        # there is no way to determine a "married" display for a port with
+        # no signal, since there's nothing to read.
+        #
+        # NOTE on splitters/MST: NvAPI_GPU_GetEDID is a pre-MST API tied to
+        # a single legacy output bit. Whether it returns each downstream
+        # monitor's own EDID or just one (e.g. the hub's) on a true MST/
+        # splitter topology is unverified -- untested against real MST
+        # hardware. For a simple point-to-point connection (the common
+        # case) this is exact.
+        try:
+            port_edid = self.physical_gpu.get_edid(self._active_output_id()).data
+        except RuntimeError:
+            return
+
+        port_edid_base = port_edid[:128]
+        if len(port_edid_base) < 128:
+            return
+
+        for display_id in self.physical_gpu._all_display_ids():
+            display = Display(self.physical_gpu.logical_gpu, display_id)
+            try:
+                display_edid = display.edid_data
+            except RuntimeError:
+                continue
+
+            if display_edid[:128] == port_edid_base:
+                yield display
+
 
 class LogicalGPU(object):
 
@@ -3117,27 +3251,20 @@ class LogicalGPU(object):
         self.gpu_index = gpu_index
 
     def __iter__(self):
-        logical_gpu_info = self._logical_gpu_info
-        for i in range(logical_gpu_info.physicalGpuCount):
-            hPhysicalGpu = logical_gpu_info.physicalGpuHandles[i]
+        # yields Port, not Display -- iterate a Port to get the display(s)
+        # (zero, one, or more with a splitter) actually attached to it.
+        # Multiple legacy output-mask bits can share one physical
+        # connector (observed: 2 per DisplayPort jack on a Quadro RTX
+        # 4000), so bits are grouped by their real connectorIndex
+        # (NvAPI_GPU_GetConnectorInfo) rather than yielding one Port per bit.
+        for physical_gpu in self.physical_gpus:
+            groups = {}
+            for output_id in _iter_set_bits(physical_gpu.all_outputs):
+                index = physical_gpu.connector_info(output_id).connector_index
+                groups.setdefault(index, []).append(output_id)
 
-            displayIdCount = NvU32(16)
-            displayIdArray = (NV_GPU_DISPLAYIDS * 16)()
-            displayIdArray[0].version = NV_GPU_DISPLAYIDS_VER
-
-            nvStatus = NvAPI_GPU_GetAllDisplayIds(
-                hPhysicalGpu,
-                displayIdArray,
-                ctypes.byref(displayIdCount),
-            )
-
-            if NvAPI_Status.NVAPI_OK != nvStatus:
-                szDesc = NvAPI_ShortString()
-                NvAPI_GetErrorMessage(nvStatus, szDesc)
-                raise RuntimeError("NvAPI_GPU_GetConnectedDisplayIds returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
-
-            for i in range(displayIdCount.value):
-                yield Display(self, displayIdArray[i].displayId)
+            for index in sorted(groups):
+                yield Port(physical_gpu, index, groups[index])
 
 
 class Singleton(type):

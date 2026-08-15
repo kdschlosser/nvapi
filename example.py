@@ -116,73 +116,99 @@ for logical_gpu in logical_gpus:
             print('   ', attr_name + ':', attr)
         print()
     
-    for display in logical_gpu:
-        print('    Display:')
+    # iterating a LogicalGPU yields Port, not Display -- a Port is a
+    # physical connector (see nvapi.Port); iterate a Port to get the
+    # display(s) actually attached to it (zero, one, or more with a
+    # splitter/MST hub).
+    for port in logical_gpu:
+        print('  Port connector_index=%r output_ids=%r:' % (port.connector_index, port.output_ids))
         for attr_name in (
-            'color_data',
-            'monitor_capabilities_vsdb',
-            'monitor_capabilities_vcdb',
-            'monitor_color_capabilities',
+            'connector_type',
+            'output_type',
+            'is_connected',
+            'is_active',
             'display_port_info',
             'hdmi_support_info',
-            'is_primary',
-            'hdr',
-            'connector_type',
-            'is_dynamic',
-            'is_multi_stream_root_node',
-            'is_active',
-            'is_cluster',
-            'is_visible',
-            'is_wireless_display',
-            'is_connected',
-            'is_physically_connected',
-            'is_hdr_supported',
-            'is_st2048etof_supported',
-            'is_traditional_gamma_supported',
-            'is_edr_supported',
-            'is_traditional_sdr_gamma_supported',
-            'is_dolby_vision_supported',
-            'hdr_dynamic_range',
-            'hdr_dynamic_range',
-            'hdr_color_format',
-            'hdr_primary_color_coordinates',
-            'hdr_maximum_content_light_level',
-            'hdr_maximum_luminance',
-            'hdr_minimum_luminance',
-            'hdr_maximum_frame_average_luminance',
-            'hdr_supports_2160p60hz',
-            'hdr_supports_yuv422_12bit',
-            'hdr_supports_global_dimming',
-            'hdr_colorimetry',
-            'hdr_supports_backlight_control',
-            'hdr_backlight_minimum',
-            'hdr_interface_supported_by_sink',
-            'hdr_supports_10b_12b_444',
-            'hdr_minimum_sink_luminance',
-            'hdr_maximum_sink_luminance',
-            'hdr_primary_chromaticity_coordinates',
-            'source_color_space',
-            'source_hdr_metadata',
-            'output_mode',
-            'hdr_tone_mapping',
-            'colorimetry',
-            'edid_data',
-            'adaptive_sync_data',
-            'virtual_refresh_rate_data',
-            'dedicated_display_metadata',
-            'display_id_info',
-            'grid_display_ids',
-            'vrr_info',
-            'edid_info',
-            'scanout_configuration',
-            'scanout_configuration_ex',
-            'scanout_intensity_enabled',
-            'scanout_warping_enabled',
         ):
             try:
-                attr = getattr(display, attr_name)
+                attr = getattr(port, attr_name)
             except:
                 continue
 
-            print('     ', attr_name + ':', attr)
+            print('   ', attr_name + ':', attr)
         print()
+
+        for display in port:
+            print('    Display:')
+            for attr_name in (
+                'color_data',
+                'monitor_capabilities_vsdb',
+                'monitor_capabilities_vcdb',
+                'monitor_color_capabilities',
+                'is_primary',
+                'hdr',
+                'connector_type',
+                'is_dynamic',
+                'is_multi_stream_root_node',
+                'is_active',
+                'is_cluster',
+                'is_visible',
+                'is_wireless_display',
+                'is_connected',
+                'is_physically_connected',
+                'is_hdr_supported',
+                'is_st2048etof_supported',
+                'is_traditional_gamma_supported',
+                'is_edr_supported',
+                'is_traditional_sdr_gamma_supported',
+                'is_dolby_vision_supported',
+                'hdr_dynamic_range',
+                'hdr_dynamic_range',
+                'hdr_color_format',
+                'hdr_primary_color_coordinates',
+                'hdr_maximum_content_light_level',
+                'hdr_maximum_luminance',
+                'hdr_minimum_luminance',
+                'hdr_maximum_frame_average_luminance',
+                'hdr_supports_2160p60hz',
+                'hdr_supports_yuv422_12bit',
+                'hdr_supports_global_dimming',
+                'hdr_colorimetry',
+                'hdr_supports_backlight_control',
+                'hdr_backlight_minimum',
+                'hdr_interface_supported_by_sink',
+                'hdr_supports_10b_12b_444',
+                'hdr_minimum_sink_luminance',
+                'hdr_maximum_sink_luminance',
+                'hdr_primary_chromaticity_coordinates',
+                'source_color_space',
+                'source_hdr_metadata',
+                'output_mode',
+                'hdr_tone_mapping',
+                'colorimetry',
+                'edid_data',
+                'adaptive_sync_data',
+                'virtual_refresh_rate_data',
+                'dedicated_display_metadata',
+                'display_id_info',
+                'grid_display_ids',
+                'vrr_info',
+                'edid_info',
+                'scanout_configuration',
+                'scanout_configuration_ex',
+                'scanout_intensity_enabled',
+                'scanout_warping_enabled',
+            ):
+                try:
+                    attr = getattr(display, attr_name)
+                except:
+                    continue
+
+                print('     ', attr_name + ':', attr)
+            print()
+
+            # to enable HDR (if supported) uncomment line below
+            # display.enable_hdr(True)
+
+            # to disable HDR (if supported) uncomment line below
+            # display.enable_hdr(False)
