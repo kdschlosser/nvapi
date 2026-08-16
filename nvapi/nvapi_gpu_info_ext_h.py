@@ -1398,13 +1398,17 @@ class NV_GPU_RAM_TYPE(ENUM):
     NV_GPU_RAM_GDDR5 = EnumItem(8).set_string('GDDR5')
     NV_GPU_RAM_LPDDR2 = EnumItem(9).set_string('LPDDR2')
     NV_GPU_RAM_GDDR5X = EnumItem(10).set_string('GDDR5X')
-    # 11-13 unknown (not present in the source enum table, which predates
-    # GDDR6 driver support -- left unlabeled rather than guessed at). 14
+    # 11 still unlabeled -- not present in either source list. 12/14/15
+    # added from a second list the user found; 14 matches the
+    # independently-verified live value below exactly.
+    NV_GPU_RAM_HBM2 = EnumItem(12).set_string('HBM2')
+    # 13 still unlabeled -- not present in either source list.
     # confirmed live on a Quadro RTX 4000 (TU104 die, verified separately
     # via short_name) -- TU104-based cards are publicly documented to use
     # GDDR6 (GDDR6X didn't exist until Ampere/GA10x), so this is a
     # verified fact, not a guess.
     NV_GPU_RAM_GDDR6 = EnumItem(14).set_string('GDDR6')
+    NV_GPU_RAM_GDDR6X = EnumItem(15).set_string('GDDR6X')
 
 
 class NV_GPU_RAM_MAKER(ENUM):
@@ -1475,3 +1479,287 @@ NVAPI_INTERFACE_IDS['NvAPI_GPU_GetFBWidthAndLocation'] = 0x11104158
 NvAPI_GPU_GetFBWidthAndLocation = hDll.GPU_GetFBWidthAndLocation
 NvAPI_GPU_GetFBWidthAndLocation.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_GetFBWidthAndLocation(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pWidth, NvU32 *pLocation);
+
+
+# ---------------------------------------------------------------------------
+# Fan/cooler control -- not in NVIDIA's public header at all (the only
+# officially documented fan function is NvAPI_GPU_GetTachReading, already
+# wired up elsewhere). Everything below is private/undocumented. Structs,
+# enums and function signatures transcribed from falahati/NvAPIWrapper
+# (https://github.com/falahati/NvAPIWrapper, MIT licensed), the same
+# community source already used for NvAPI_GPU_GetConnectorInfo; interface
+# IDs from arcnmx/nvapi-rs (https://github.com/arcnmx/nvapi-rs).
+#
+# Two generations exist:
+#  - the legacy "Cooler" API (GetCoolerSettings/SetCoolerLevels/
+#    RestoreCoolerSettings/GetCoolerPolicyTable/SetCoolerPolicyTable/
+#    RestoreCoolerPolicyTable) -- older GPUs.
+#  - the modern "ClientFanCoolers" API (GetInfo/GetStatus/GetControl/
+#    SetControl) -- what current-generation GPUs use.
+# ---------------------------------------------------------------------------
+class _NV_COOLER_TYPE(ENUM):
+    NVAPI_COOLER_TYPE_NONE = EnumItem(0).set_string('None')
+    NVAPI_COOLER_TYPE_FAN = EnumItem(1).set_string('Fan')
+    NVAPI_COOLER_TYPE_WATER = EnumItem(2).set_string('Water')
+    NVAPI_COOLER_TYPE_LIQUID_NITROGEN = EnumItem(3).set_string('Liquid Nitrogen')
+
+
+NV_COOLER_TYPE = _NV_COOLER_TYPE
+
+
+class _NV_COOLER_CONTROLLER(ENUM):
+    NVAPI_COOLER_CONTROLLER_NONE = EnumItem(0).set_string('None')
+    NVAPI_COOLER_CONTROLLER_ADI = EnumItem(1).set_string('ADI')
+    NVAPI_COOLER_CONTROLLER_INTERNAL = EnumItem(2).set_string('Internal')
+
+
+NV_COOLER_CONTROLLER = _NV_COOLER_CONTROLLER
+
+
+# bitmask
+class _NV_COOLER_POLICY(ENUM):
+    NVAPI_COOLER_POLICY_NONE = EnumItem(0).set_string('None')
+    NVAPI_COOLER_POLICY_MANUAL = EnumItem(0b1).set_string('Manual')
+    NVAPI_COOLER_POLICY_PERFORMANCE = EnumItem(0b10).set_string('Performance')
+    NVAPI_COOLER_POLICY_TEMPERATURE_DISCRETE = EnumItem(0b100).set_string('Temperature Discrete')
+    NVAPI_COOLER_POLICY_TEMPERATURE_CONTINUOUS = EnumItem(0b1000).set_string('Temperature Continuous')
+    NVAPI_COOLER_POLICY_SILENT = EnumItem(0b10000).set_string('Silent')
+
+
+NV_COOLER_POLICY = _NV_COOLER_POLICY
+
+
+# bitmask
+class _NV_COOLER_TARGET(ENUM):
+    NVAPI_COOLER_TARGET_NONE = EnumItem(0).set_string('None')
+    NVAPI_COOLER_TARGET_GPU = EnumItem(0b1).set_string('GPU')
+    NVAPI_COOLER_TARGET_MEMORY = EnumItem(0b10).set_string('Memory')
+    NVAPI_COOLER_TARGET_POWER_SUPPLY = EnumItem(0b100).set_string('Power Supply')
+    NVAPI_COOLER_TARGET_ALL = EnumItem(0b111).set_string('All')
+
+
+NV_COOLER_TARGET = _NV_COOLER_TARGET
+
+
+class _NV_COOLER_CONTROL_MODE(ENUM):
+    NVAPI_COOLER_CONTROL_MODE_NONE = EnumItem(0).set_string('None')
+    NVAPI_COOLER_CONTROL_MODE_TOGGLE = EnumItem(1).set_string('Toggle')
+    NVAPI_COOLER_CONTROL_MODE_VARIABLE = EnumItem(2).set_string('Variable')
+
+
+NV_COOLER_CONTROL_MODE = _NV_COOLER_CONTROL_MODE
+
+
+NVAPI_MAX_COOLERS_PER_GPU = 3
+NVAPI_MAX_COOLER_POLICY_LEVELS = 24
+
+
+class NV_COOLER_SETTING(ctypes.Structure):
+    _fields_ = [
+        ('coolerType', NvU32),
+        ('controller', NvU32),
+        ('defaultMinLevel', NvU32),
+        ('defaultMaxLevel', NvU32),
+        ('currentMinLevel', NvU32),
+        ('currentMaxLevel', NvU32),
+        ('currentLevel', NvU32),
+        ('defaultPolicy', NvU32),
+        ('currentPolicy', NvU32),
+        ('target', NvU32),
+        ('controlMode', NvU32),
+        ('isActive', NvU32),
+    ]
+
+
+class NV_GPU_COOLER_SETTINGS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('count', NvU32),
+        ('settings', NV_COOLER_SETTING * NVAPI_MAX_COOLERS_PER_GPU),
+    ]
+
+
+NV_GPU_COOLER_SETTINGS = NV_GPU_COOLER_SETTINGS_V1
+NV_GPU_COOLER_SETTINGS_VER1 = MAKE_NVAPI_VERSION(NV_GPU_COOLER_SETTINGS_V1, 1)
+NV_GPU_COOLER_SETTINGS_VER = NV_GPU_COOLER_SETTINGS_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetCoolerSettings'] = 0xda141340
+NvAPI_GPU_GetCoolerSettings = hDll.GPU_GetCoolerSettings
+NvAPI_GPU_GetCoolerSettings.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetCoolerSettings(NvPhysicalGpuHandle hPhysicalGpu, NV_COOLER_TARGET coolerTarget, NV_GPU_COOLER_SETTINGS *pCoolerSettings);
+
+
+class NV_COOLER_LEVEL_ENTRY(ctypes.Structure):
+    _fields_ = [
+        ('currentLevel', NvU32),
+        ('currentPolicy', NvU32),
+    ]
+
+
+class NV_GPU_COOLER_LEVELS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('levels', NV_COOLER_LEVEL_ENTRY * NVAPI_MAX_COOLERS_PER_GPU),
+    ]
+
+
+NV_GPU_COOLER_LEVELS = NV_GPU_COOLER_LEVELS_V1
+NV_GPU_COOLER_LEVELS_VER1 = MAKE_NVAPI_VERSION(NV_GPU_COOLER_LEVELS_V1, 1)
+NV_GPU_COOLER_LEVELS_VER = NV_GPU_COOLER_LEVELS_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_SetCoolerLevels'] = 0x891fa0ae
+NvAPI_GPU_SetCoolerLevels = hDll.GPU_SetCoolerLevels
+NvAPI_GPU_SetCoolerLevels.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_SetCoolerLevels(NvPhysicalGpuHandle hPhysicalGpu, NvU32 coolerIndex, NV_GPU_COOLER_LEVELS *pCoolerLevels, NvU32 count);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_RestoreCoolerSettings'] = 0x8f6ed0fb
+NvAPI_GPU_RestoreCoolerSettings = hDll.GPU_RestoreCoolerSettings
+NvAPI_GPU_RestoreCoolerSettings.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_RestoreCoolerSettings(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *coolerIndexes, NvU32 count);
+
+
+class NV_COOLER_POLICY_TABLE_ENTRY(ctypes.Structure):
+    _fields_ = [
+        ('entryId', NvU32),
+        ('currentLevel', NvU32),
+        ('defaultLevel', NvU32),
+    ]
+
+
+class NV_GPU_COOLER_POLICY_TABLE_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('policy', NvU32),
+        ('entries', NV_COOLER_POLICY_TABLE_ENTRY * NVAPI_MAX_COOLER_POLICY_LEVELS),
+    ]
+
+
+NV_GPU_COOLER_POLICY_TABLE = NV_GPU_COOLER_POLICY_TABLE_V1
+NV_GPU_COOLER_POLICY_TABLE_VER1 = MAKE_NVAPI_VERSION(NV_GPU_COOLER_POLICY_TABLE_V1, 1)
+NV_GPU_COOLER_POLICY_TABLE_VER = NV_GPU_COOLER_POLICY_TABLE_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetCoolerPolicyTable'] = 0x0518a32c
+NvAPI_GPU_GetCoolerPolicyTable = hDll.GPU_GetCoolerPolicyTable
+NvAPI_GPU_GetCoolerPolicyTable.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetCoolerPolicyTable(NvPhysicalGpuHandle hPhysicalGpu, NvU32 coolerIndex, NV_GPU_COOLER_POLICY_TABLE *pPolicyTable, NvU32 *pCount);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_SetCoolerPolicyTable'] = 0x987947cd
+NvAPI_GPU_SetCoolerPolicyTable = hDll.GPU_SetCoolerPolicyTable
+NvAPI_GPU_SetCoolerPolicyTable.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_SetCoolerPolicyTable(NvPhysicalGpuHandle hPhysicalGpu, NvU32 coolerIndex, NV_GPU_COOLER_POLICY_TABLE *pPolicyTable, NvU32 count);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_RestoreCoolerPolicyTable'] = 0xd8c4fe63
+NvAPI_GPU_RestoreCoolerPolicyTable = hDll.GPU_RestoreCoolerPolicyTable
+NvAPI_GPU_RestoreCoolerPolicyTable.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_RestoreCoolerPolicyTable(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *coolerIndexes, NvU32 count, NV_COOLER_POLICY policy);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetCurrentFanSpeedLevel'] = 0xbd71f0c9
+NvAPI_GPU_GetCurrentFanSpeedLevel = hDll.GPU_GetCurrentFanSpeedLevel
+NvAPI_GPU_GetCurrentFanSpeedLevel.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetCurrentFanSpeedLevel(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pFanLevel);
+
+
+# --- modern ClientFanCoolers API ---
+# bitmask
+class _NV_FAN_COOLERS_CONTROL_MODE(ENUM):
+    NVAPI_FAN_COOLERS_CONTROL_MODE_AUTO = EnumItem(0).set_string('Auto')
+    NVAPI_FAN_COOLERS_CONTROL_MODE_MANUAL = EnumItem(0b1).set_string('Manual')
+
+
+NV_FAN_COOLERS_CONTROL_MODE = _NV_FAN_COOLERS_CONTROL_MODE
+
+NVAPI_MAX_FAN_COOLERS_PER_GPU = 32
+
+
+class NV_FAN_COOLERS_INFO_ENTRY(ctypes.Structure):
+    _fields_ = [
+        ('coolerId', NvU32),
+        ('unknown1', NvU32),
+        ('unknown2', NvU32),
+        ('maximumRPM', NvU32),
+        ('reserved', NvU32 * 8),
+    ]
+
+
+class NV_GPU_CLIENT_FAN_COOLERS_INFO_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('unknown1', NvU32),
+        ('count', NvU32),
+        ('reserved', NvU32 * 8),
+        ('entries', NV_FAN_COOLERS_INFO_ENTRY * NVAPI_MAX_FAN_COOLERS_PER_GPU),
+    ]
+
+
+NV_GPU_CLIENT_FAN_COOLERS_INFO = NV_GPU_CLIENT_FAN_COOLERS_INFO_V1
+NV_GPU_CLIENT_FAN_COOLERS_INFO_VER1 = MAKE_NVAPI_VERSION(NV_GPU_CLIENT_FAN_COOLERS_INFO_V1, 1)
+NV_GPU_CLIENT_FAN_COOLERS_INFO_VER = NV_GPU_CLIENT_FAN_COOLERS_INFO_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_ClientFanCoolersGetInfo'] = 0xfb85b01e
+NvAPI_GPU_ClientFanCoolersGetInfo = hDll.GPU_ClientFanCoolersGetInfo
+NvAPI_GPU_ClientFanCoolersGetInfo.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_ClientFanCoolersGetInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_CLIENT_FAN_COOLERS_INFO *pInfo);
+
+
+class NV_FAN_COOLERS_STATUS_ENTRY(ctypes.Structure):
+    _fields_ = [
+        ('coolerId', NvU32),
+        ('currentRPM', NvU32),
+        ('currentMinimumLevel', NvU32),
+        ('currentMaximumLevel', NvU32),
+        ('currentLevel', NvU32),
+        ('reserved', NvU32 * 8),
+    ]
+
+
+class NV_GPU_CLIENT_FAN_COOLERS_STATUS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('count', NvU32),
+        ('reserved', NvU32 * 8),
+        ('entries', NV_FAN_COOLERS_STATUS_ENTRY * NVAPI_MAX_FAN_COOLERS_PER_GPU),
+    ]
+
+
+NV_GPU_CLIENT_FAN_COOLERS_STATUS = NV_GPU_CLIENT_FAN_COOLERS_STATUS_V1
+NV_GPU_CLIENT_FAN_COOLERS_STATUS_VER1 = MAKE_NVAPI_VERSION(NV_GPU_CLIENT_FAN_COOLERS_STATUS_V1, 1)
+NV_GPU_CLIENT_FAN_COOLERS_STATUS_VER = NV_GPU_CLIENT_FAN_COOLERS_STATUS_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_ClientFanCoolersGetStatus'] = 0x35aed5e8
+NvAPI_GPU_ClientFanCoolersGetStatus = hDll.GPU_ClientFanCoolersGetStatus
+NvAPI_GPU_ClientFanCoolersGetStatus.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_ClientFanCoolersGetStatus(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_CLIENT_FAN_COOLERS_STATUS *pStatus);
+
+
+class NV_FAN_COOLERS_CONTROL_ENTRY(ctypes.Structure):
+    _fields_ = [
+        ('coolerId', NvU32),
+        ('level', NvU32),
+        ('controlMode', NvU32),
+        ('reserved', NvU32 * 8),
+    ]
+
+
+class NV_GPU_CLIENT_FAN_COOLERS_CONTROL_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('unknown1', NvU32),
+        ('count', NvU32),
+        ('reserved', NvU32 * 8),
+        ('entries', NV_FAN_COOLERS_CONTROL_ENTRY * NVAPI_MAX_FAN_COOLERS_PER_GPU),
+    ]
+
+
+NV_GPU_CLIENT_FAN_COOLERS_CONTROL = NV_GPU_CLIENT_FAN_COOLERS_CONTROL_V1
+NV_GPU_CLIENT_FAN_COOLERS_CONTROL_VER1 = MAKE_NVAPI_VERSION(NV_GPU_CLIENT_FAN_COOLERS_CONTROL_V1, 1)
+NV_GPU_CLIENT_FAN_COOLERS_CONTROL_VER = NV_GPU_CLIENT_FAN_COOLERS_CONTROL_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_ClientFanCoolersGetControl'] = 0x814b209f
+NvAPI_GPU_ClientFanCoolersGetControl = hDll.GPU_ClientFanCoolersGetControl
+NvAPI_GPU_ClientFanCoolersGetControl.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_ClientFanCoolersGetControl(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_CLIENT_FAN_COOLERS_CONTROL *pControl);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_ClientFanCoolersSetControl'] = 0xa58971a5
+NvAPI_GPU_ClientFanCoolersSetControl = hDll.GPU_ClientFanCoolersSetControl
+NvAPI_GPU_ClientFanCoolersSetControl.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_ClientFanCoolersSetControl(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_CLIENT_FAN_COOLERS_CONTROL *pControl);

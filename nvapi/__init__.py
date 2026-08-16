@@ -104,6 +104,22 @@ WorkstationFeatureQuery = namedtuple('WorkstationFeatureQuery', ['configured', '
 ThermalSensorInfo = namedtuple('ThermalSensorInfo', [
     'controller', 'default_minimum_temp', 'default_maximum_temp', 'current_temp', 'target',
 ])
+# legacy "Cooler" API (undocumented) -- levels/temps are all percentages
+# unless noted otherwise.
+CoolerSetting = namedtuple('CoolerSetting', [
+    'cooler_type', 'controller', 'default_minimum_level', 'default_maximum_level',
+    'current_minimum_level', 'current_maximum_level', 'current_level',
+    'default_policy', 'current_policy', 'target', 'control_mode', 'is_active',
+])
+CoolerPolicyTableEntry = namedtuple('CoolerPolicyTableEntry', ['entry_id', 'current_level', 'default_level'])
+CoolerPolicyTable = namedtuple('CoolerPolicyTable', ['policy', 'entries'])
+# modern "ClientFanCoolers" API (undocumented) -- what current-generation
+# GPUs use.
+FanCoolerInfo = namedtuple('FanCoolerInfo', ['cooler_id', 'maximum_rpm'])
+FanCoolerStatus = namedtuple('FanCoolerStatus', [
+    'cooler_id', 'current_rpm', 'current_minimum_level', 'current_maximum_level', 'current_level',
+])
+FanCoolerControl = namedtuple('FanCoolerControl', ['cooler_id', 'control_mode', 'level'])
 # graphics/memory/processor/video match NV_GPU_PUBLIC_CLOCK_ID -- the only
 # 4 of the 32 possible clock-domain slots the driver ever populates. A
 # field is None if that domain isn't present on this GPU.
@@ -2319,6 +2335,211 @@ class PhysicalGPU(object):
             raise RuntimeError("NvAPI_GPU_GetTachReading returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
         return pValue.value
+
+    # --- legacy "Cooler" API (undocumented, older GPUs) ---
+    # verified live: returns NVAPI_NOT_SUPPORTED on this Turing-based
+    # Quadro RTX 4000 -- a legitimate per-GPU "not supported" result (this
+    # generation uses the ClientFanCoolers API below instead), not a bug.
+
+    @property
+    def cooler_settings(self):
+        p = NV_GPU_COOLER_SETTINGS()
+        p.version = NV_GPU_COOLER_SETTINGS_VER
+        nvStatus = NvAPI_GPU_GetCoolerSettings(self._hPhysicalGpu, NvU32(int(NV_COOLER_TARGET.NVAPI_COOLER_TARGET_ALL)), ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetCoolerSettings returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        res = []
+        for i in range(p.count):
+            s = p.settings[i]
+            res.append(CoolerSetting(
+                cooler_type=NV_COOLER_TYPE.get(s.coolerType),
+                controller=NV_COOLER_CONTROLLER.get(s.controller),
+                default_minimum_level=s.defaultMinLevel,
+                default_maximum_level=s.defaultMaxLevel,
+                current_minimum_level=s.currentMinLevel,
+                current_maximum_level=s.currentMaxLevel,
+                current_level=s.currentLevel,
+                default_policy=NV_COOLER_POLICY.decode_flags(s.defaultPolicy),
+                current_policy=NV_COOLER_POLICY.decode_flags(s.currentPolicy),
+                target=NV_COOLER_TARGET.decode_flags(s.target),
+                control_mode=NV_COOLER_CONTROL_MODE.get(s.controlMode),
+                is_active=bool(s.isActive),
+            ))
+        return res
+
+    @property
+    def current_fan_speed_level(self):
+        # legacy API's fan speed level, in percentage
+        pLevel = NvU32()
+        nvStatus = NvAPI_GPU_GetCurrentFanSpeedLevel(self._hPhysicalGpu, ctypes.byref(pLevel))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetCurrentFanSpeedLevel returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return pLevel.value
+
+    def set_cooler_levels(self, index, level, policy=None):
+        # WRITE: changes live fan behavior on real hardware. Do not call
+        # without the user's explicit go-ahead.
+        if policy is None:
+            policy = NV_COOLER_POLICY.NVAPI_COOLER_POLICY_MANUAL
+
+        p = NV_GPU_COOLER_LEVELS()
+        p.version = NV_GPU_COOLER_LEVELS_VER
+        p.levels[0].currentLevel = level
+        p.levels[0].currentPolicy = int(policy)
+        nvStatus = NvAPI_GPU_SetCoolerLevels(self._hPhysicalGpu, NvU32(index), ctypes.byref(p), NvU32(1))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetCoolerLevels returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    def restore_cooler_settings(self, indexes=None):
+        # WRITE: resets fan policy/level to the driver default. Do not
+        # call without the user's explicit go-ahead.
+        if indexes:
+            arr = (NvU32 * len(indexes))(*indexes)
+            pIndexes = ctypes.cast(arr, ctypes.POINTER(NvU32))
+            count = len(indexes)
+        else:
+            pIndexes = None
+            count = 0
+
+        nvStatus = NvAPI_GPU_RestoreCoolerSettings(self._hPhysicalGpu, pIndexes, NvU32(count))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_RestoreCoolerSettings returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    def cooler_policy_table(self, index, policy):
+        p = NV_GPU_COOLER_POLICY_TABLE()
+        p.version = NV_GPU_COOLER_POLICY_TABLE_VER
+        p.policy = int(policy)
+        pCount = NvU32()
+        nvStatus = NvAPI_GPU_GetCoolerPolicyTable(self._hPhysicalGpu, NvU32(index), ctypes.byref(p), ctypes.byref(pCount))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetCoolerPolicyTable returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        entries = [
+            CoolerPolicyTableEntry(p.entries[i].entryId, p.entries[i].currentLevel, p.entries[i].defaultLevel)
+            for i in range(pCount.value)
+        ]
+        return CoolerPolicyTable(policy=NV_COOLER_POLICY.decode_flags(p.policy), entries=entries)
+
+    def set_cooler_policy_table(self, index, policy, entries):
+        # WRITE: changes live fan policy on real hardware. Do not call
+        # without the user's explicit go-ahead. entries: list of
+        # (entry_id, current_level, default_level) tuples.
+        p = NV_GPU_COOLER_POLICY_TABLE()
+        p.version = NV_GPU_COOLER_POLICY_TABLE_VER
+        p.policy = int(policy)
+        for i, (entry_id, current_level, default_level) in enumerate(entries):
+            p.entries[i].entryId = entry_id
+            p.entries[i].currentLevel = current_level
+            p.entries[i].defaultLevel = default_level
+
+        nvStatus = NvAPI_GPU_SetCoolerPolicyTable(self._hPhysicalGpu, NvU32(index), ctypes.byref(p), NvU32(len(entries)))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetCoolerPolicyTable returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    def restore_cooler_policy_table(self, policy, indexes=None):
+        # WRITE: resets fan policy table to the driver default. Do not
+        # call without the user's explicit go-ahead.
+        if indexes:
+            arr = (NvU32 * len(indexes))(*indexes)
+            pIndexes = ctypes.cast(arr, ctypes.POINTER(NvU32))
+            count = len(indexes)
+        else:
+            pIndexes = None
+            count = 0
+
+        nvStatus = NvAPI_GPU_RestoreCoolerPolicyTable(self._hPhysicalGpu, pIndexes, NvU32(count), NvU32(int(policy)))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_RestoreCoolerPolicyTable returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+    # --- modern "ClientFanCoolers" API (undocumented, current-gen GPUs) ---
+
+    @property
+    def fan_coolers_info(self):
+        p = NV_GPU_CLIENT_FAN_COOLERS_INFO()
+        p.version = NV_GPU_CLIENT_FAN_COOLERS_INFO_VER
+        nvStatus = NvAPI_GPU_ClientFanCoolersGetInfo(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientFanCoolersGetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [
+            FanCoolerInfo(p.entries[i].coolerId, p.entries[i].maximumRPM)
+            for i in range(p.count)
+        ]
+
+    @property
+    def fan_coolers_status(self):
+        p = NV_GPU_CLIENT_FAN_COOLERS_STATUS()
+        p.version = NV_GPU_CLIENT_FAN_COOLERS_STATUS_VER
+        nvStatus = NvAPI_GPU_ClientFanCoolersGetStatus(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientFanCoolersGetStatus returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [
+            FanCoolerStatus(
+                p.entries[i].coolerId, p.entries[i].currentRPM, p.entries[i].currentMinimumLevel,
+                p.entries[i].currentMaximumLevel, p.entries[i].currentLevel,
+            )
+            for i in range(p.count)
+        ]
+
+    @property
+    def fan_coolers_control(self):
+        p = NV_GPU_CLIENT_FAN_COOLERS_CONTROL()
+        p.version = NV_GPU_CLIENT_FAN_COOLERS_CONTROL_VER
+        nvStatus = NvAPI_GPU_ClientFanCoolersGetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientFanCoolersGetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return [
+            FanCoolerControl(
+                p.entries[i].coolerId, NV_FAN_COOLERS_CONTROL_MODE.get(p.entries[i].controlMode),
+                p.entries[i].level,
+            )
+            for i in range(p.count)
+        ]
+
+    @fan_coolers_control.setter
+    def fan_coolers_control(self, entries):
+        # WRITE: changes live fan behavior on real hardware. Do not call
+        # without the user's explicit go-ahead. entries: list of
+        # (cooler_id, control_mode, level) tuples -- control_mode is
+        # NV_FAN_COOLERS_CONTROL_MODE.NVAPI_FAN_COOLERS_CONTROL_MODE_AUTO
+        # or _MANUAL; level (percentage) only matters for Manual.
+        p = NV_GPU_CLIENT_FAN_COOLERS_CONTROL()
+        p.version = NV_GPU_CLIENT_FAN_COOLERS_CONTROL_VER
+        p.count = len(entries)
+        for i, (cooler_id, control_mode, level) in enumerate(entries):
+            p.entries[i].coolerId = cooler_id
+            p.entries[i].controlMode = int(control_mode)
+            p.entries[i].level = level
+
+        nvStatus = NvAPI_GPU_ClientFanCoolersSetControl(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_ClientFanCoolersSetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
     def _i2c_info(self, display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id):
         info = NV_I2C_INFO()

@@ -116,6 +116,11 @@ for logical_gpu in logical_gpus:
             'partition_count',
             'driver_model',
             'framebuffer_width_and_location',
+            'cooler_settings',
+            'current_fan_speed_level',
+            'fan_coolers_info',
+            'fan_coolers_status',
+            'fan_coolers_control',
         ):
             try:
                 attr = getattr(gpu, attr_name)
