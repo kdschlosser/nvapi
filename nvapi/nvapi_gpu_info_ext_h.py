@@ -1767,3 +1767,57 @@ NVAPI_INTERFACE_IDS['NvAPI_GPU_ClientFanCoolersSetControl'] = 0xa58971a5
 NvAPI_GPU_ClientFanCoolersSetControl = hDll.GPU_ClientFanCoolersSetControl
 NvAPI_GPU_ClientFanCoolersSetControl.restype = NVAPI_INTERFACE
 # NVAPI_INTERFACE NvAPI_GPU_ClientFanCoolersSetControl(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_CLIENT_FAN_COOLERS_CONTROL *pControl);
+
+
+# ---------------------------------------------------------------------------
+# Voltage -- not in NVIDIA's public header. Structs/signatures from
+# falahati/NvAPIWrapper (PrivateVoltageBoostPercentV1) and JustAMan/pynvraw
+# (NV_GPU_VOLTAGE_STATUS); interface IDs cross-validated three ways
+# (NvAPIWrapper, pynvraw, arcnmx/nvapi-rs's nvid.rs -- the latter also
+# records the newer "ClientVoltRails" names NVIDIA dispatches these same
+# three interface IDs under: ClientVoltRailsGetStatus/GetControl/SetControl
+# are the same functions as GetCurrentVoltage/GetCoreVoltageBoostPercent/
+# SetCoreVoltageBoostPercent respectively, just newer names for the same
+# numeric IDs).
+# ---------------------------------------------------------------------------
+class NV_GPU_VOLTAGE_STATUS_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('reserved1', NvU32),
+        ('reserved2', NvU32 * 8),
+        ('voltage_uV', NvU32),
+        ('reserved3', NvU32 * 8),
+    ]
+
+
+NV_GPU_VOLTAGE_STATUS = NV_GPU_VOLTAGE_STATUS_V1
+NV_GPU_VOLTAGE_STATUS_VER1 = MAKE_NVAPI_VERSION(NV_GPU_VOLTAGE_STATUS_V1, 1)
+NV_GPU_VOLTAGE_STATUS_VER = NV_GPU_VOLTAGE_STATUS_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetCurrentVoltage'] = 0x465f9bcf
+NvAPI_GPU_GetCurrentVoltage = hDll.GPU_GetCurrentVoltage
+NvAPI_GPU_GetCurrentVoltage.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetCurrentVoltage(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_VOLTAGE_STATUS *pVoltage);
+
+
+class NV_GPU_VOLTAGE_BOOST_PERCENT_V1(ctypes.Structure):
+    _fields_ = [
+        ('version', NvU32),
+        ('percent', NvU32),
+        ('unknown', NvU32 * 8),
+    ]
+
+
+NV_GPU_VOLTAGE_BOOST_PERCENT = NV_GPU_VOLTAGE_BOOST_PERCENT_V1
+NV_GPU_VOLTAGE_BOOST_PERCENT_VER1 = MAKE_NVAPI_VERSION(NV_GPU_VOLTAGE_BOOST_PERCENT_V1, 1)
+NV_GPU_VOLTAGE_BOOST_PERCENT_VER = NV_GPU_VOLTAGE_BOOST_PERCENT_VER1
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_GetCoreVoltageBoostPercent'] = 0x9df23ca1
+NvAPI_GPU_GetCoreVoltageBoostPercent = hDll.GPU_GetCoreVoltageBoostPercent
+NvAPI_GPU_GetCoreVoltageBoostPercent.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_GetCoreVoltageBoostPercent(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_VOLTAGE_BOOST_PERCENT *pPercent);
+
+NVAPI_INTERFACE_IDS['NvAPI_GPU_SetCoreVoltageBoostPercent'] = 0xb9306d9b
+NvAPI_GPU_SetCoreVoltageBoostPercent = hDll.GPU_SetCoreVoltageBoostPercent
+NvAPI_GPU_SetCoreVoltageBoostPercent.restype = NVAPI_INTERFACE
+# NVAPI_INTERFACE NvAPI_GPU_SetCoreVoltageBoostPercent(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_VOLTAGE_BOOST_PERCENT *pPercent);

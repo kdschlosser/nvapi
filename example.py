@@ -121,6 +121,8 @@ for logical_gpu in logical_gpus:
             'fan_coolers_info',
             'fan_coolers_status',
             'fan_coolers_control',
+            'current_voltage',
+            'core_voltage_boost_percent',
         ):
             try:
                 attr = getattr(gpu, attr_name)

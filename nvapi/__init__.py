@@ -2554,6 +2554,62 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_ClientFanCoolersSetControl returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
+    # --- voltage (undocumented) ---
+
+    @property
+    def current_voltage(self):
+        # actual present core voltage, in volts
+        p = NV_GPU_VOLTAGE_STATUS()
+        p.version = NV_GPU_VOLTAGE_STATUS_VER
+        nvStatus = NvAPI_GPU_GetCurrentVoltage(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetCurrentVoltage returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return p.voltage_uV / 1000000.0
+
+    @property
+    def core_voltage_boost_percent(self):
+        p = NV_GPU_VOLTAGE_BOOST_PERCENT()
+        p.version = NV_GPU_VOLTAGE_BOOST_PERCENT_VER
+        nvStatus = NvAPI_GPU_GetCoreVoltageBoostPercent(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_GetCoreVoltageBoostPercent returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
+        return p.percent
+
+    def set_core_voltage_boost_percent(self, percent):
+        # WRITE: overvolts/undervolts the GPU core on real hardware.
+        # Undocumented by NVIDIA and NEVER tested against real hardware
+        # by this library -- an incorrect or excessive value can damage
+        # your GPU, other hardware, or cause system instability. The
+        # authors of this library are not responsible for any damage
+        # caused by using this feature. Requires interactive
+        # confirmation; will not run under a non-interactive stdin.
+        print('!' * 70)
+        print('WARNING: about to change the GPU core voltage boost to %s%%.' % percent)
+        print('This function is UNDOCUMENTED by NVIDIA and UNTESTED against')
+        print('real hardware by this library. An incorrect or excessive value')
+        print('can damage your GPU, other hardware, or cause system instability.')
+        print('The authors of this library are NOT responsible for any damage')
+        print('caused by using this feature. Proceed at your own risk.')
+        print('!' * 70)
+        response = input("Type Continue (exact case, no quotes) to proceed, anything else aborts: ")
+        if response != 'Continue':
+            raise RuntimeError("Core voltage boost change aborted -- confirmation not given.")
+
+        p = NV_GPU_VOLTAGE_BOOST_PERCENT()
+        p.version = NV_GPU_VOLTAGE_BOOST_PERCENT_VER
+        p.percent = percent
+        nvStatus = NvAPI_GPU_SetCoreVoltageBoostPercent(self._hPhysicalGpu, ctypes.byref(p))
+        if NvAPI_Status.NVAPI_OK != nvStatus:
+            szDesc = NvAPI_ShortString()
+            NvAPI_GetErrorMessage(nvStatus, szDesc)
+            raise RuntimeError("NvAPI_GPU_SetCoreVoltageBoostPercent returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
+
     def _i2c_info(self, display_mask, i2c_dev_address, reg_address, is_ddc_port, speed_khz, port_id):
         info = NV_I2C_INFO()
         info.version = NV_I2C_INFO_VER
