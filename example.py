@@ -177,7 +177,6 @@ for logical_gpu in logical_gpus:
                 'is_traditional_sdr_gamma_supported',
                 'is_dolby_vision_supported',
                 'hdr_dynamic_range',
-                'hdr_dynamic_range',
                 'hdr_color_format',
                 'hdr_primary_color_coordinates',
                 'hdr_maximum_content_light_level',
