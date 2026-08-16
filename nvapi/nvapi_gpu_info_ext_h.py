@@ -1682,9 +1682,13 @@ class NV_FAN_COOLERS_INFO_ENTRY(ctypes.Structure):
 
 
 class NV_GPU_CLIENT_FAN_COOLERS_INFO_V1(ctypes.Structure):
+    # JustAMan/pynvraw independently identifies this leading field (called
+    # unknown1/unknown in falahati/NvAPIWrapper) as a `supported` bool --
+    # same byte offset/struct size either way (bool + padding == a full
+    # uint32 field), verified by comparing ctypes.sizeof() of both layouts.
     _fields_ = [
         ('version', NvU32),
-        ('unknown1', NvU32),
+        ('supported', ctypes.c_bool),
         ('count', NvU32),
         ('reserved', NvU32 * 8),
         ('entries', NV_FAN_COOLERS_INFO_ENTRY * NVAPI_MAX_FAN_COOLERS_PER_GPU),

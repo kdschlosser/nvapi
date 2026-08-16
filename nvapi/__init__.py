@@ -116,6 +116,7 @@ CoolerPolicyTable = namedtuple('CoolerPolicyTable', ['policy', 'entries'])
 # modern "ClientFanCoolers" API (undocumented) -- what current-generation
 # GPUs use.
 FanCoolerInfo = namedtuple('FanCoolerInfo', ['cooler_id', 'maximum_rpm'])
+FanCoolersInfo = namedtuple('FanCoolersInfo', ['is_supported', 'coolers'])
 FanCoolerStatus = namedtuple('FanCoolerStatus', [
     'cooler_id', 'current_rpm', 'current_minimum_level', 'current_maximum_level', 'current_level',
 ])
@@ -2385,6 +2386,15 @@ class PhysicalGPU(object):
     def set_cooler_levels(self, index, level, policy=None):
         # WRITE: changes live fan behavior on real hardware. Do not call
         # without the user's explicit go-ahead.
+        #
+        # UNVERIFIED: falahati/NvAPIWrapper (used below) declares this
+        # function as (gpu, index, *levels, count) -- 4 args. A second,
+        # independent source (JustAMan/pynvraw) declares it as (gpu,
+        # index, *levels) -- 3 args, no count -- and fills every slot in
+        # a fixed-size 20-entry array rather than passing a count. These
+        # disagree and this path has not been tested against real
+        # hardware to resolve it; if this call misbehaves, try dropping
+        # the trailing NvU32(1) argument first.
         if policy is None:
             policy = NV_COOLER_POLICY.NVAPI_COOLER_POLICY_MANUAL
 
@@ -2479,10 +2489,13 @@ class PhysicalGPU(object):
             NvAPI_GetErrorMessage(nvStatus, szDesc)
             raise RuntimeError("NvAPI_GPU_ClientFanCoolersGetInfo returned %s (%d)" % (szDesc.value.decode('ascii', 'replace'), nvStatus))
 
-        return [
-            FanCoolerInfo(p.entries[i].coolerId, p.entries[i].maximumRPM)
-            for i in range(p.count)
-        ]
+        return FanCoolersInfo(
+            is_supported=bool(p.supported),
+            coolers=[
+                FanCoolerInfo(p.entries[i].coolerId, p.entries[i].maximumRPM)
+                for i in range(p.count)
+            ],
+        )
 
     @property
     def fan_coolers_status(self):
