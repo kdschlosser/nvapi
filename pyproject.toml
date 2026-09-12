@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nvapi"
+version = "0.1.0"
+description = "NVIDIA NVAPI SDK port to Python -- GPU/display management and monitoring"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Kevin G. Schlosser", email = "kevin.g.schlosser@gmail.com" }]
+requires-python = ">=3.9"
+dependencies = ["six"]
+
+[tool.setuptools]
+packages = ["nvapi"]
