@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "NVIDIA NVAPI SDK port to Python -- GPU/display management and monitoring"
 readme = "README.md"
 license = { file = "LICENSE" }
-authors = [{ name = "Kevin G. Schlosser", email = "kevin.g.schlosser@gmail.com" }]
+authors = [{ name = "Kevin G. Schlosser" }]
 requires-python = ">=3.9"
 dependencies = ["six"]
 
